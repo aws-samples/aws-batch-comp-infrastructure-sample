@@ -1,0 +1,4 @@
+Release Notes:
+==============
+
+02/25/2020:  Version 1.  Sample code documenting how to run SAT solvers in AWS Batch.   

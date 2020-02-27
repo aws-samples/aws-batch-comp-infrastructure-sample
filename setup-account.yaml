@@ -1,0 +1,67 @@
+# Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  emailAddress:
+    Type: String
+
+Description: "Basic Budget"
+
+Resources:
+  BudgetExample:
+    Type: "AWS::Budgets::Budget"
+    Properties:
+      Budget:
+        BudgetLimit:
+          Amount: 200
+          Unit: USD
+        TimeUnit: MONTHLY
+        BudgetType: COST
+      NotificationsWithSubscribers:
+        - Notification:
+            NotificationType: ACTUAL
+            ComparisonOperator: GREATER_THAN
+            Threshold: 99
+          Subscribers:
+            - SubscriptionType: EMAIL
+              Address: sat-comp-2020@amazon.com
+            - SubscriptionType: EMAIL
+              Address: !Ref emailAddress
+        - Notification:
+            NotificationType: ACTUAL
+            ComparisonOperator: GREATER_THAN
+            Threshold: 80
+          Subscribers:
+            - SubscriptionType: EMAIL
+              Address: sat-comp-2020@amazon.com
+            - SubscriptionType: EMAIL
+              Address: !Ref emailAddress
+        - Notification:
+            NotificationType: ACTUAL
+            ComparisonOperator: GREATER_THAN
+            Threshold: 60
+          Subscribers:
+            - SubscriptionType: EMAIL
+              Address: sat-comp-2020@amazon.com
+            - SubscriptionType: EMAIL
+              Address: !Ref emailAddress
+        - Notification:
+            NotificationType: ACTUAL
+            ComparisonOperator: GREATER_THAN
+            Threshold: 40
+          Subscribers:
+            - SubscriptionType: EMAIL
+              Address: sat-comp-2020@amazon.com
+            - SubscriptionType: EMAIL
+              Address: !Ref emailAddress
+        - Notification:
+            NotificationType: ACTUAL
+            ComparisonOperator: GREATER_THAN
+            Threshold: 20
+          Subscribers:
+            - SubscriptionType: EMAIL
+              Address: sat-comp-2020@amazon.com
+            - SubscriptionType: EMAIL
+              Address: !Ref emailAddress
