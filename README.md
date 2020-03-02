@@ -166,7 +166,7 @@ Successful builds will create a Docker container that is stored in ECR.  If a bu
 
 If you encounter difficulties with the debugging process, please email us at: [sv-comp-2020@amazon.com](mailto:sv-comp-2020@amazon.com) and we will walk you through the process.
 
-## Building the AWS Batch Pipeline
+## Building the AWS Batch Pipeline that will run the solver
 
 The next step is to build the Batch environment that will run the solver.  This is relatively straightforward, and a script is provided to construct the batch environment.
 
@@ -174,7 +174,7 @@ The batch environment is designed to allow testing at small scale, and consists 
 
 To set up the batch pipeline, run the job-queue.sh file:
 
-**build-job-queue.sh PROFILE PROJECT\_NAME
+**build-job-queue.sh PROFILE REGION PROJECT\_NAME
 where:
    PROFILE is a AWS CLI profile with administrator access to the account**
 
