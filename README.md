@@ -257,7 +257,7 @@ For a given job, each output to stdio/stderr by a node is logged.  To examine th
 
 ## Example
 
-We have an example repository with a Dockerfile that builds and runs Hordesat in the following git repo: https://github.com/eidelmanjonathan/sat_competition_entry
+We have an example repository with a Dockerfile that builds and runs Hordesat in the following git repo: https://github.com/aws-samples/aws-batch-hordesat-sample
 
 
 
