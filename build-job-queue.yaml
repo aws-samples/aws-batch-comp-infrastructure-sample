@@ -168,8 +168,8 @@ Resources:
       ComputeResources:
         Type: EC2
         MinvCpus: 0
-        DesiredvCpus: 128
-        MaxvCpus: 128
+        DesiredvCpus: 32
+        MaxvCpus: 32
         AllocationStrategy: BEST_FIT_PROGRESSIVE
         InstanceTypes:
         - optimal
