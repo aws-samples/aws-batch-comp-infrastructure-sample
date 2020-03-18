@@ -11,7 +11,7 @@ Preparing tools and testing them involves four phases, which will be described i
 
 This project provides some sample code to set up your account and test your solver.
 
-For each step, we have a CloudFormation template that can be used to set up the account for use with minimal effort.  These files are available in the github project at: https://github.com/aws-samples/comp-infrastructure-samples (which also contains this README file).  CloudFormation is AWS&#39;s approach to &quot;infrastructure as code&quot;, and it allows bulk creation of AWS resources using a relatively straightforward (if verbose) YAML format to construct resources.  It is not necessary that teams become expert CloudFormation users, but some understanding of the rudiments of CloudFormation are useful.  See: [https://aws.amazon.com/cloudformation/](https://aws.amazon.com/cloudformation/) for information and a tutorial on CloudFormation.  At each stage, we will tell you how to invoke CloudFormation to install resources into the account.
+For each step, we have a CloudFormation template that can be used to set up the account for use with minimal effort.  These files are available in the github project at: https://github.com/aws-samples/aws-batch-comp-infrastructure-sample (which also contains this README file).  CloudFormation is AWS&#39;s approach to &quot;infrastructure as code&quot;, and it allows bulk creation of AWS resources using a relatively straightforward (if verbose) YAML format to construct resources.  It is not necessary that teams become expert CloudFormation users, but some understanding of the rudiments of CloudFormation are useful.  See: [https://aws.amazon.com/cloudformation/](https://aws.amazon.com/cloudformation/) for information and a tutorial on CloudFormation.  At each stage, we will tell you how to invoke CloudFormation to install resources into the account.
 
 Parallel solvers are constructed by running multiple copies of a single Docker image that can communicate with one another using IP, TCP, SSH, or any number of higher-level protocols such as MPI.  We provide a Docker container image that by default has support for the use of MPIover SSH.
 
@@ -94,7 +94,7 @@ Although it is handy to get emails when certain account budget thresholds have b
 
 ## Building the Solver
 
-Solvers should be buildable from source code using a standard process.  It is expected that you will provide a GitHub repo that has a Dockerfile in the top directory. We have provided the following Github repo as an example: https://github.com/eidelmanjonathan/sat_competition_entry.
+Solvers should be buildable from source code using a standard process.  It is expected that you will provide a GitHub repo that has a Dockerfile in the top directory. We have provided the following Github repo as an example: https://github.com/aws-samples/aws-batch-hordesat-sample.
 
 
  ![](build_process.png)
