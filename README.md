@@ -206,7 +206,7 @@ This is exactly how we will run the competition.
 
 To run the script run:
 
-    ./run_example --profile PROFILE --project-name PROJECT_NAME
+    ./run_example --profile PROFILE --project-name PROJECT_NAME --file CNF_FILE_PATH
 
 
 Where profile is your aws profile as configured in ~/.aws/config, the PROJECT_NAME is whatever name you gave your project
