@@ -125,11 +125,11 @@ Resources:
             build:
               commands:
                 - set -x
-                - $(aws ecr get-login --region ${REGION} --no-include-email)
                 - export DATE=`date -u +%Y%m%d-%H%M%S`
                 - export COMMIT=`expr substr ${CODEBUILD_RESOLVED_SOURCE_VERSION} 1 8`
                 - export REPO=${ACCOUNTID}.dkr.ecr.${REGION}.amazonaws.com/${PROJECTNAME}
                 - docker build . -t ${REPO}
+                - $(aws ecr get-login --region ${REGION} --no-include-email)
                 - docker push $REPO
   BuildDockerPipelineRole:
     Type: AWS::IAM::Role

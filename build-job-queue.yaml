@@ -24,7 +24,15 @@ Resources:
     Type: AWS::EC2::VPC
     Properties:
       CidrBlock: 10.0.0.0/16
- 
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+
+  SecondCidr:
+    Type: AWS::EC2::VPCCidrBlock
+    Properties:
+      CidrBlock: 10.1.0.0/16
+      VpcId: !Ref VPC
+
   InternetGateway:
     Type: AWS::EC2::InternetGateway
 
@@ -42,7 +50,7 @@ Resources:
       InternetGatewayId:
         Ref: InternetGateway
 
- 
+
   SecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -70,11 +78,11 @@ Resources:
 
   SubnetPrivate:
     Type: AWS::EC2::Subnet
+    DependsOn: SecondCidr
     Properties:
-      AvailabilityZone: !Sub "${Region}a"
-      CidrBlock: 10.0.0.0/24
+      AvailabilityZone: us-east-2a
+      CidrBlock: 10.1.0.0/16
       VpcId: !Ref VPC
-      MapPublicIpOnLaunch: 'True'
   RouteTablePrivate:
     Type: AWS::EC2::RouteTable
     Properties:
@@ -98,7 +106,7 @@ Resources:
   SubnetPublic:
     Type: AWS::EC2::Subnet
     Properties:
-      AvailabilityZone: !Sub "${Region}a"
+      AvailabilityZone:  us-east-2a
       CidrBlock: 10.0.1.0/24
       VpcId: !Ref VPC
       MapPublicIpOnLaunch: 'True'
@@ -121,70 +129,121 @@ Resources:
       RouteTableId: !Ref RouteTablePublic
       SubnetId: !Ref SubnetPublic
 
-  BatchServiceRole:
+  EcsCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: SatCompCluster
+      ClusterSettings:
+        - Name: containerInsights
+          Value: enabled
+
+  # A security group for the containers we will run in Fargate.
+  # Rules are added to this security group based on what ingress you
+  # add for the cluster.
+  ContainerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Access to the Fargate containers
+      VpcId: !Ref 'VPC'
+
+  # A role used to allow AWS Autoscaling to inspect stats and adjust scaleable targets
+  # on your AWS account
+  AutoscalingRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
         Statement:
         - Effect: Allow
           Principal:
-            Service: batch.amazonaws.com
-          Action: sts:AssumeRole
-      ManagedPolicyArns:
-      - arn:aws:iam::aws:policy/service-role/AWSBatchServiceRole
- 
-  IamInstanceProfile:
-    Type: AWS::IAM::InstanceProfile
-    Properties:
-      Roles:
-      - Ref: EcsInstanceRole
- 
-  EcsInstanceRole:
+            Service: [application-autoscaling.amazonaws.com]
+          Action: ['sts:AssumeRole']
+      Path: /
+      Policies:
+      - PolicyName: service-autoscaling
+        PolicyDocument:
+          Statement:
+          - Effect: Allow
+            Action:
+              - 'application-autoscaling:*'
+              - 'cloudwatch:DescribeAlarms'
+              - 'cloudwatch:PutMetricAlarm'
+              - 'ecs:DescribeServices'
+              - 'ecs:UpdateService'
+            Resource: '*'
+
+  # This is an IAM role which authorizes ECS to manage resources on your
+  # account on your behalf, such as updating your load balancer with the
+  # details of where your containers are, so that traffic can reach your
+  # containers.
+  ECSRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: '2008-10-17'
         Statement:
-        - Sid: ''
-          Effect: Allow
+        - Effect: Allow
           Principal:
-            Service: ec2.amazonaws.com
-          Action: sts:AssumeRole
-      ManagedPolicyArns:
-      - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role
+            Service: [ecs.amazonaws.com]
+          Action: ['sts:AssumeRole']
+      Path: /
+      Policies:
+      - PolicyName: ecs-service
+        PolicyDocument:
+          Statement:
+          - Effect: Allow
+            Action:
+              # Rules which allow ECS to attach network interfaces to instances
+              # on your behalf in order for awsvpc networking mode to work right
+              - 'ec2:AttachNetworkInterface'
+              - 'ec2:CreateNetworkInterface'
+              - 'ec2:CreateNetworkInterfacePermission'
+              - 'ec2:DeleteNetworkInterface'
+              - 'ec2:DeleteNetworkInterfacePermission'
+              - 'ec2:Describe*'
+              - 'ec2:DetachNetworkInterface'
+              - 'elasticfilesystem:*'
 
-  JobQueue:
-    Type: AWS::Batch::JobQueue
-    Properties:
-      JobQueueName: !Sub "JobQueue-${ProjectName}"
-      Priority: 1
-      ComputeEnvironmentOrder:
-      - Order: 1
-        ComputeEnvironment:
-          Ref: ComputeEnvironment
+              # Rules which allow ECS to update load balancers on your behalf
+              # with the information sabout how to send traffic to your containers
+              - 'elasticloadbalancing:DeregisterInstancesFromLoadBalancer'
+              - 'elasticloadbalancing:DeregisterTargets'
+              - 'elasticloadbalancing:Describe*'
+              - 'elasticloadbalancing:RegisterInstancesWithLoadBalancer'
+              - 'elasticloadbalancing:RegisterTargets'
+            Resource: '*'
 
-  ComputeEnvironment:
-    Type: AWS::Batch::ComputeEnvironment
-    Properties:
-      Type: MANAGED
-      ComputeEnvironmentName: !Sub "ComputeEnv-${ProjectName}"
-      ComputeResources:
-        Type: EC2
-        MinvCpus: 0
-        DesiredvCpus: 32
-        MaxvCpus: 32
-        AllocationStrategy: BEST_FIT_PROGRESSIVE
-        InstanceTypes:
-        - optimal
-        Subnets:
-        - Ref: SubnetPrivate
-        SecurityGroupIds:
-        - Ref: SecurityGroup
-        InstanceRole:
-          Ref: IamInstanceProfile
-      ServiceRole:
-        Ref: BatchServiceRole
+
+
+#  JobQueue:
+#    Type: AWS::Batch::JobQueue
+#    Properties:
+#      JobQueueName: !Sub "JobQueue-${ProjectName}"
+#      Priority: 1
+#      ComputeEnvironmentOrder:
+#      - Order: 1
+#        ComputeEnvironment:
+#          Ref: ComputeEnvironment
+
+#  ComputeEnvironment:
+#    Type: AWS::Batch::ComputeEnvironment
+#    Properties:
+#      Type: MANAGED
+#      ComputeEnvironmentName: !Sub "ComputeEnv-${ProjectName}"
+#      ComputeResources:
+#        Type: EC2
+#        MinvCpus: 0
+#        DesiredvCpus: 32
+#        MaxvCpus: 32
+#        AllocationStrategy: BEST_FIT_PROGRESSIVE
+#        InstanceTypes:
+#        - optimal
+#        Subnets:
+#        - Ref: SubnetPrivate
+#        SecurityGroupIds:
+#        - Ref: SecurityGroup
+#        InstanceRole:
+#          Ref: IamInstanceProfile
+#      ServiceRole:
+#        Ref: BatchServiceRole
 
 # Non-boilerplate Batch code here!
   EcsTaskRole:
@@ -210,41 +269,82 @@ Resources:
                 Effect: Allow
                 Resource: "*"
  
-  JobDefinition:
-    Type: AWS::Batch::JobDefinition
+  SolverProjectDefinition:
+    Type: AWS::ECS::TaskDefinition
     Properties:
-      JobDefinitionName: !Sub "JobDefinition-${ProjectName}"
-      RetryStrategy:
-        Attempts: 1
-      Type: multinode
-      NodeProperties:
-        NumNodes: 2
-        MainNode: 0
-        NodeRangeProperties:
-          -
-            TargetNodes: "0:1"
-            Container:
-                Image: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ProjectName}
-                Vcpus: 4
-                Memory: 64000
-                JobRoleArn: !Ref EcsTaskRole
-                Environment:
-                  - Name: S3_BKT
-                    Value: !Sub "${AWS::Region}-${AWS::AccountId}-${ProjectName}"
+      ExecutionRoleArn: !GetAtt ECSTaskExecutionRole.Arn
+      TaskRoleArn: !GetAtt EcsTaskRole.Arn
+      NetworkMode: awsvpc
+      Cpu: 1024
+      Memory: 2048
+      RequiresCompatibilities:
+        - FARGATE
+        - EC2
+
+      ContainerDefinitions:
+        - Cpu: 1024
+          Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ProjectName}"
+          Name: !Sub "${ProjectName}"
+          Memory: 2048
+          Environment:
+            - Name: AWS_BATCH_JOB_MAIN_NODE_INDEX
+              Value: 0
+            - Name: COMP_S3_PROBLEM_PATH
+              Value: "shared-entries/test.cnf"
+            - Name: S3_BKT
+              Value: "sat-comp-2020"
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Sub "/ecs/${ProjectName}"
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: ecs
+  SolverLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/ecs/${ProjectName}"
+      RetentionInDays: 1827
+  ECSTaskExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: [ecs-tasks.amazonaws.com]
+            Action: ['sts:AssumeRole']
+      Path: /
+      Policies:
+        - PolicyName: AmazonECSTaskExecutionRolePolicy
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  # Allow the ECS Tasks to download images from ECR
+                  - 'ecr:GetAuthorizationToken'
+                  - 'ecr:BatchCheckLayerAvailability'
+                  - 'ecr:GetDownloadUrlForLayer'
+                  - 'ecr:BatchGetImage'
+
+                  # Allow the ECS tasks to upload logs to CloudWatch
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: '*'
 
 Outputs:
-  ComputeEnvironmentArn:
+  SolverProjectDefinition:
     Value:
-      Ref: ComputeEnvironment
+      Ref: SolverProjectDefinition
     Export:
-      Name: !Sub "ComputeEnvironmentArn-${ProjectName}"
-  JobQueueArn:
+      Name: ProjectDefinition
+  Subnet:
     Value:
-      Ref: JobQueue
+      Ref: SubnetPrivate
     Export:
-      Name: !Sub "JobQueueArn-${ProjectName}"
-  JobDefinitionArn:
+      Name: SubnetId
+  SecurityGroupId:
     Value:
-      Ref: JobDefinition
+      Ref: SecurityGroup
     Export:
-      Name: !Sub "JobDefinitionArn-${ProjectName}"
+      Name: SecurityGroup
+

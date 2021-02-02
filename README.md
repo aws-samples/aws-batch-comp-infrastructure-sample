@@ -6,7 +6,7 @@ Preparing tools and testing them involves four phases, which will be described i
 
 1. Creation of a test AWS Account for building your solver and running limited-scale experiments.
 2. Creating the build pipeline to build your solver
-3. Creating the AWS Batch execution pipeline to run your solver at limited scale in your test account.
+3. Creating an ECS cluster where your solver will be run
 4. Sharing your tools with us to run tests at scale
 
 This project provides some sample code to set up your account and test your solver.
@@ -15,7 +15,7 @@ For each step, we have a CloudFormation template that can be used to set up the 
 
 Parallel solvers are constructed by running multiple copies of a single Docker image that can communicate with one another using IP, TCP, SSH, or any number of higher-level protocols such as MPI.  We provide a Docker container image that by default has support for the use of MPIover SSH.
 
-The containers are hosted on AWS resources using a service called [AWS Batch](https://docs.aws.amazon.com/batch/latest/userguide/what-is-batch.html), where solver jobs run as multi-node jobs: [https://docs.aws.amazon.com/batch/latest/userguide/multi-node-parallel-jobs.html](https://docs.aws.amazon.com/batch/latest/userguide/multi-node-parallel-jobs.html).  We describe the process to build the docker image and execute it on AWS Batch in the next two sections of this document.
+The containers will be hosted in an ECS cluster. See [https://aws.amazon.com/ecs/] for more details
 
 When solvers are stable, we will use the scripts and github information to build the solver and run tests at scale.  This will allow us to report results to you as to how well the solver is performing on a set of test benchmarks when running at scale.
 
@@ -166,7 +166,7 @@ Successful builds will create a Docker container that is stored in ECR.  If a bu
 
 If you encounter difficulties with the debugging process, please email us at: [sv-comp-2020@amazon.com](mailto:sv-comp-2020@amazon.com) and we will walk you through the process.
 
-## Building the AWS Batch Pipeline that will run the solver
+## Building the ECS cluster that will run the solver
 
 The next step is to build the Batch environment that will run the solver.  This is relatively straightforward, and a script is provided to construct the batch environment.
 
@@ -174,7 +174,7 @@ The batch environment is designed to allow testing at small scale, and consists 
 
 To set up the batch pipeline, run the job-queue.sh file:
 
-**build-job-queue.sh PROFILE REGION PROJECT\_NAME
+    build-job-queue.sh PROFILE REGION PROJECT\_NAME
 where:
    PROFILE is a AWS CLI profile with administrator access to the account**
 
@@ -194,38 +194,30 @@ To run the solver, we have to point it at a test directory and pass in arguments
 
 This approach allocates resources for parallel execution, sets up a &#39;main node&#39; with an IP address that is started first.  Once executing, a set of &#39;child nodes&#39; is started, and the IP address of the main node is passed to all child nodes, so that they can communicate back to the main node.
 
-### run-solver.sh
+### run_exmple.py
 
-We have prepared a bash script that will run the solver. Before running your solver, you will have to 
-let us know what your AWS account ID is so we can grant you access to the S3 bucket that has the competition problems.
+We have prepared a Python script that will give an example of how these solver containers will be run. 
+It will create two instances of your Docker container in ECS, assuming the first is the "Main" node and the second is the "Worker" node.
+It will wait until the Main node is spun up, and then spin up the worker Node with the IP of the Main node in an environment variable.
+Notice that the Main node must declare its IP address in the standard output by printing a line that says "main IP: ${IP_ADDRESS}".
 
-All the script does it run aws command line to start a multinode batch job (as described above)
-running our container. This passes a json string with our parameters that we want to pass to the solver as environment variables.
+Once the main Node terminates, the script will terminate the worker node and print the full log of the Main node. 
+This is exactly how we will run the competition.
 
-To run the solver run:
+To run the script run:
 
-```run-solver.sh PROFILE PROJECT_NAME COMP_S3_PROBLEM_PATH NUM_PROCESSES JOB_NAME_SUFFIX```
+    ./run_example --profile PROFILE --project-name PROJECT_NAME
+
 
 Where profile is your aws profile as configured in ~/.aws/config, the PROJECT_NAME is whatever name you gave your project
 in the previous steps.
  
-COMP\_S3\_PROBLEM\_PATH is the relative path to the SAT instance within the shared competition bucket. In general this should
-just be the filename such as test.cnf or test.zip. 
-
-NUM\_PROCESSES is the number of processes running per node. This should not be more than the number of cores on a node,
-or else your process will just hang and never start.
-
-JOB\_NAME\_SUFFIX This is just a suffix to identify your job. It can be any string of letters
-
-You can also add an optional argument COMP\_OPTIONS after JOB\_NAME\_SUFFIX. You can use this
-to pass any other information or arguments you would like to use.
 
 If you look at the script itself, you will see that we are actually passing the name of the S3 bucket and the full path 
 to the problem being solved as a container environment variable. You can use a different S3 bucket if you have your own
 problems you would like to experiment with.
 
-In addition to the environment variables we are passing, there are some environment variables about multinode batch
-metadata that can be used from within the container:
+In addition to the environment variables we are passing, there are some environment variables with metadata that can be used from within the container:
 
 AWS\_BATCH\_JOB\_MAIN\_NODE\_INDEX
 
@@ -249,11 +241,7 @@ To see the results of your run, simply look at the logs as described in the next
 
 ### Monitoring and Logging
 
-The AWS Batch console allows you to observe the status of batch jobs.  Each job goes through stages: SUBMITTED, RUNNABLE, STARTING, RUNNING, and either SUCCEEDED or FAILED.  You can examine all jobs in each stage using the console application.
-
-For a given job, each output to stdio/stderr by a node is logged.  To examine the logs, choose the job, then navigate to the bottom of the information page, and there will be a link to view the logs.
-
-
+The ECS console allows you to monitor the logs of all running tasks. For information about the ECS console please refer to the documentation: https://aws.amazon.com/ecs/
 
 ## Example
 
