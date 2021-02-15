@@ -23,7 +23,7 @@ When solvers are stable, we will use the scripts and github information to build
 
 Please create a &quot;fresh&quot; account in order to simplify billing for the account.  If you have not created an AWS previously, it is straightforward to do, requiring a cell phone #, credit card, and address.  Please navigate to aws.amazon.com and follow the instructions on the web site to create an account.
 
-If you have already created an account based on your email address, please create a separate AWS account for managing the SAT-Comp tool construction and testing.  This makes it straightforward for us to manage account credits and billing.   **Once the account is created please email us the account number at sat-comp-2020@amazon.com** so that we can apply credits to your account.
+If you have already created an account based on your email address, please create a separate AWS account for managing the SAT-Comp tool construction and testing.  This makes it straightforward for us to manage account credits and billing.   **Once the account is created please email us the account number at sat-comp-2021@amazon.com** so that we can apply credits to your account.
 To find your account ID, click on your account name in the top right corner, and then click "My Account". You should see Account ID in the Account Settings
 
 
@@ -77,18 +77,22 @@ aws --profile [YOUR PROFILE NAME HERE] s3api list-buckets
 
 If it does not work, see the troubleshooting section at the bottom of this document.
 
-Now, we will use CloudFormation to do basic account setup.  The account-setup.yaml script sets up notification emails to be sent to the list of email accounts when the account reaches 20%, 40%, 60%, 80%, and 100% of the monthly account budget so that you have a window into the current spend rate for building and testing your solver.  Here is the command to run it:
+Now, we will use CloudFormation to do basic account setup.  The account-setup.yaml script sets up notification emails to be sent to the list of email accounts when the account reaches 20%, 40%, 60%, 80%, and 100% of the monthly account budget so that you have a window into the current spend rate for building and testing your solver.  
 
-aws --profile [YOUR PROFILE NAME HERE] cloudformation create-stack --stack-name &quot;setup-account-stack&quot; --template-body file://setup-account.yaml --parameters ParameterKey=emailAddress,ParameterValue=[ENTER EMAIL ADDRESS HERE]
+Here is the command to run it:
+
+    aws --profile [YOUR PROFILE NAME HERE] cloudformation create-stack --stack-name &quot;setup-account-stack&quot; --template-body file://setup-account.yaml --parameters ParameterKey=emailAddress,ParameterValue=[ENTER EMAIL ADDRESS HERE]
 
 The --profile argument should be the profile associated with the account, and the emailAddress parameter is the email address that notification messages related to budgeting and account spending will be sent.
 
-After running the aws cloudformation command, you can monitor the installation process from the CloudFormation console.  Log into your AWS account and navigate to the CloudFormation console.  You should see a stack named &quot;setup-account-stack&quot;.
+After running the aws cloudformation command, you can monitor the installation process from the CloudFormation console  [console.aws.amazon.com/cloudformation](console.aws.amazon.com/cloudformation). 
+Log into your AWS account and navigate to the CloudFormation console. Make sure you are in the region you chose in your profile (Region is selected in the top right corder)  
+You should see a stack named &quot;setup-account-stack&quot;.
 
  ![](cloudformation.png)
 _Figure 1: Cloudformation result_
 
-By clicking on this stack, and choosing &quot;events&quot;, you can see the resources associated with the stack.  After a short time, you should see the &quot;CREATE\_SUCCEEDED&quot; event.   If not (e.g., the email address was not valid email address syntax), you will see a &quot;CREATE\_FAILED&quot; event.  In this case, delete the stack and try again.  If you have trouble, please email us at: [sat-comp-2020@amazon.com](mailto:sat-comp-2020@amazon.com) and we will walk you through the process.
+By clicking on this stack, and choosing &quot;events&quot;, you can see the resources associated with the stack.  After a short time, you should see the &quot;CREATE\_SUCCEEDED&quot; event.   If not (e.g., the email address was not valid email address syntax), you will see a &quot;CREATE\_FAILED&quot; event.  In this case, delete the stack and try again.  If you have trouble, please email us at: [sat-comp-2021@amazon.com](mailto:sat-comp-2021@amazon.com) and we will walk you through the process.
 
 Although it is handy to get emails when certain account budget thresholds have been met, it is also possible to check by-the-minute account spending on the console: [https://console.aws.amazon.com/billing/home](https://console.aws.amazon.com/billing/home)
 
@@ -107,13 +111,13 @@ An overview of the build process is shown in Figure 1. The build mechanism creat
 
 ### Building Sources from GitHub
 
-To build sources from GitHub, a GitHub OAuth token is required.  You can find this on your Github account settings page, on the sidebar go into developer settings and then OAth token. You should give read access to your repo.
+To build sources from GitHub, a GitHub OAuth token is required.  You can find this on your Github account settings page, on the sidebar go into developer settings and then Personal Access Tokens. You should give read access to your repo.
 
 This OAuth token allows CodePipeline to query the state of the GitHub repository and to rebuild the solver when changes occur.
 
 We have a shell script that, for Mac OS and linux, can create the pipeline.  It requires 6 arguments (sorry!) and creates the architecture shown in Figure 1.  Here is the syntax for the command:
 
-    build-solver-pipeline-github.sh PROFILE PROJECT_NAME GITHUB_TOKEN REPOSITORY_OWNER REPOSITORY_NAME REPOSITORY_BRANCH_NAME
+    ./build-solver-pipeline-github.sh PROFILE PROJECT_NAME GITHUB_TOKEN REPOSITORY_OWNER REPOSITORY_NAME REPOSITORY_BRANCH_NAME
 where:
 
 **   PROFILE is a AWS CLI profile with administrator access to the account    **
@@ -136,13 +140,13 @@ where:
 
 After running the shell command, you can monitor the progress of the CloudFormation account by logging into the CloudFormation console (as described above for the account setup script).  The stack name will be **build-PROJECT\_NAME** , where PROJECT\_NAME is the name of the project that you used in the shell script.
 
-If errors occur, please delete the stack (as described above for the account setup script), determine the error in parameters (e.g., did you use lower-case for the PROJECT\_NAME?) and re-run the build-solver-pipeline-github.sh script.  If you encounter difficulties, please email us at: [sv-comp-2020@amazon.com](mailto:sv-comp-2020@amazon.com) and we will walk you through the process.
+If errors occur, please delete the stack (as described above for the account setup script), determine the error in parameters (e.g., did you use lower-case for the PROJECT\_NAME?) and re-run the build-solver-pipeline-github.sh script.  If you encounter difficulties, please email us at: [sv-comp-2021@amazon.com](mailto:sv-comp-2021@amazon.com) and we will walk you through the process.
 
 ### Debugging the Build Process
 
 It is unlikely that the solver build will work the first time.  Fortunately, CodePipeline and CodeBuild, the services that perform the build, have good logging and error reporting.
 
-To get started, log in to your account and navigate to the CodePipeline console.  You should see a pipeline that looks like the following:
+To get started, log in to your account and navigate to the CodePipeline console [console.aws.amazon.com/codepipeline](console.aws.amazon.com/codepipeline).  You should see a pipeline that looks like the following:
 
 ![](pipeline.png)
 
@@ -158,13 +162,13 @@ If building from GitHub, examine the error that is returned and carefully check 
 
 **Debugging the Build Stage:**
 
-The build stage builds the Dockerfile at the top level of the directory structure.  The docker file in our example entry repository should work for this purpose without any changes.  Include this Dockerfile at the top-level of your directory structure.
+We can monitor the build stage in CodeBuild by going to this console:  [console.aws.amazon.com/codebuild](console.aws.amazon.com/codebuild) . The build stage builds the Dockerfile at the top level of the directory structure.  The docker file in our example entry repository should work for this purpose without any changes.  Include this Dockerfile at the top-level of your directory structure.
 
 The container used by CodeBuild to build your tool contains recent versions of GCC, Java, Scala, Ruby, Python, and many standard build utilities for linux.  When performing a build, it creates a log of the build activity.  To debug the build process, please navigate to the CodeBuild service from the AWS Console.  From there, it is possible to see success/failure of recent builds and logs of the build.
 
 Successful builds will create a Docker container that is stored in ECR.  If a build is successful, you should see a container image in ECR.  To verify a build was successful, navigate to ECR and check to see whether a container was created.
 
-If you encounter difficulties with the debugging process, please email us at: [sv-comp-2020@amazon.com](mailto:sv-comp-2020@amazon.com) and we will walk you through the process.
+If you encounter difficulties with the debugging process, please email us at: [sv-comp-2021@amazon.com](mailto:sv-comp-2021@amazon.com) and we will walk you through the process.
 
 ## Building the ECS cluster that will run the solver
 
@@ -174,7 +178,7 @@ The batch environment is designed to allow testing at small scale, and consists 
 
 To set up the batch pipeline, run the job-queue.sh file:
 
-    build-job-queue.sh PROFILE REGION PROJECT\_NAME
+    ./build-job-queue.sh PROFILE REGION PROJECT\_NAME
 where:
    PROFILE is a AWS CLI profile with administrator access to the account**
 
@@ -206,11 +210,12 @@ This is exactly how we will run the competition.
 
 To run the script run:
 
-    ./run_example --profile PROFILE --project-name PROJECT_NAME --file CNF_FILE_PATH
+    ./run_example.py --profile PROFILE --project-name PROJECT-NAME  --file test.cnf
 
 
 Where profile is your aws profile as configured in ~/.aws/config, the PROJECT_NAME is whatever name you gave your project
-in the previous steps.
+in the previous steps. test.cnf is an UNSAT example in our shared S3 bucket that can be solved quickly. 
+We will add more test examples shortly.
  
 
 If you look at the script itself, you will see that we are actually passing the name of the S3 bucket and the full path 

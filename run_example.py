@@ -1,10 +1,11 @@
+#!/usr/bin/env python3
+
 import argparse
 import json
 import subprocess
 from time import sleep
 
 import boto3
-import botocore_amazon.monkeypatch
 
 class LogAnalyzer:
     def __init__(self, cloudwatch):
@@ -152,7 +153,14 @@ for arg in [{
         "help": "Project name",
         "metavar": "A",
         "required": True,
-}]:
+},{
+
+    "flags": ["-f", "--file"],
+    "metavar": "P",
+    "help": "The file you are trying to solve",
+    "required": True,
+}
+]:
     flags = arg.pop("flags")
     pars.add_argument(*flags, **arg)
 if __name__=="__main__":
