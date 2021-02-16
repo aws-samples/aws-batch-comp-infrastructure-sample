@@ -14,7 +14,7 @@ fi
 aws --profile $1 cloudformation create-stack --stack-name job-queue-$3 \
 --template-body file://build-job-queue.yaml --capabilities CAPABILITY_IAM \
 --parameters \
-  ParameterKey=ProjectName,ParameterValue=$3 ParameterKey=Region,ParameterValue=$2
+  ParameterKey=ProjectName,ParameterValue=$3 ParameterKey=AvailZoneId,ParameterValue=a
 
 # Wait for bucket to finish creating...
 # echo waiting for bucket to create.

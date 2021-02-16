@@ -13,7 +13,7 @@ aws --profile $1 ecs run-task --launch-type FARGATE --cluster $2 --task-definiti
 --overrides \
 "{
   \"containerOverrides\": [{
-    \"name\": \"hordesat-test\",
+    \"name\": \"$9\",
     \"environment\": [
         {
             \"name\":\"COMP_S3_PROBLEM_PATH\",

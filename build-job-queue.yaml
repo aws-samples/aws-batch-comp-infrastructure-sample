@@ -13,10 +13,10 @@ Parameters:
     Type: String
     Default: "proofs"
     Description: "S3 bucket will be AccountId-Region-ProjectName"
-  Region:
+  AvailZoneId:
     Type: String
-    Default: "us-west-2"
-    Description: "Region to deploy in"
+    Default: "a"
+    Description: "Availability Zone ID"
 
 Resources:
 
@@ -80,7 +80,7 @@ Resources:
     Type: AWS::EC2::Subnet
     DependsOn: SecondCidr
     Properties:
-      AvailabilityZone: us-east-2a
+      AvailabilityZone: !Sub "${AWS::Region}${AvailZoneId}"
       CidrBlock: 10.1.0.0/16
       VpcId: !Ref VPC
   RouteTablePrivate:
@@ -106,7 +106,7 @@ Resources:
   SubnetPublic:
     Type: AWS::EC2::Subnet
     Properties:
-      AvailabilityZone:  us-east-2a
+      AvailabilityZone: !Sub "${AWS::Region}${AvailZoneId}"
       CidrBlock: 10.0.1.0/24
       VpcId: !Ref VPC
       MapPublicIpOnLaunch: 'True'
