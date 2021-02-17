@@ -52,6 +52,7 @@ looks like has this:
     account=ACCOUNT-ID
 
 where the PROFILE-NAME is any name you would like to use, and the ACCOUNT-ID is your account ID that got in the previous section.
+Examples of valid regions are us-east-1 (N. Virginia), us-west-2 (Oregon), eu-west-2 (London), etc...
 
 We also need to set up credentials to access the account. For the purposes of making the competition simple, we will use the root level
 access key. This is NOT the best practice, which would be to create a user but it will suffice for the competition. If you continue
