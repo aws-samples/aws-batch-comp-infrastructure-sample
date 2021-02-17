@@ -168,6 +168,16 @@ The container used by CodeBuild to build your tool contains recent versions of G
 
 Successful builds will create a Docker container that is stored in ECR.  If a build is successful, you should see a container image in ECR.  To verify a build was successful, navigate to ECR and check to see whether a container was created.
 
+Although the build process usually succeeds, Docker is now sometimes limiting how much we can pull images in Codebuild.
+If this happens, you may have to build your container locally and push it manually. 
+
+To do this, go into your AWS console in the ECR service: [console.aws.amazon.com/ecr](console.aws.amazon.com/ecr). 
+Click on the repository with your project name and then in the top right corner, click the "View push commands" button.
+
+Follow the instructions here to manually push your container image.
+
+
+
 If you encounter difficulties with the debugging process, please email us at: [sv-comp-2021@amazon.com](mailto:sv-comp-2021@amazon.com) and we will walk you through the process.
 
 ## Building the ECS cluster that will run the solver
