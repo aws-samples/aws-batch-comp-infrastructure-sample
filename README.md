@@ -209,7 +209,21 @@ To run the solver, we have to point it at a test directory and pass in arguments
 
 This approach allocates resources for parallel execution, sets up a &#39;main node&#39; with an IP address that is started first.  Once executing, a set of &#39;child nodes&#39; is started, and the IP address of the main node is passed to all child nodes, so that they can communicate back to the main node.
 
-### run_exmple.py
+The infrastructure we are using to run the examples is EC2 clusters managed using ECS. 
+In order to use this cluster, you will have to explicitly spin up EC2 instances.
+
+Since you will now be responsible for spinning up and down your own instances, if you want to run an experiment, you will have to manually modify your cluster to include the number of instances you need, and then manually spin it down. 
+
+__IMPORTANT!!!: If you do not spin down your cluster, you will be responsible for the cost of accidentally leaving instances running__
+ 
+To control the instances in your cluster, go to the ECS console and click on the SatCompCluster. Then click the tab that says ECS Instances and click the link that says “Auto Scaling”.
+ In the list, you will see an autoscaling group called something like job-queue-PROJECT_NAME-EcsInstanceAsg-.... 
+ Select that, and click Edit. 
+ Set the Desired Capacity and Maximum Capacity to 2 (or however many instances you need). 
+ When you are finished you experiment, please set these values back to 0.
+ 
+You will incur costs for the time the machines are running. Do not forget to spin down the cluster when it is not in use.
+### run_example.py
 
 We have prepared a Python script that will give an example of how these solver containers will be run. 
 It will create two instances of your Docker container in ECS, assuming the first is the "Main" node and the second is the "Worker" node.
