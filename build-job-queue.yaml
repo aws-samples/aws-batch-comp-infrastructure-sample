@@ -137,6 +137,113 @@ Resources:
         - Name: containerInsights
           Value: enabled
 
+  Ec2AutoscaleInstanceProfile:
+    Type: "AWS::IAM::InstanceProfile"
+    Properties:
+      Path: "/"
+      Roles:
+        -
+          Ref: "InstanceRole"
+  InstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+      AssumeRolePolicyDocument:
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: [ec2.amazonaws.com]
+          Action: ['sts:AssumeRole']
+      Path: /
+      Policies:
+      - PolicyName: ecs-service
+        PolicyDocument:
+          Statement:
+          - Effect: Allow
+            Action:
+              # Rules which allow ECS to attach network interfaces to instances
+              # on your behalf in order for awsvpc networking mode to work right
+              - 'ec2:AttachNetworkInterface'
+              - 'ec2:CreateNetworkInterface'
+              - 'ec2:CreateNetworkInterfacePermission'
+              - 'ec2:DeleteNetworkInterface'
+              - 'ec2:DeleteNetworkInterfacePermission'
+              - 'ec2:Describe*'
+              - 'ec2:DetachNetworkInterface'
+              - 'elasticfilesystem:*'
+              - 'cloudwatch:*'
+              - 'ecs:*'
+              # Rules which allow ECS to update load balancers on your behalf
+              # with the information sabout how to send traffic to your containers
+              - 'elasticloadbalancing:DeregisterInstancesFromLoadBalancer'
+              - 'elasticloadbalancing:DeregisterTargets'
+              - 'elasticloadbalancing:Describe*'
+              - 'elasticloadbalancing:RegisterInstancesWithLoadBalancer'
+              - 'elasticloadbalancing:RegisterTargets'
+              - 's3:GetObject'
+              - 's3:GetObjectVersion'
+            Resource: '*'
+
+  EcsInstanceLc:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Properties:
+      ImageId: ami-0ecb1ece84d43215d
+      InstanceType: !Select [ 0, ["m4.4xlarge" ] ]
+      AssociatePublicIpAddress: true
+      IamInstanceProfile: !GetAtt Ec2AutoscaleInstanceProfile.Arn
+      SecurityGroups: [ !Ref SecurityGroup]
+      BlockDeviceMappings:
+          - DeviceName: /dev/xvda
+            Ebs:
+              VolumeSize: 30
+              VolumeType: gp2
+          - DeviceName: /dev/xvdcz
+            Ebs:
+              VolumeSize: 22
+              VolumeType: gp2
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash -xe
+          echo ECS_CLUSTER=${EcsCluster} >> /etc/ecs/ecs.config
+          yum install -y aws-cfn-bootstrap python-pip
+          pip install awscli boto3
+          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource ECSAutoScalingGroup --region ${AWS::Region}
+
+  EcsInstanceAsg:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    UpdatePolicy:
+      AutoScalingRollingUpdate:
+        MaxBatchSize: 1
+        MinSuccessfulInstancesPercent: 95
+        PauseTime: PT30M
+        SuspendProcesses: [HealthCheck, ReplaceUnhealthy, AZRebalance, AlarmNotification,
+          ScheduledActions]
+        WaitOnResourceSignals: 'true'
+    Properties:
+      VPCZoneIdentifier: [!Ref SubnetPrivate]
+      LaunchConfigurationName: !Ref EcsInstanceLc
+      MinSize: '0'
+      MaxSize: '0'
+      DesiredCapacity: '0'
+      Tags:
+        - Key: IsAutoscaledCluster
+          PropagateAtLaunch: true
+          Value: "true"
+        - Key: "Patch Group"
+          PropagateAtLaunch: true
+          Value: "ManagedClusterPatchGroup"
+
+  AutoscaleCapacityProvider:
+    Type: AWS::ECS::CapacityProvider
+    Properties:
+      AutoScalingGroupProvider:
+        AutoScalingGroupArn: !Ref EcsInstanceAsg
+        ManagedTerminationProtection: DISABLED
+        ManagedScaling:
+          Status: DISABLED
+      Name: AutoscaleCapacityProvider
+
   # A security group for the containers we will run in Fargate.
   # Rules are added to this security group based on what ingress you
   # add for the cluster.
@@ -275,17 +382,15 @@ Resources:
       ExecutionRoleArn: !GetAtt ECSTaskExecutionRole.Arn
       TaskRoleArn: !GetAtt EcsTaskRole.Arn
       NetworkMode: awsvpc
-      Cpu: 1024
-      Memory: 2048
+
       RequiresCompatibilities:
-        - FARGATE
         - EC2
 
       ContainerDefinitions:
-        - Cpu: 1024
+        - Cpu: 16384
           Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ProjectName}"
           Name: !Sub "${ProjectName}"
-          Memory: 2048
+          Memory: 61000
           Environment:
             - Name: AWS_BATCH_JOB_MAIN_NODE_INDEX
               Value: 0

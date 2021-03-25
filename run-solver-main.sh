@@ -2,12 +2,11 @@
 
 set -x
 
-aws --profile $1 ecs run-task --launch-type FARGATE --cluster $2 --task-definition $3 --network-configuration \
+aws --profile $1 ecs run-task --launch-type EC2 --cluster $2 --task-definition $3 --network-configuration \
 "{
    \"awsvpcConfiguration\": {
       \"subnets\": [\"$4\"],
-      \"securityGroups\": [\"$5\"],
-      \"assignPublicIp\": \"ENABLED\"
+      \"securityGroups\": [\"$5\"]
    }
 }" \
 --overrides \
