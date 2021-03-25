@@ -222,7 +222,11 @@ To control the instances in your cluster, go to the ECS console and click on the
  Set the Desired Capacity and Maximum Capacity to 2 (or however many instances you need). 
  When you are finished you experiment, please set these values back to 0.
  
-You will incur costs for the time the machines are running. Do not forget to spin down the cluster when it is not in use.
+Please allow 2-3 minutes for the instances to boot up and register with the cluster
+ 
+You will incur costs for the time the machines are running.
+
+__Do not forget to spin down the cluster when it is not in use!!!__
 ### run_example.py
 
 We have prepared a Python script that will give an example of how these solver containers will be run. 
