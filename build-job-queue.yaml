@@ -18,6 +18,11 @@ Parameters:
     Default: "a"
     Description: "Availability Zone ID"
 
+  InstanceType:
+    Type: String
+    Default: "m4.4xlarge"
+    Description: "Instance type"
+
 Resources:
 
   VPC:
@@ -189,7 +194,7 @@ Resources:
     Type: AWS::AutoScaling::LaunchConfiguration
     Properties:
       ImageId: ami-0ecb1ece84d43215d
-      InstanceType: !Select [ 0, ["m4.4xlarge" ] ]
+      InstanceType: !Select [ 0, [!Ref InstanceType ] ]
       AssociatePublicIpAddress: true
       IamInstanceProfile: !GetAtt Ec2AutoscaleInstanceProfile.Arn
       SecurityGroups: [ !Ref SecurityGroup]
@@ -318,7 +323,15 @@ Resources:
               - 'elasticloadbalancing:RegisterTargets'
             Resource: '*'
 
-
+  SsmVpcEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcEndpointType: Interface
+      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.ssm'
+      VpcId: !Ref VPC
+      SecurityGroupIds: [!Ref SecurityGroup]
+      SubnetIds: [!Ref SubnetPrivate]
+      PrivateDnsEnabled: true
 
 #  JobQueue:
 #    Type: AWS::Batch::JobQueue

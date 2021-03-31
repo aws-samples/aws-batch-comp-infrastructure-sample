@@ -6,6 +6,7 @@ import subprocess
 from time import sleep
 
 import boto3
+import botocore_amazon.monkeypatch
 
 class LogAnalyzer:
     def __init__(self, cloudwatch):
@@ -118,7 +119,7 @@ def main(args):
     stack_outputs = cf.get_outputs(f"job-queue-{args.project_name}")
     output = subprocess.check_output(['./run-solver-main.sh', args.profile, CLUSTER_NAME, stack_outputs["SolverProjectDefinition"], stack_outputs["Subnet"], stack_outputs["SecurityGroupId"], args.file, '2', args.project_name])
     task_output = json.loads(output)
-
+    print(task_output)
     task_arn = task_output['tasks'][0]['taskArn']
     task_id = task_arn.split('/')[2]
 
@@ -129,15 +130,18 @@ def main(args):
     ip_fetcher = IpFetch(log_analyzer)
     ip_addr = ip_fetcher.fetch_ip(args.project_name, task_id)
 
-    output2 = subprocess.check_output(['./run-worker.sh', args.profile, CLUSTER_NAME, stack_outputs["SolverProjectDefinition"], stack_outputs["Subnet"], stack_outputs["SecurityGroupId"], args.file, '2', ip_addr, args.project_name])
-    task_output2 = json.loads(output2)
+    worker_task = None
+    if args.cloud == None or args.cloud == "True":
+        output2 = subprocess.check_output(['./run-worker.sh', args.profile, CLUSTER_NAME, stack_outputs["SolverProjectDefinition"], stack_outputs["Subnet"], stack_outputs["SecurityGroupId"], args.file, '2', ip_addr, args.project_name])
+        task_output2 = json.loads(output2)
 
-    task_arn2 = task_output2['tasks'][0]['taskArn']
-    task_id2 = task_arn2.split('/')[2]
-    worker_task = Task(ecs_client=session.client("ecs"), cluster_name=CLUSTER_NAME, task_arn=task_id2)
+        task_arn2 = task_output2['tasks'][0]['taskArn']
+        task_id2 = task_arn2.split('/')[2]
+        worker_task = Task(ecs_client=session.client("ecs"), cluster_name=CLUSTER_NAME, task_arn=task_id2)
     main_task.wait_for_task_complete()
 
-    worker_task.kill()
+    if  args.cloud == None or args.cloud == "True" and worker_task is not None:
+        worker_task.kill()
     logs = log_analyzer.fetch_logs(args.project_name, task_id)
     print(logs)
 
@@ -159,7 +163,13 @@ for arg in [{
     "metavar": "P",
     "help": "The file you are trying to solve",
     "required": True,
-}
+},
+    {
+        "flags": ["-c", "--cloud"],
+        "metavar": "P",
+        "help": "Whether this is a cloud job (True of False - default is True)",
+        "required": False,
+    }
 ]:
     flags = arg.pop("flags")
     pars.add_argument(*flags, **arg)

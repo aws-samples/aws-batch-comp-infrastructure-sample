@@ -201,7 +201,14 @@ where:
 
 PROJECT\_NAME must be the same name that you used earlier for the build-solver-pipeline script.
 
+NOTE: This script will create infrastructure for the Cloud track of the competition, using m4.4xlarge EC2 instances
+For the parallel track you should run the following command to run m4.16xlarge, and you should use the following command:
+
+     ./build-job-queue.sh PROFILE REGION PROJECT\_NAME m4.16xlarge
+     
 Once again, monitor the creation of resources from the script by navigating to the CloudFormation console.
+
+
 
 ## Running the Solver
 
@@ -219,10 +226,15 @@ __IMPORTANT!!!: If you do not spin down your cluster, you will be responsible fo
 To control the instances in your cluster, go to the ECS console and click on the SatCompCluster. Then click the tab that says ECS Instances and click the link that says “Auto Scaling”.
  In the list, you will see an autoscaling group called something like job-queue-PROJECT_NAME-EcsInstanceAsg-.... 
  Select that, and click Edit. 
- Set the Desired Capacity and Maximum Capacity to 2 (or however many instances you need). 
+ Set the Desired Capacity __and__ Maximum Capacity to 2 (or however many instances you need). 
  When you are finished you experiment, please set these values back to 0.
  
-Please allow 2-3 minutes for the instances to boot up and register with the cluster
+Please allow 2-3 minutes for the instances to boot up and register with the cluster. 
+If you get the following error, it means that your instances have not yet booted up:
+
+    An error occurred (InvalidParameterException) when calling the RunTask operation: No Container Instances were found in your cluster.
+     
+If they fail to boot up after 5 minutes, please verify that both Desired Capacity and Maximum Capacity are set correctly.
  
 You will incur costs for the time the machines are running.
 
@@ -241,6 +253,10 @@ To run the script run:
 
     ./run_example.py --profile PROFILE --project-name PROJECT-NAME  --file test.cnf
 
+By default this will run the Cloud version of the script which will spin up 2 jobs.
+For the Parallel version that will only spin up one job, please run the following command:
+
+    python3 run_example.py --profile fake-prod-east-2 --project-name hordesat-test -f test.cnf --cloud False
 
 Where profile is your aws profile as configured in ~/.aws/config, the PROJECT_NAME is whatever name you gave your project
 in the previous steps. test.cnf is an UNSAT example in our shared S3 bucket that can be solved quickly. 
