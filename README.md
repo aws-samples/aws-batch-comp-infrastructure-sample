@@ -189,11 +189,15 @@ The batch environment is designed to allow testing at small scale, and consists 
 
 To set up the batch pipeline, run the job-queue.sh file:
 
-    ./build-job-queue.sh PROFILE REGION PROJECT\_NAME
+    ./build-job-queue.sh PROFILE REGION PROJECT_NAME INSTANCE_TYPE INSTANCE_AMI
 where:
    PROFILE is a AWS CLI profile with administrator access to the account**
 
 **   PROJECT\_NAME is the name of the project.  MUST BE ALL LOWERCASE.**
+
+** The INSTANCE_TYPE is the machine you want to run on. For the cloud track, this should be m4.4xlarge, and for parallel track it should be m4.16xlarge 
+
+** INSTANCE_AMI To get the instance AMI, please go to https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-optimized_AMI.html and select the Amazon Linux 2 AMI for your region. These are both region specific and are updated frequently which is why we cannot give a default.
 
 **      Regular expression for names is:**
 
@@ -201,10 +205,7 @@ where:
 
 PROJECT\_NAME must be the same name that you used earlier for the build-solver-pipeline script.
 
-NOTE: This script will create infrastructure for the Cloud track of the competition, using m4.4xlarge EC2 instances
-For the parallel track you should run the following command to run m4.16xlarge, and you should use the following command:
 
-     ./build-job-queue.sh PROFILE REGION PROJECT\_NAME m4.16xlarge
      
 Once again, monitor the creation of resources from the script by navigating to the CloudFormation console.
 

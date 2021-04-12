@@ -23,6 +23,10 @@ Parameters:
     Default: "m4.4xlarge"
     Description: "Instance type"
 
+  AmiImageId:
+    Type: String
+    Description: "Ami for your instances"
+
 Resources:
 
   VPC:
@@ -193,7 +197,7 @@ Resources:
   EcsInstanceLc:
     Type: AWS::AutoScaling::LaunchConfiguration
     Properties:
-      ImageId: ami-0ecb1ece84d43215d
+      ImageId: !Ref AmiImageId
       InstanceType: !Select [ 0, [!Ref InstanceType ] ]
       AssociatePublicIpAddress: true
       IamInstanceProfile: !GetAtt Ec2AutoscaleInstanceProfile.Arn
