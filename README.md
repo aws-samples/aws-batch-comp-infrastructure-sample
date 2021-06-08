@@ -89,7 +89,7 @@ Now, we will use CloudFormation to do basic account setup.  The account-setup.ya
 
 Here is the command to run it:
 
-    aws --profile [YOUR PROFILE NAME HERE] cloudformation create-stack --stack-name setup-account-stack--template-body file://setup-account.yaml --parameters ParameterKey=emailAddress,ParameterValue=[ENTER EMAIL ADDRESS HERE]
+    aws --profile [YOUR PROFILE NAME HERE] cloudformation create-stack --stack-name setup-account-stack --template-body file://setup-account.yaml --parameters ParameterKey=emailAddress,ParameterValue=[ENTER EMAIL ADDRESS HERE]
 
 The --profile argument should be the profile associated with the account, and the emailAddress parameter is the email address that notification messages related to budgeting and account spending will be sent.
 
