@@ -1,0 +1,203 @@
+# Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  GitHubToken:
+    Type: String
+
+  RepositoryOwner:
+    Type: String
+
+  RepositoryName:
+    Type: String
+
+  RepositoryBranchName:
+    Type: String
+    Default: master
+
+  ProjectName:
+    Type: String
+    Default: master
+
+# TODO: Define a variable for the S3 bucket name: ${AWS::Region}-${AWS::AccountId}-${ProjectName}
+
+Resources:
+
+  DockerRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Ref ProjectName
+      LifecyclePolicy:
+        LifecyclePolicyText: '
+          {
+            "rules": [ {
+              "rulePriority": 10,
+              "description": "remove untagged images except the latest one",
+              "selection": {
+                "tagStatus": "untagged",
+                "countType": "imageCountMoreThan",
+                "countNumber": 1
+              },
+              "action": {
+                "type": "expire"
+              }
+            } ]
+          }'
+
+  BuildDockerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          Effect: Allow
+          Principal:
+            Service: codebuild.amazonaws.com
+          Action: sts:AssumeRole
+      Policies:
+        - PolicyName: !Sub "build-docker-policy-${AWS::Region}-${ProjectName}"
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Action:
+                  - ecr:GetAuthorizationToken
+                Effect: Allow
+                Resource: "*"
+              - Action:
+                  - ecr:InitiateLayerUpload
+                  - ecr:UploadLayerPart
+                  - ecr:CompleteLayerUpload
+                  - ecr:PutImage
+                  - ecr:BatchCheckLayerAvailability
+                Effect: Allow
+                Resource: !Sub "arn:aws:ecr:${AWS::Region}:${AWS::AccountId}:repository/${ProjectName}"
+              - Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Effect: Allow
+                Resource: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/*"
+              - Action:
+                  - s3:GetObject
+                Effect: Allow
+                Resource: !Join ["/", [!Sub "arn:aws:s3:::${AWS::Region}-${AWS::AccountId}-${ProjectName}", "*"]]
+
+  S3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${AWS::Region}-${AWS::AccountId}-${ProjectName}"
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+
+  BuildDockerProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/standard:1.0
+        Type: LINUX_CONTAINER
+        PrivilegedMode: true
+        EnvironmentVariables:
+          - Name: REGION
+            Type: PLAINTEXT
+            Value: !Sub "${AWS::Region}"
+          - Name: ACCOUNTID
+            Type: PLAINTEXT
+            Value: !Sub "${AWS::AccountId}"
+          - Name: PROJECTNAME
+            Type: PLAINTEXT
+            Value: !Sub "${ProjectName}"
+      Name: !Sub "Build-Docker-${ProjectName}"
+      ServiceRole: !Ref BuildDockerRole
+      Source:
+        Type: CODEPIPELINE
+        # TODO: Fix this buildspec to build something called build.sh
+        # TODO: My guess is that this occurs in the - > line.
+        BuildSpec: |
+          version: 0.2
+          phases:
+            build:
+              commands:
+                - set -x
+                - export DATE=`date -u +%Y%m%d-%H%M%S`
+                - export COMMIT=`expr substr ${CODEBUILD_RESOLVED_SOURCE_VERSION} 1 8`
+                - export REPO=${ACCOUNTID}.dkr.ecr.${REGION}.amazonaws.com/${PROJECTNAME}
+                - docker build . -t ${REPO}
+                - $(aws ecr get-login --region ${REGION} --no-include-email)
+                - docker push $REPO
+  BuildDockerPipelineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          Effect: Allow
+          Principal:
+            Service: codepipeline.amazonaws.com
+          Action: sts:AssumeRole
+      Policies:
+        - PolicyName: !Sub "infrastructurepipeline-policy-${AWS::Region}-${ProjectName}"
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Action:
+                  - codebuild:BatchGetBuilds
+                  - codebuild:StartBuild
+                Effect: Allow
+                Resource:
+                  - !GetAtt BuildDockerProject.Arn
+              - Action:
+                  - s3:PutObject
+                Effect: Allow
+                Resource: !Join ["/", [!Sub "arn:aws:s3:::${AWS::Region}-${AWS::AccountId}-${ProjectName}", "*"]]
+
+  BuildDockerPipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      Name: !Sub "Build-Docker-Pipeline-${ProjectName}"
+      RoleArn: !GetAtt BuildDockerPipelineRole.Arn
+      ArtifactStore:
+        Type: S3
+        Location: !Sub "${AWS::Region}-${AWS::AccountId}-${ProjectName}"
+      Stages:
+        - Name: "Source"
+          Actions:
+            - Name: "Build-Docker-Source"
+              ActionTypeId:
+                Category: Source
+                Owner: ThirdParty
+                Provider: GitHub
+                Version: 1
+              Configuration:
+                Owner: !Ref RepositoryOwner
+                Repo: !Ref RepositoryName
+                Branch: !Ref RepositoryBranchName
+                OAuthToken: !Ref GitHubToken
+                PollForSourceChanges: True
+              OutputArtifacts:
+                - Name: !Sub "${ProjectName}-docker-src"
+        - Name: "Build"
+          Actions:
+            - Name: "Build-Docker-Build"
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: 1
+              Configuration:
+                ProjectName: !Ref BuildDockerProject
+              InputArtifacts:
+                - Name: !Sub "${ProjectName}-docker-src"
+              RunOrder: 1
+# TODO: Add another stage to push the result to Docker (this was recently added)
+# TODO: Learn how this works.
+
+Outputs:
+  BuildDockerPipeline:
+    Value: !Ref BuildDockerPipeline
