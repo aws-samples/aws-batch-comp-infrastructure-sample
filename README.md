@@ -394,7 +394,7 @@ Next, submit a job using the Simple Queue Service (SQS) console.
 For example, for the bucket we described earlier, given a 2 node (1 worker) cluster, it would be:
 
 ```json
-{"s3_uri":"s3://[ACCOUNT\_ID]-us-east-1-satcompbucket/test.cnf",
+{"s3_uri":"s3://[ACCOUNT_ID]-us-east-1-satcompbucket/test.cnf",
 "num_workers": 1}
 ```
 
@@ -461,7 +461,8 @@ The competition participant must provide the `/competition/solver` script which 
 the code to invoke their solver and to coordinate with the Worker nodes if needed.
 
 Here is an example of the `input.json` file:
-```json
+
+```text
 {
   "problem_path": "/mount/efs/problem.cnf",
   "worker_node_ips": ["192.158.1.38", "192.158.2.39", ...]
@@ -469,7 +470,8 @@ Here is an example of the `input.json` file:
 ```
 
 The Leader Base Container waits until the /competition/solver script has completed, and looks for a `solver_out.json` file with the following format:
-```json
+
+```text
 {
   "return_code": Number, // of running the solve command
   "result": String,      // Should be one of {"SAT", "UNSAT", "UNKNOWN", "ERROR"}
@@ -517,7 +519,7 @@ Repeated failures of worker nodes (currently under discussion, but likely a maxi
 
 Here is an example of the format for worker_node_status.json:
 
-```json
+```text
 {
     "status": "READY",  // one of {"READY", "BUSY", "ERROR"}
     "timestamp": "1644545117" // linux epoch time as returned by the C time() function
