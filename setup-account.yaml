@@ -26,16 +26,12 @@ Resources:
             Threshold: 99
           Subscribers:
             - SubscriptionType: EMAIL
-              Address: sat-comp-2021@amazon.com
-            - SubscriptionType: EMAIL
               Address: !Ref emailAddress
         - Notification:
             NotificationType: ACTUAL
             ComparisonOperator: GREATER_THAN
             Threshold: 95
           Subscribers:
-            - SubscriptionType: EMAIL
-              Address: sat-comp-2021@amazon.com
             - SubscriptionType: EMAIL
               Address: !Ref emailAddress
         - Notification:
@@ -44,16 +40,12 @@ Resources:
             Threshold: 90
           Subscribers:
             - SubscriptionType: EMAIL
-              Address: sat-comp-2021@amazon.com
-            - SubscriptionType: EMAIL
               Address: !Ref emailAddress
         - Notification:
             NotificationType: ACTUAL
             ComparisonOperator: GREATER_THAN
             Threshold: 80
           Subscribers:
-            - SubscriptionType: EMAIL
-              Address: sat-comp-2021@amazon.com
             - SubscriptionType: EMAIL
               Address: !Ref emailAddress
         - Notification:
@@ -62,16 +54,12 @@ Resources:
             Threshold: 70
           Subscribers:
             - SubscriptionType: EMAIL
-              Address: sat-comp-2021@amazon.com
-            - SubscriptionType: EMAIL
               Address: !Ref emailAddress
         - Notification:
             NotificationType: ACTUAL
             ComparisonOperator: GREATER_THAN
             Threshold: 50
           Subscribers:
-            - SubscriptionType: EMAIL
-              Address: sat-comp-2021@amazon.com
             - SubscriptionType: EMAIL
               Address: !Ref emailAddress
         - Notification:
@@ -80,15 +68,11 @@ Resources:
             Threshold: 30
           Subscribers:
             - SubscriptionType: EMAIL
-              Address: sat-comp-2021@amazon.com
-            - SubscriptionType: EMAIL
               Address: !Ref emailAddress
         - Notification:
             NotificationType: ACTUAL
             ComparisonOperator: GREATER_THAN
             Threshold: 10
           Subscribers:
-            - SubscriptionType: EMAIL
-              Address: sat-comp-2021@amazon.com
             - SubscriptionType: EMAIL
               Address: !Ref emailAddress

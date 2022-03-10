@@ -1,0 +1,3 @@
+#!/bin/bash
+echo "Cleaning up: Killing all mpi processes"
+pkill -9 mpi

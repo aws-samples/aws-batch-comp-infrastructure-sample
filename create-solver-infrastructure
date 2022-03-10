@@ -1,0 +1,122 @@
+#!/usr/bin/env python3
+import argparse
+import logging
+import boto3
+from botocore.exceptions import ClientError
+import time
+
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger("Runner")
+logger.setLevel(logging.INFO)
+
+
+class S3Filesystem:
+    def __init__(self, s3_client) -> None:
+        self.s3 = s3_client
+
+    def get_satcomp_bucket(self) -> str:
+        try:
+            for bucket in self.s3.list_buckets()["Buckets"]:
+                if "satcompbucket" in bucket["Name"]:
+                    return bucket["Name"]
+        except Exception as e:
+            logger.error(f"Failed to get satcomp bucket: {e}")
+            raise e
+
+
+    def upload_file_to_s3(self, bucket: str, file_name: str, object_name=None) -> None:
+        """Upload a file to an S3 bucket
+
+        :param file_name: File to upload
+        :param bucket: Bucket to upload to
+        :param object_name: S3 object name. If not specified then file_name is used
+        :return: True if file was uploaded, else False
+        """
+
+        # If S3 object_name was not specified, use file_name
+        if object_name is None:
+            object_name = file_name
+
+        # Upload the file
+        try:
+            response = self.s3.upload_file(file_name, bucket, object_name)
+        except ClientError as e:
+            logging.error(f"Failed to upload file to s3: {e}")
+            raise e
+
+
+class CloudFormation:
+    def __init__(self, stack_name: str) -> None:
+        self.stack_name = stack_name
+
+    def creat_cloudformation_stack(self, cloudformation, project_name, instance_type, ami_id) -> None:
+        try:
+            cf_template = open('create-solver-infrastructure.yaml').read()
+            response = cloudformation.create_stack(
+                StackName=self.stack_name,
+                TemplateBody=cf_template,
+                Capabilities=["CAPABILITY_IAM"],
+                Parameters=[
+                    {
+                        'ParameterKey': "ProjectName",
+                        'ParameterValue': project_name
+                    },
+                    {
+                        'ParameterKey': "AvailZoneId",
+                        'ParameterValue': "a"
+                    },
+                    {
+                        'ParameterKey': "InstanceType",
+                        'ParameterValue': instance_type
+                    },
+                    {
+                        'ParameterKey': "AmiImageId",
+                        'ParameterValue': ami_id
+                    },
+                ]
+            )
+        except Exception as e:
+            logger.error(f"Failed to create stack: {e}")
+            raise e
+
+
+if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--profile', required = True, help = "AWS profile")
+    parser.add_argument('--project', required = True, help = "Name of the project")
+    parser.add_argument('--instance', required = True, help = "Machine instance type")
+    parser.add_argument('--ami', required = True, help = "Instance AMI")
+    
+    args = parser.parse_args()
+    
+    profile = args.profile
+    project_name = args.project
+    instance_type = args.instance
+    ami_id = args.ami
+    stack_name = f"solver-infrastructure-{project_name}"
+    
+    session = boto3.Session(profile_name=profile)
+    s3 = session.client('s3')
+    s3_file_system = S3Filesystem(s3)
+
+    cloudformation = session.resource('cloudformation')
+    cfn = CloudFormation(stack_name)
+    cfn.creat_cloudformation_stack(cloudformation, project_name, instance_type, ami_id)
+        
+    logger.info("Waiting for cloudformation stack to create....")
+    stack_created = False
+    while not stack_created:
+        # Sleep time added to reduce cloudformation api calls to get status
+        time.sleep(60)
+        stack = cloudformation.Stack(stack_name)
+        if stack.stack_status == "CREATE_COMPLETE":
+            stack_created = True
+            logger.info("Finished creating Cloudformation stack.")
+            logger.info("Uploading test file to S3 bucket..")
+            bucket_name = s3_file_system.get_satcomp_bucket()
+            s3_file_system.upload_file_to_s3(bucket_name, "test.cnf")
+        elif stack.stack_status == "CREATE_FAILED":
+            logger.info("Stack Creation failed")
+            break
