@@ -123,7 +123,7 @@ The next step is to create the AWS infrastructure necessary to build and test so
 * A problem queue that the solver uses to extract the next problem to solve, provided by the [Simple Queue Service](https://aws.amazon.com/sqs/) (SQS).
 
 
-For each of the services above, click the associated link to learn more about the service.  We will also explain how these services interact in more detail in the [Creating your own solver](extending-solver) section of this document.
+For each of the services above, click the associated link to learn more about the service.  We will also explain how these services interact in more detail in the &quot;Extending the Competition Base Container&quot; section of this document.
 
 
 To set up the account resources, run the create-solver-infrastructure file:
@@ -396,7 +396,7 @@ For example, for the bucket we described earlier, given a 2 node (1 worker) clus
 "num_workers": 1}
 ```
 
-The leader base container infrastructure will pull the message off of the queue, find the problem in S3 and begin running it.  For more information on the steps performed, please read the [Understanding the Solver Architecture...](extending-solver) section below.  
+The leader base container infrastructure will pull the message off of the queue, find the problem in S3 and begin running it.  For more information on the steps performed, please read the &quot;Extending the Solver Base Container&quot; section below.  
 
 ### Monitoring and Logging
 
@@ -405,9 +405,7 @@ Currently, the best way to examine the status of the solvers is by examining the
 The ECS console allows you to monitor the logs of all running tasks. For information about the ECS console please refer to the documentation: [https://aws.amazon.com/ecs/](https://aws.amazon.com/ecs/).
 
 
-<a name="extending-solver"> 
 ## Understanding the Solver Architecture and Extending the Competition Base Leader Container
-</a>
 
 In previous years, we asked participants to provide a Dockerfile which would build a container that would handle all of the coordination between nodes, as well as downloading problem from S3 and all interactions with AWS.
 This meant that the Dockerfiles were quite complicated and included things which are common to all solvers such as retrieving problems from S3 or setting up openssh-server.  This required duplicate effort on the part of each team.
@@ -424,7 +422,7 @@ The Worker Node base container is responsible for reporting its status and IP ad
 
 Solvers must be buildable from source code using a standard process.  We use Docker to create a build process that can easily be standardized.  Docker removes many of the platform-specific problems with building under one operating system and running in another.
 
-You must provide a GitHub repo that has a Dockerfile in the top directory that we will use to build your solver. The following Github repo is an example: https://github.com/aws-samples/aws-batch-mallob-sample.
+You must provide a GitHub repo that has a Dockerfile in the top directory that we will use to build your solver. The following Github repo is an example: [https://github.com/aws-samples/aws-satcomp-solver-sample](https://github.com/aws-samples/aws-satcomp-solver-sample).
 
 This year we will ask participants to supply two Dockerfiles for their solver, one that acts as a Leader Node and one that acts as a Worker Node.
 
