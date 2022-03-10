@@ -386,14 +386,14 @@ Next, submit a job using the Simple Queue Service (SQS) console.
 2. Click the SendAndReceiveMessages button
 3. Set the message body to something matching the following structure:
 
-```json
+```text
 {"s3_uri":"s3://[PATH TO CNF PROBLEM]",
  "num_workers": [DESIRED NUMBER OF WORKERS]}
 ```
 
 For example, for the bucket we described earlier, given a 2 node (1 worker) cluster, it would be:
 
-```json
+```text
 {"s3_uri":"s3://[ACCOUNT_ID]-us-east-1-satcompbucket/test.cnf",
 "num_workers": 1}
 ```
