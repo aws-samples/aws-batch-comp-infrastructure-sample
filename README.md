@@ -111,9 +111,7 @@ By clicking on this stack, and choosing &quot;events&quot;, you can see the reso
 
 Although it is handy to get emails when certain account budget thresholds have been met, it is both useful and important to check by-the-minute account spending on the console: [https://console.aws.amazon.com/billing/home](https://console.aws.amazon.com/billing/home).
 
-<a name="aws-infrastructure"> 
 ### Creating the AWS Solver Infrastructure within the Account
-</a> 
 
 The next step is to create the AWS infrastructure necessary to build and test solvers.  The SAT competition uses the following AWS capabilities to host distributed solvers: 
 
@@ -201,7 +199,7 @@ To simplify the solver construction process, this year we are providing two base
 
 We provide an example repository with a Dockerfile that builds a distributed solver from the base images in the following git repo: [https://github.com/aws-samples/aws-satcomp-solver-sample](https://github.com/aws-samples/aws-satcomp-solver-sample).  In order to test the infrastructure here, please follow the build steps detailed in the README.md file for that repository.   
 
-After following the build steps in that repository described in the README.md file, the sample solver should work &quot;out of the box&quot; on the steps below.   After you have this solver working, you can create your own solver as described in the section [below](extending-solver).
+After following the build steps in that repository described in the README.md file, the sample solver should work &quot;out of the box&quot; on the steps below.   After you have this solver working, you can create your own solver as described in the section on &quot;extending solvers&quot; below.
 
 Once you have built the leader and worker images locally following the directions for the sample, we need to upload them to the Elastic Container Registry.
 
@@ -247,7 +245,7 @@ where
 
 * **LOCAL\_WORKER\_IMAGE\_ID** is the local worker image tag.  For the sample solver, this image tag is described in the README.md instructions.  
 * **AWS\_ACCOUNT\_ID** is the accound id where you want to store the image.
-* **PROJECT\_NAME** is the name of the project that you chose in the [&quot;Creating the AWS Infrastructure&quot;](aws-infrastructure) section above.
+* **PROJECT\_NAME** is the name of the project that you chose in the &quot;Creating the AWS Infrastructure&quot; section above.
 
 For the leader, tag the image as:
 
