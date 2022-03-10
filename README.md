@@ -481,7 +481,7 @@ The Leader Base Container waits until the /competition/solver script has complet
 
 You can extend the competition base image (either Leader or Worker) by writing your own `/competition/solver` script and copying it to a new container which is based on the Competition Base Container.
 
-NOTE: We have provided a fully fleshed out example of how to do this in the following github repo: [https://github.com/aws-samples/aws-satcomp-sample-solver](https://github.com/aws-samples/aws-satcomp-sample-solver).
+NOTE: We have provided a fully fleshed out example of how to do this in the following github repo: [https://github.com/aws-samples/aws-satcomp-solver-sample](https://github.com/aws-samples/aws-satcomp-solver-sample).
 
 For example:
 
