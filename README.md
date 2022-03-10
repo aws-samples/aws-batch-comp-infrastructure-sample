@@ -199,7 +199,7 @@ To simplify the solver construction process, this year we are providing two base
 
 ## Building and Running a Solver 
 
-We provide an example repository with a Dockerfile that builds a distributed solver from the base images in the following git repo: [https://github.com/aws-samples/aws-batch-solver-sample](https://github.com/aws-samples/aws-batch-solver-sample).  In order to test the infrastructure here, please follow the build steps detailed in the README.md file for that repository.   
+We provide an example repository with a Dockerfile that builds a distributed solver from the base images in the following git repo: [https://github.com/aws-samples/aws-satcomp-solver-sample](https://github.com/aws-samples/aws-satcomp-solver-sample).  In order to test the infrastructure here, please follow the build steps detailed in the README.md file for that repository.   
 
 After following the build steps in that repository described in the README.md file, the sample solver should work &quot;out of the box&quot; on the steps below.   After you have this solver working, you can create your own solver as described in the section [below](extending-solver).
 
