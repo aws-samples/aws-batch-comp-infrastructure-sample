@@ -17,10 +17,10 @@ This project provides the infrastructure necessary to build and test solvers, in
 
 To install the infrastructure described in this document, you need the following tools installed:
 
-- python3
-- awscli
-- boto3
-- docker
+- [python3](https://www.python.org/)
+- [awscli](https://aws.amazon.com/cli/)
+- [boto3](https://aws.amazon.com/sdk-for-python/)
+- [docker](https://www.docker.com/)
 
 It is expected that solver writers are familiar with Docker, and can construct Docker images from Dockerfiles.  If not, there are a number of excellent tutorials, such as [this one](https://docs.docker.com/get-started/).  Also, basic knowledge of AWS accounts and services is helpful, though we try to walk you through the necessary pieces.
 
@@ -40,12 +40,12 @@ Once we hear from you, we will email you an acknowledgment that the accounts hav
 
 ### Installing the AWS CLI
 
-In order to work with AWS, you must install the AWS CLI for your platform.
+In order to work with AWS, you must install the [AWS CLI](https://aws.amazon.com/cli/) for your platform.
 
 To use the AWS CLI, please follow the directions for your operating system here:
-  [https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-welcome.html](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-welcome.html)
+  [https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
 
-When setting up an account, we recommend the use of named profiles as they allow some flexibility in later connecting to multiple accounts:
+When setting up an account, we recommend the use of _named profiles_ as they allow some flexibility in later connecting to multiple accounts:
   [https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-profiles.html](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-profiles.html)
 
 Once you have installed AWS CLI, to get the named profiles working, you should create (or modify) a ~/.aws/config file that
@@ -58,16 +58,16 @@ looks like has this:
 where the PROFILE-NAME is any name you would like to use, and the ACCOUNT-ID is the id of the account you created in the previous section.
 Examples of valid regions are us-east-1 (N. Virginia), us-west-2 (Oregon), eu-west-2 (London), etc...
 
-**THE REST OF THIS GUIDE ASSUMES THAT THE REGION IS us-east-1.  IF YOU ARE CHOOSE A DIFFERENT REGION, PLEASE REPLACE us-east-1 WITH YOUR REGION.  This can be performed by a simple find/replace on this document**
+**THE REST OF THIS GUIDE ASSUMES THAT THE REGION IS us-east-1.  IF YOU ARE CHOOSE A DIFFERENT REGION, PLEASE REPLACE us-east-1 WITH YOUR REGION.  This can be performed by a simple find/replace on this document.  We recommend that you use the region us-east-1 when going through the steps described in this document.**
 
 ### Creating Credentials ###
 
-You also need to set up credentials to access the account. For the purposes of making the competition simple, you will use the root level
-access key. This is NOT the best practice, which would be to create a user but it suffices for the competition. If you continue
+You also need to set up credentials to access the account. For the purposes of making the competition simple, you will use a so-called _root level
+access key_. This is NOT the best practice (which would be to create a user) but it suffices for the competition. If you continue
 using the account beyond the competition, we recommend that you follow AWS best practices as described here:
     [https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html#create-iam-users](https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html#create-iam-users)
 
-To create a root level access key, click services, and then type "IAM" into the search bar and click the resulting link.
+To create a root level access key go to the [IAM Console](https://console.aws.amazon.com/iamv2/) (you can get there either by clicking the link or by searching for "IAM" in the search field on the top of the (AWS Console)[https://console.aws.amazon.com] and then clicking the resulting link).
 On the Identity and Access Management page, click on "Delete your root access keys" and then choose "My Security Credentials" from the account drop down menu on the top right of the screen.
 
 Then click on "Access keys (access key ID and secret access key)" and then "Create New Access Key", and then "Show Access Key"
@@ -86,30 +86,9 @@ After installing the AWS CLI and gaining credentials, make sure that the CLI is 
 aws --profile [PROFILE_NAME] sts get-caller-identity
 ```
 
-If it does not work, see the troubleshooting section at the bottom of this document.
+In case you get an error message, see the troubleshooting section at the bottom of this document.
 
-### Basic Account Configuration
-
-We use CloudFormation to do a basic account setup.  The `setup-account.yaml` script is an optional cloudformation script that can help you track your spending.  It sets up notification emails to be sent to an email address you provide when the account reaches 20%, 40%, 60%, 80%, 90%, 95%, and 100% of the monthly account budget so that you have a window into the current spend rate for building and testing your solver.
-
-Here is the command to run it:
-
-    aws --profile [PROFILE_NAME] cloudformation create-stack --stack-name setup-account-stack --template-body file://setup-account.yaml --parameters ParameterKey=emailAddress,ParameterValue=[ENTER EMAIL ADDRESS HERE]
-
-**N.B.:** Be sure to double check the email address is correct!
-
-The `--profile` argument should be the profile associated with the account, and the emailAddress parameter is the email address to which notification messages related to budgeting and account spending will be sent.
-
-After running the aws cloudformation command, you can monitor the installation process by logging into your AWS account and navigating to the [CloudFormation console](https://console.aws.amazon.com/cloudformation).
-Make sure you are in the region you chose in your profile (Region is selected in the top right corner).
-You should see a stack named `setup-account-stack`.
-
- ![](images/cloudformation.png)
-_Figure 1: Cloudformation result_
-
-By clicking on this stack, and choosing &quot;events&quot;, you can see the resources associated with the stack.  After a short time, you should see the &quot;CREATE\_SUCCEEDED&quot; event.   If not (e.g., the email address was not valid email address syntax), you will see a &quot;CREATE\_FAILED&quot; event.  In this case, delete the stack and try again.  If you have trouble, please email us at: [sat-comp-2022@amazon.com](mailto:sat-comp-2022@amazon.com) and we will walk you through the process.
-
-Although it is handy to get emails when certain account budget thresholds have been met, it is both useful and important to check by-the-minute account spending on the console: [https://console.aws.amazon.com/billing/home](https://console.aws.amazon.com/billing/home).
+We recommend that you follow the steps in the section [Basic Account Configuration](#basic-account-configuration) at the bottom of this page to track your spending. Make sure you go through that section once you've set up your infrastructure.
 
 ### Creating the AWS Solver Infrastructure within the Account
 
@@ -591,6 +570,32 @@ RUN chmod +x /competition/worker
 COPY cleanup /competition/cleanup
 RUN chmod +x /competition/cleanup
 ```
+
+## Additional Steps
+
+### Basic Account Configuration
+
+We use [AWS CloudFormation](https://aws.amazon.com/cloudformation/) to do a basic account setup.  The file `setup-account.yaml` in this repository is an optional CloudFormation script that can help you track your spending.  It sets up notification emails to be sent to an email address you provide when the account reaches 20%, 40%, 60%, 80%, 90%, 95%, and 100% of the monthly account budget so that you have a window into the current spend rate for building and testing your solver.
+
+Here is the command to run it:
+
+    aws --profile [PROFILE_NAME] cloudformation create-stack --stack-name setup-account-stack --template-body file://setup-account.yaml --parameters ParameterKey=emailAddress,ParameterValue=[ENTER EMAIL ADDRESS HERE]
+
+**N.B.:** Be sure to double check the email address is correct!
+
+The `--profile` argument should be the profile associated with the account, and the emailAddress parameter is the email address to which notification messages related to budgeting and account spending will be sent.
+
+After running the aws cloudformation command, you can monitor the installation process by logging into your AWS account and navigating to the [CloudFormation console](https://console.aws.amazon.com/cloudformation).
+Make sure you are in the region you chose in your profile (Region is selected in the top right corner).
+You should see a stack named `setup-account-stack`.
+
+ ![](images/cloudformation.png)
+_Figure 1: Cloudformation result_
+
+By clicking on this stack, and choosing &quot;events&quot;, you can see the resources associated with the stack.  After a short time, you should see the &quot;CREATE\_SUCCEEDED&quot; event.   If not (e.g., the email address was not valid email address syntax), you will see a &quot;CREATE\_FAILED&quot; event.  In this case, delete the stack and try again.  If you have trouble, please email us at: [sat-comp-2022@amazon.com](mailto:sat-comp-2022@amazon.com) and we will walk you through the process.
+
+Although it is handy to get emails when certain account budget thresholds have been met, it is both useful and important to check by-the-minute account spending on the console: [https://console.aws.amazon.com/billing/home](https://console.aws.amazon.com/billing/home).
+
 
 ## Troubleshooting
 
