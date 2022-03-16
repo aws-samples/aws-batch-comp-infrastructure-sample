@@ -105,7 +105,7 @@ The next step is to create the AWS infrastructure necessary to build and test so
 For each of the services above, click the associated link to learn more about the service.  We will also explain how these services interact in more detail in the &quot;Extending the Competition Base Container&quot; section of this document.
 
 
-To set up the account resources, run the create-solver-infrastructure file:
+To set up the account resources, run the `create-solver-infrastructure` script:
 
 ```text
 ./create-solver-infrastructure --profile PROFILE_NAME --project PROJECT_NAME --instance INSTANCE_TYPE --ami INSTANCE_AMI
