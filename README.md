@@ -58,7 +58,7 @@ looks like has this:
 where the PROFILE-NAME is any name you would like to use, and the ACCOUNT-ID is the id of the account you created in the previous section.
 Examples of valid regions are us-east-1 (N. Virginia), us-west-2 (Oregon), eu-west-2 (London), etc...
 
-**THE REST OF THIS GUIDE ASSUMES THAT THE REGION IS us-east-1.  IF YOU CHOOSE A DIFFERENT REGION, PLEASE REPLACE `us-east-1` WITH YOUR REGION.  This can be performed by a simple find/replace on this document.  We recommend that you use the region `us-east-1` when going through the steps described in this document.**
+**THE REST OF THIS GUIDE ASSUMES THAT THE REGION IS `us-east-1`.  IF YOU CHOOSE A DIFFERENT REGION, PLEASE REPLACE `us-east-1` WITH YOUR REGION.  This can be performed by a simple find/replace on this document.  We recommend that you use the region `us-east-1` when going through the steps described in this document.**
 
 ### Creating Credentials ###
 
