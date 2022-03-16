@@ -73,7 +73,7 @@ On the Identity and Access Management page, click on "Delete your root access ke
 Then click on "Access keys (access key ID and secret access key)" and then "Create New Access Key", and then "Show Access Key"
 This gives you an Access Key ID and a Secret Access Key.
 
-Create a ~/.aws/credentials file with the following:
+Create a `~/.aws/credentials` file with the following:
 
     [PROFILE-NAME]
     aws_access_key_id=ACCESS_KEY_ID
@@ -176,9 +176,9 @@ To simplify the solver construction process, this year we are providing two base
 
 ## Building and Running a Solver 
 
-We provide an example repository with a Dockerfile that builds a distributed solver from the base images in the following git repo: [https://github.com/aws-samples/aws-satcomp-solver-sample](https://github.com/aws-samples/aws-satcomp-solver-sample).  In order to test the infrastructure here, please follow the build steps detailed in the README.md file for that repository.   
+We provide an example repository with a Dockerfile that builds a distributed solver from the base images in the following git repo: [https://github.com/aws-samples/aws-satcomp-solver-sample](https://github.com/aws-samples/aws-satcomp-solver-sample).  In order to test the infrastructure here, please follow the build steps detailed in the `README.md` file for that repository.   
 
-After following the build steps in that repository described in the README.md file, the sample solver should work &quot;out of the box&quot; on the steps below.   After you have this solver working, you can create your own solver as described in the section on &quot;extending solvers&quot; below.
+After following the build steps in that repository described in the `README.md` file, the sample solver should work &quot;out of the box&quot; on the steps below.   After you have this solver working, you can create your own solver as described in the section on &quot;extending solvers&quot; below.
 
 Once you have built the leader and worker images locally following the directions for the sample, we need to upload them to the Elastic Container Registry.
 
@@ -222,7 +222,7 @@ docker tag [LOCAL_WORKER_IMAGE_ID] [AWS_ACCOUNT_ID].dkr.ecr.us-east-1.amazonaws.
 
 where 
 
-* **LOCAL\_WORKER\_IMAGE\_ID** is the local worker image tag (e.g., `my-solver:leader`).  For the sample solver, this image tag is described in the README.md instructions.  
+* **LOCAL\_WORKER\_IMAGE\_ID** is the local worker image tag (e.g., `my-solver:leader`).  For the sample solver, this image tag is described in the `README.md` instructions.  
 * **AWS\_ACCOUNT\_ID** is the account ID where you want to store the image.
 * **PROJECT\_NAME** is the name of the project that you chose in the &quot;Creating the AWS Infrastructure&quot; section above.
 
@@ -252,9 +252,7 @@ If you have trouble, please email us at: [sat-comp-2022@amazon.com](mailto:sat-c
 
 ## Adding SAT Problems to an S3 Bucket.
 
-Before you can run the solver, you have to add the problems to be solved to an S3 bucket that is accessible to your account.  
-As part of the `create-solver-infrastructure` CloudFormation script, we have created a bucket for you where you can store files: `[ACCOUNT\_ID]-us-east-1-satcompbucket`, and added a `test.cnf` file to this bucket for testing (if you chose a different region than `us-east-1`, the part `us-east-1` in the bucket name my vary accordingly).  
-You can start with this `test.cnf` example and skip the rest of this section until you wish to add additional files or buckets for testing your solver.
+Before you can run the solver, you have to add the problems to be solved to an S3 bucket that is accessible by your account. As part of the `create-solver-infrastructure` CloudFormation script, we have created a bucket for you where you can store files: `[ACCOUNT\_ID]-us-east-1-satcompbucket`, and added a `test.cnf` file to this bucket for testing (if you chose a different region than `us-east-1`, the part `us-east-1` in the bucket name my vary accordingly).  You can start with this `test.cnf` example and skip the rest of this section until you wish to add additional files or buckets for testing your solver.
 
 
 In case you wish to create a bucket, here is a command to create a bucket named `[PROJECT_NAME]-satcomp-examples`:
@@ -265,7 +263,7 @@ aws --profile [PROFILE_NAME] s3api create-bucket --bucket [PROJECT_NAME]-satcomp
 
 **Note: this creates the bucket in the AWS region specified in your named profile**
 
-**Note: If you chose a different region than us-east-1, you might get an `IllegalLocationConstraintException`. To deal with the problem, you have to append the argument `--create-bucket-configuration {"LocationConstraint": "YOUR-REGION-NAME"}` to the command, where `YOUR-REGION-NAME` is replaced with the name of the region you chose.**
+**Note: If you chose a different region than `us-east-1`, you might get an `IllegalLocationConstraintException`. To deal with the problem, you have to append the argument `--create-bucket-configuration {"LocationConstraint": "YOUR-REGION-NAME"}` to the command, where `YOUR-REGION-NAME` is replaced with the name of the region you chose.**
 
 **Note: S3 buckets are globally unique across all of AWS, which means that the command will fail if someone else is already using the same bucket name.  A simple fix is to add the AWS account number to the bucket name, which will likely yield a unique bucket name.**
 
@@ -281,7 +279,7 @@ Once this command completes successfully, you should see this object in the list
 aws --profile [PROFILE_NAME] s3 ls [ACCOUNT_ID]-us-east-1-satcompbucket
 ```
 
-More information on creating and managing s3 buckets is found here: [https://aws.amazon.com/s3/](https://aws.amazon.com/s3/),
+More information on creating and managing S3 buckets is found here: [https://aws.amazon.com/s3/](https://aws.amazon.com/s3/),
 and the command line is described in more detail here: [https://docs.aws.amazon.com/cli/latest/userguide/cli-services-s3-commands.html](https://docs.aws.amazon.com/cli/latest/userguide/cli-services-s3-commands.html).
 
 
@@ -301,7 +299,7 @@ Running the solver consists of three steps:
 
 After setup, you should be able to run any number of solve jobs before cleaning up.
 
-**It is very important that you clean up!  EC2 nodes that remain active continue to be charged against your account**.
+**It is important that you [clean up](#cluster-teardown) once you are done.  EC2 nodes that remain active continue to be charged against your account.**
 
 ### Cluster Setup
 
@@ -319,7 +317,7 @@ update_instances --profile [PROFILE_NAME] --option setup --workers [NUM_WORKERS]
 where: 
 
 * **PROFILE\_NAME** is the profile name for the account
-* **NUM\_WORKERS** is the number of worker nodes you would like to allocate.
+* **NUM\_WORKERS** is the number of worker nodes you would like to allocate. To avoid any problems with possible resource limits for your AWS account, we recommend that you set `NUM\_WORKERS` to `1` when going through the steps of this document for the first time.
 
 After requesting the nodes from EC2 and ECS, AWS normally requires between 2-5 minutes to allocate the machines and host the ECS cluster.  
 
@@ -334,9 +332,9 @@ job-queue-PROJECT_NAME-SolverLeaderService-...
 job-queue-PROJECT_NAME-SolverWorkerService-...
 ```
 
-The service is running and available when the number of running tasks for the leader is '1' and that the number of running tasks for the Worker service is 'n', where n is the number of desired tasks, which should match [NUM_WORKERS] from the script arguments.
+The service is running and available when the number of running tasks for the leader is `1` and that the number of running tasks for the Worker service is `n`, where _n_ is the number of desired tasks, which should match `NUM_WORKERS` from the script arguments.
 
-**N.B.:** you are charged for the number of EC2 instances that you run, so the bill for computation is directly proportional to the number of workers that you allocate.  We recommend a small number of workers for initial testing to conserve resources.
+**N.B.:** you are charged for the number of EC2 instances that you run, so the bill for computation is directly proportional to the number of workers that you allocate.  
 
 ### Job Submission and Execution
 
@@ -353,14 +351,14 @@ Next, submit a job using the [Simple Queue Service (SQS) console](https://consol
  "num_workers": [DESIRED NUMBER OF WORKERS]}
 ```
 
-For example, for the bucket we described earlier, given a 2 node (1 worker) cluster, it would be:
+For example, for the bucket we described earlier, given a cluster with two nodes (one worker), it would be:
 
 ```text
 {"s3_uri":"s3://[ACCOUNT_ID]-us-east-1-satcompbucket/test.cnf",
 "num_workers": 1}
 ```
 
-The leader base container infrastructure will pull the message off of the queue, find the problem in S3 and begin running it.  For more information on the steps performed, please read the &quot;Extending the Solver Base Container&quot; section below.  
+The leader base container infrastructure will pull the message off of the queue, find the problem in S3 and begin running it.  For more information on the steps performed, please read the [section on Extending the Solver Base Container](#understanding-the-solver-architecture-and-extending-the-competition-base-leader-container) below.  
 
 ### Monitoring and Logging
 
@@ -377,9 +375,9 @@ After testing, tear down the cluster by running:
 update_instances --profile [PROFILE_NAME] --option shutdown
 ```
 
-Which will terminate all EC2 instances and reset the number of leaders and workers to zero in the ECS service. 
+This will terminate all EC2 instances and reset the number of leaders and workers to zero in the ECS service. 
 
-Be sure to check that no EC2 instances are running after running the teardown script.  Navigate to the EC2 console for the account and check the Instances tab.  There should be no running instances.  Note that it might take a minute or two for the instances to shut down after running the script.
+Be sure to check that no EC2 instances are running after running the teardown script.  Navigate to the [EC2 console](https://console.aws.amazon.com/ec2) for the account and check the Instances tab.  There should be no running instances.  Note that it might take a minute or two for the instances to shut down after running the script.
 
 **N.B.: You are responsible for any charges made to your account.  While we have tested the shutdown script and believe it to be robust, you are responsible for monitoring the EC2 cluster to make sure resources have shutdown properly.  We have alternate directions to shutdown resources using the console in the Q&A section.**
 
@@ -575,7 +573,7 @@ RUN chmod +x /competition/cleanup
 
 ### Basic Account Configuration
 
-We use [AWS CloudFormation](https://aws.amazon.com/cloudformation/) to do a basic account setup.  The file `setup-account.yaml` in this repository is an optional CloudFormation script that can help you track your spending.  It sets up notification emails to be sent to an email address you provide when the account reaches 20%, 40%, 60%, 80%, 90%, 95%, and 100% of the monthly account budget so that you have a window into the current spend rate for building and testing your solver.
+When doing the basic account setup, we use [AWS CloudFormation](https://aws.amazon.com/cloudformation/).  The file `setup-account.yaml` in this repository is an optional CloudFormation script that can help you track your spending.  It sets up notification emails to be sent to an email address you provide when the account reaches 20%, 40%, 60%, 80%, 90%, 95%, and 100% of the monthly account budget so that you have a window into the current spend rate for building and testing your solver.
 
 Here is the command to run it:
 
