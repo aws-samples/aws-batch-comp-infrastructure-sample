@@ -67,7 +67,7 @@ access key_. This is NOT the best practice (which would be to create a user) but
 using the account beyond the competition, we recommend that you follow AWS best practices as described here:
     [https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html#create-iam-users](https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html#create-iam-users)
 
-To create a root level access key go to the [IAM Console](https://console.aws.amazon.com/iamv2/) (you can get there either by clicking the link or by searching for "IAM" in the search field on the top of the (AWS Console)[https://console.aws.amazon.com] and then clicking the resulting link).
+To create a root level access key go to the [IAM Console](https://console.aws.amazon.com/iamv2/) (you can get there either by clicking the link or by searching for "IAM" in the search field on the top of the [AWS Console](https://console.aws.amazon.com) and then clicking the resulting link).
 On the Identity and Access Management page, click on "Delete your root access keys" and then choose "My Security Credentials" from the account drop down menu on the top right of the screen.
 
 Then click on "Access keys (access key ID and secret access key)" and then "Create New Access Key", and then "Show Access Key"
