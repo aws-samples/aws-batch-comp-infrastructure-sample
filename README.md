@@ -1,7 +1,7 @@
-# SAT-Comp Cloud Track Instructions
+# SAT-Comp and SMT-Comp Cloud Track Instructions
 
 
-The goal of the SAT-Comp Cloud Track infrastructure is to make it straightforward to build distributed solvers that will be used in the SAT-Comp competition, and to run them at scale on Amazon Web Services (AWS) resources.
+The goal of the SAT-Comp / SMT-Comp Cloud Track infrastructure is to make it straightforward to build distributed solvers that will be used in the competitions, and to run them at scale on Amazon Web Services (AWS) resources.
 
 Preparing tools for the competition involves four phases, described in this document: 
 
@@ -29,7 +29,7 @@ It is expected that solver writers are familiar with Docker, and can construct D
 
 Please create a &quot;fresh&quot; account in order to simplify billing for the account.  If you have not created an AWS account previously, it is straightforward to do, requiring a cell phone #, credit card, and address.  Please navigate to [aws.amazon.com](https://aws.amazon.com) and follow the instructions on the web site to create an account.
 
-If you have already created an account based on your email address, please create a separate AWS account for managing the SAT-Comp tool construction and testing.  This makes it straightforward for us to manage account credits and billing.   Once the account is created please email us the account number at sat-comp-2022@amazon.com so that we can apply credits to your account.
+If you have already created an account based on your email address, please create a separate AWS account for managing the SAT/SMT-Comp tool construction and testing.  This makes it straightforward for us to manage account credits and billing.   Once the account is created please email us the account number at: sat-comp-2022@amazon.com (for SAT-Comp) or aws-smtcomp-2022@googlegroups.com (for SMT-Comp) so that we can apply credits to your account.
 To find your account ID, click on your account name in the top right corner, and then click "My Account". You should see Account ID in the Account Settings
 
 **N.B.:** It is very important that you tell us your account number immediately after creating the account, so that we
@@ -92,7 +92,7 @@ We recommend that once you've gone through the steps for setting up the AWS Solv
 
 ### Creating the AWS Solver Infrastructure within the Account
 
-The next step is to create the AWS infrastructure necessary to build and test solvers.  The SAT competition uses the following AWS capabilities to host distributed solvers: 
+The next step is to create the AWS infrastructure necessary to build and test solvers.  The SAT and SMT competitions use the following AWS capabilities to host distributed solvers: 
 
 * The compute resources necessary to host the solver, provided by the [Elastic Compute Cloud](https://aws.amazon.com/ec2/) (EC2) service,
 * A registry for the Docker image files containing the solver workers and leader, provided by the [Elastic Container Registry](https://aws.amazon.com/ecr/) (ECR) service,
@@ -148,7 +148,7 @@ For example, here is result from this call:
 
 and the instance AMI from the image_id is: `ami-0bb273345f0961e90`.  **N.B.: do *not* use** `ami-0bb273345f0961e90` as your instance AMI.  Instead, please use the result of the command above when you run it.  Instance AMIs are both region-specific and updated frequently, so we cannot provide a default.
 
-The `create-solver-infrastructure` script takes 5-10 minutes to run.  At this point, all the SAT-Comp cloud resources should be created.
+The `create-solver-infrastructure` script takes 5-10 minutes to run.  At this point, all the cloud resources should be created.
 
 ### Creating the Base Docker Leader and Worker Images for Solvers
 
@@ -250,7 +250,7 @@ More information related to the ECR procedures is described here: [https://docs.
 If you have trouble, please email us at: [sat-comp-2022@amazon.com](mailto:sat-comp-2022@amazon.com) and we will walk you through the process.
 
 
-## Adding SAT Problems to an S3 Bucket.
+## Adding Problems to an S3 Bucket.
 
 Before you can run the solver, you have to add the problems to be solved to an S3 bucket that is accessible by your account. As part of the `create-solver-infrastructure` CloudFormation script, we have created a bucket for you where you can store files: `[ACCOUNT\_ID]-us-east-1-satcompbucket`, and added a `test.cnf` file to this bucket for testing (if you chose a different region than `us-east-1`, the part `us-east-1` in the bucket name my vary accordingly).  You can start with this `test.cnf` example and skip the rest of this section until you wish to add additional files or buckets for testing your solver.
 
