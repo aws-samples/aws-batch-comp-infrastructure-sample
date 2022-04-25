@@ -1,6 +1,7 @@
 import logging
 import os
 import subprocess
+import time
 from dataclasses import dataclass
 
 from arg_satcomp_solver_base.utils import FileOperations
@@ -18,21 +19,32 @@ class CommandRunner:
         self.stdout_target_loc = stdout_target_loc
         self.stderr_target_loc = stderr_target_loc
 
+    def process_line(self, stream, str_name, file_handle):
+        if stream:
+            line = stream.readline().decode("UTF-8")
+            if line != "":
+                self.logger.info(f"{str_name}: {line}")
+                file_handle.write(line)
+                return True    
+        return False
+            
     def run(self, cmd: list, output_directory: str):
-        self.logger.info("Running command: %s", str(cmd))
-        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        os.environ['PYTHONUNBUFFERED'] = "1"
+        self.logger.info("Creating file locatons")
         with open(os.path.join(output_directory, self.stdout_target_loc), "w") as stdout_handle:
-            for line in proc.stdout:
-                line_str = line.decode("UTF-8")
-                self.logger.info(f"STDOUT: {line_str}")
-                stdout_handle.write(line_str)
-        with open(os.path.join(output_directory, self.stderr_target_loc), "w") as stderr_handle:
-            for line in proc.stderr:
-                line_str = line.decode("UTF-8")
-                self.logger.info(f"STDERR: {line_str}")
-                stderr_handle.write(line_str)
-        return_code = proc.wait()
-
+            with open(os.path.join(output_directory, self.stderr_target_loc), "w") as stderr_handle:
+                self.logger.info("Running command: %s", str(cmd))
+                proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                while True:
+                    return_code = proc.poll()
+                    while(self.process_line(proc.stdout, "STDOUT", stdout_handle)):
+                        pass
+                    while(self.process_line(proc.stderr, "STDERR", stderr_handle)):
+                        pass
+                    if return_code is not None:
+                        break
+                    else:
+                        time.sleep(0.1)  # sleep 100 ms
         return {
             "stdout": self.stdout_target_loc,
             "stderr": self.stderr_target_loc,
