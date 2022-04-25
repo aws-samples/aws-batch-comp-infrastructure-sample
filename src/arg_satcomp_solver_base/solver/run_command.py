@@ -1,6 +1,7 @@
 import logging
 import os
 import subprocess
+import threading
 from dataclasses import dataclass
 
 from arg_satcomp_solver_base.utils import FileOperations
@@ -18,21 +19,27 @@ class CommandRunner:
         self.stdout_target_loc = stdout_target_loc
         self.stderr_target_loc = stderr_target_loc
 
-    def run(self, cmd: list, output_directory: str):
-        self.logger.info("Running command: %s", str(cmd))
-        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        with open(os.path.join(output_directory, self.stdout_target_loc), "w") as stdout_handle:
-            for line in proc.stdout:
-                line_str = line.decode("UTF-8")
-                self.logger.info(f"STDOUT: {line_str}")
-                stdout_handle.write(line_str)
-        with open(os.path.join(output_directory, self.stderr_target_loc), "w") as stderr_handle:
-            for line in proc.stderr:
-                line_str = line.decode("UTF-8")
-                self.logger.info(f"STDERR: {line_str}")
-                stderr_handle.write(line_str)
-        return_code = proc.wait()
+    def process_stream(self, stream, str_name, file_handle):
+        line = stream.readline().decode("UTF-8")
+        while line != "":
+            self.logger.info(f"{str_name}: {line}")
+            file_handle.write(line)
+            line = stream.readline()
 
+    def run(self, cmd: list, output_directory: str):
+        os.environ['PYTHONUNBUFFERED'] = "1"
+        self.logger.info("Running command: %s", str(cmd))
+        with open(os.path.join(output_directory, self.stdout_target_loc), "w") as stdout_handle:
+            with open(os.path.join(output_directory, self.stderr_target_loc), "w") as stderr_handle:
+                proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                    universal_newlines=True)
+                stdout_t = threading.Thread(target = self.process_stream, args=(proc.stdout, "STDOUT", stdout_handle))
+                stderr_t = threading.Thread(target = self.process_stream, args=(proc.stderr, "STDERR", stderr_handle))
+                stdout_t.start()
+                stderr_t.start()
+                return_code = proc.wait()
+                stdout_t.join()
+                stderr_t.join()
         return {
             "stdout": self.stdout_target_loc,
             "stderr": self.stderr_target_loc,
