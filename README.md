@@ -340,23 +340,23 @@ The service is running and available when the number of running tasks for the le
 
 First, ensure a cluster is set up and running, and the desired .cnf problem is available in an accessible S3 bucket.
 
-Next, submit a job using the [Simple Queue Service (SQS) console](https://console.aws.amazon.com/sqs/).
+To submit a job by sending a SQS message.  We have provided a script called `send_message` that will submit an SQS job.  You provide the location of the file to run and number of desired worker nodes, and it will submit a SQS request to the `[ACCOUNT_NUMBER]-[REGION]-SatCompQueue` queue which will trigger execution of the solver.
 
-1. Navigate to the SQS console, and select the queue named `[ACCOUNT_NUMBER]-[REGION]-SatCompQueue`.
-2. Click the *SendAndReceiveMessages* button
-3. Set the message body to something matching the following structure:
 
-```text
-{"s3_uri":"s3://[PATH TO CNF PROBLEM]",
- "num_workers": [DESIRED NUMBER OF WORKERS]}
-```
-
-For example, for the bucket we described earlier, given a cluster with two nodes (one worker), it would be:
+To run the script: 
 
 ```text
-{"s3_uri":"s3://[ACCOUNT_ID]-us-east-1-satcompbucket/test.cnf",
-"num_workers": 1}
+send_message --profile [PROFILE_NAME] --location [S3_LOCATION] --workers [NUM_WORKERS]
 ```
+
+where: 
+
+* **PROFILE\_NAME** is the profile name for the account.
+* **LOCATION** is the s3 location of the .cnf file.  For example, for the bucket we described earlier, the location would be s3://[ACCOUNT_ID]-us-east-1-satcompbucket/test.cnf (where ACCOUNT_ID is the account number you used).
+* **NUM\_WORKERS** is the number of worker nodes you would like to allocate. To avoid any problems with possible resource limits for your AWS account, we recommend that you set `NUM\_WORKERS` to `1` when going through the steps of this document for the first time.
+
+
+
 
 The leader base container infrastructure will pull the message off of the queue, find the problem in S3 and begin running it.  For more information on the steps performed, please read the [section on Extending the Solver Base Container](#understanding-the-solver-architecture-and-extending-the-competition-base-leader-container) below.  
 
@@ -652,3 +652,22 @@ In the next page, you will see an autoscaling group called something like job-qu
 1. Set the desired and maximum task capacity to 0.  This shuts down any EC2 instances.
  
 
+**Q: Suppose I want to use the console to send SQS messages to start executing jobs.  How do I do that?**
+
+Submit a job using the [Simple Queue Service (SQS) console](https://console.aws.amazon.com/sqs/).
+
+1. Navigate to the SQS console, and select the queue named `[ACCOUNT_NUMBER]-[REGION]-SatCompQueue`.
+2. Click the *SendAndReceiveMessages* button
+3. Set the message body to something matching the following structure:
+
+```text
+{"s3_uri":"s3://[PATH TO CNF PROBLEM]",
+ "num_workers": [DESIRED NUMBER OF WORKERS]}
+```
+
+For example, for the bucket we described earlier, given a cluster with two nodes (one worker), it would be:
+
+```text
+{"s3_uri":"s3://[ACCOUNT_ID]-us-east-1-satcompbucket/test.cnf",
+"num_workers": 1}
+```

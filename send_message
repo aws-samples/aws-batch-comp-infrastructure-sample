@@ -1,0 +1,71 @@
+#!/usr/bin/env python3
+import argparse
+import logging
+import boto3
+import json       
+
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger("Runner")
+logger.setLevel(logging.INFO)
+
+
+
+class SqsService:
+    def __init__(self, client):
+        self.sqs = client
+
+    def get_satcomp_queue(self):
+        """Get SQS services and return sat comp queue.
+        
+        Returns: SQS SatCompQueue
+        
+        """
+        try:
+            response = self.sqs.list_queues()
+            for service in response['QueueUrls']:
+                if service.endswith('SatCompQueue'):
+                    return service
+            
+            raise "No queue ending with 'SatCompQueue' "
+        except Exception as e:
+            logger.error(f"Failed to get SQS queue: {e}")
+            raise e
+
+    def send_message(self, location, workers):
+        queue = self.get_satcomp_queue()
+
+        message_body = {"s3_uri": f"{location}",
+                        "num_workers": int(workers) }
+        message_body_str = json.dumps(message_body, indent = 4)
+        try:
+            response = self.sqs.send_message(
+                QueueUrl = queue,
+                MessageBody = message_body_str
+            )
+            print(f"Message sent: {message_body_str} to queue {queue}, with response: {str(response)}")
+        except Exception as e:
+            logger.error(f"Failed to send message: {e}")
+            raise e
+
+
+if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--profile', required = True, help = "AWS profile")
+    parser.add_argument('--location', required = True, help = "S3 location for CNF file")
+    parser.add_argument('--workers', required = True, help = "Required Worker nodes count")
+    
+    args = parser.parse_args()
+
+
+    profile = args.profile
+    
+    # Send message
+    session = boto3.Session(profile_name=profile)
+    sqs_client = session.client('sqs')
+    sqs = SqsService(sqs_client)
+    try:
+        sqs.send_message(args.location, args.workers)
+    except Exception as e:
+        logger.info(f"Failed to send message. {e}")
+        
