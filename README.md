@@ -597,6 +597,14 @@ Although it is handy to get emails when certain account budget thresholds have b
 
 ## Troubleshooting
 
+**Q: I ran the infrastructure scripts, and they seemed to work, but when I go out to the console, I don't see any of the infrastructure: S3 buckets, ECS Queues, etc.  What happened?**
+
+The most common mistake people make when starting with AWS is not choosing the correct *region* for executing their jobs.  In the console on the top right there is a selectable region:
+
+<img src="images/regions.png" alt="image of region selector" width="200"/>
+
+The reason that you view has to be the same as the one referenced in your profile created at the beginning of this document (by default, it is us-east-1).  Make sure that the region selected in the top-right of the console page matches the region in your profile. 
+
 **Q: I created a leader node and submitted a job, but the leader keeps saying it is waiting for worker nodes and not running my solver.  What happened?**
 
 **A:** There are two likely causes.  First it could be that you submitted an SQS that asked for more workers than you configured when you set up your cluster.  Make sure that the number of worker nodes equals or exceeds the number of worker nodes that were requested in the SQS message.  Second, if you just set up the ECS cluster, then it is likely that either the requested EC2 servers have not yet initialized, or that the ECS cluster has not yet started running on them.  It takes 2-5 minutes for the resources to become available after they are requested.
