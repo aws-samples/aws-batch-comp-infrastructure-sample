@@ -15,6 +15,7 @@ from arg_satcomp_solver_base.sqs_queue.sqs_queue import SqsQueue
 from arg_satcomp_solver_base.poller.poller import Poller
 from arg_satcomp_solver_base.node_manifest.dynamodb_manifest import DynamodbManifest
 from arg_satcomp_solver_base.task_end_notification.task_end_notifier import TaskEndNotifier
+from arg_satcomp_solver_base.leader.leader import LeaderStatusChecker
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 QUEUE_NAME = os.getenv('SQS_QUEUE_NAME')
@@ -51,6 +52,10 @@ if __name__ == "__main__":
 
     logger.info("Getting local IP address")
     local_ip_address = socket.gethostbyname(socket.gethostname())
+
+    logger.info("Starting leader status checker")
+    leader_status = LeaderStatusChecker(node_manifest)
+    leader_status.start()
 
     logger.info("starting poller")
     poller = Poller(1, local_ip_address, sqs_queue, node_manifest, task_end_notifier, solver)

@@ -52,9 +52,9 @@ class DynamodbManifest:
             }
         )
 
-    def get_all_ready_worker_nodes(self):
+    def get_all_ready_nodes(self, nodeTypeVal):
         """
-        Returns all worker nodes that are currently set to READY status
+        Returns all nodes of type nodeTypeVal that are currently set to READY status
         :return:
         """
         expiration_time = int(time.time() - self.node_expiration_time)
@@ -69,13 +69,27 @@ class DynamodbManifest:
             },
             ExpressionAttributeValues={
                 ":nodeStatusVal": "READY",
-                ":nodeTypeVal": "WORKER",
+                ":nodeTypeVal": nodeTypeVal,
                 ":lastModifiedVal": expiration_time
             },
             ConsistentRead=True
         )
         return nodes["Items"]
 
+    def get_all_ready_worker_nodes(self):
+        """
+        Returns all worker nodes that are currently set to READY status
+        :return:
+        """
+        return self.get_all_ready_nodes("WORKER")
+
+    def get_all_ready_leader_nodes(self):
+        """
+        Returns a list of zero or one leader node currently set to READY status
+        :return:
+        """
+        return self.get_all_ready_nodes("LEADER")
+        
     @staticmethod
     def get_dynamodb_manifest():
         dynamodb_resource = boto3.resource("dynamodb")
