@@ -152,7 +152,7 @@ The `create-solver-infrastructure` script takes 5-10 minutes to run.  At this po
 
 ### Creating the Base Docker Leader and Worker Images for Solvers
 
-To simplify the solver construction process, this year we are providing two base Docker images that manage most of the infrastructure necessary for solvers and mediate access to AWS resources.  You must extend these images in order to create the leader and worker images to use for the competition.  Teams will build these images on their local workstation and extend the images to construct their solvers.
+To simplify the solver construction process, this year we are providing two base Docker images that manage most of the infrastructure necessary for solvers and mediate access to AWS resources.  You must extend these images in order to create the leader and worker images to use for the competition.  Teams will build these images on their local workstation and extend the images to construct their solvers.  **N.B.:** if you are entering the parallel track only, you do not need to build a worker image or store it in ECS.  For the parallel case, set the number of workers to zero when you run the solver.
 
 
 #### Build `satcomp-common-base:latest` image
@@ -317,7 +317,7 @@ update_instances --profile [PROFILE_NAME] --option setup --workers [NUM_WORKERS]
 where: 
 
 * **PROFILE\_NAME** is the profile name for the account
-* **NUM\_WORKERS** is the number of worker nodes you would like to allocate. To avoid any problems with possible resource limits for your AWS account, we recommend that you set `NUM\_WORKERS` to `1` when going through the steps of this document for the first time.
+* **NUM\_WORKERS** is the number of worker nodes you would like to allocate. To avoid any problems with possible resource limits for your AWS account, we recommend that you set `NUM\_WORKERS` to `1` when going through the steps of this document for the first time.  If you are building for the parallel track rather than the cloud track, then set `NUM\_WORKERS` to `0`: all solving should be performed by the leader node.
 
 After requesting the nodes from EC2 and ECS, AWS normally requires between 2-5 minutes to allocate the machines and host the ECS cluster.  
 
@@ -353,7 +353,7 @@ where:
 
 * **PROFILE\_NAME** is the profile name for the account.
 * **LOCATION** is the s3 location of the .cnf file.  For example, for the bucket we described earlier, the location would be s3://[ACCOUNT_ID]-us-east-1-satcompbucket/test.cnf (where ACCOUNT_ID is the account number you used).
-* **NUM\_WORKERS** is the number of worker nodes you would like to allocate. To avoid any problems with possible resource limits for your AWS account, we recommend that you set `NUM\_WORKERS` to `1` when going through the steps of this document for the first time.
+* **NUM\_WORKERS** is the number of worker nodes you would like to allocate. To avoid any problems with possible resource limits for your AWS account, we recommend that you set `NUM\_WORKERS` to `1` when going through the steps of this document for the first time.  If you are building for the parallel track rather than the cloud track, then set `NUM\_WORKERS` to `0`: all solving should be performed by the leader node.
 
 
 
