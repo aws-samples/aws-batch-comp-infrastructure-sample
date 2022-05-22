@@ -406,6 +406,8 @@ Resources:
           Environment:
             - Name: SQS_QUEUE_NAME
               Value: !GetAtt SatCompQueue.QueueName
+            - Name: SQS_OUTPUT_QUEUE_NAME
+              Value: !GetAtt SatCompOutputQueue.QueueName
             - Name: AWS_DEFAULT_REGION
               Value: !Ref AWS::Region
           LogConfiguration:
@@ -452,6 +454,8 @@ Resources:
           Environment:
             - Name: SQS_QUEUE_NAME
               Value: !GetAtt SatCompQueue.QueueName
+            - Name: SQS_OUTPUT_QUEUE_NAME
+              Value: !GetAtt SatCompOutputQueue.QueueName
             - Name: AWS_DEFAULT_REGION
               Value: !Ref AWS::Region
           LogConfiguration:
@@ -563,6 +567,14 @@ Resources:
     Type: AWS::SQS::Queue
     Properties:
       QueueName: !Sub "${AWS::AccountId}-${AWS::Region}-SatCompQueue"
+      VisibilityTimeout: 5
+      ReceiveMessageWaitTimeSeconds: 20
+      KmsDataKeyReusePeriodSeconds: 3600
+      KmsMasterKeyId: "alias/aws/sqs"
+  SatCompOutputQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub "${AWS::AccountId}-${AWS::Region}-SatCompOutputQueue"
       VisibilityTimeout: 5
       ReceiveMessageWaitTimeSeconds: 20
       KmsDataKeyReusePeriodSeconds: 3600
