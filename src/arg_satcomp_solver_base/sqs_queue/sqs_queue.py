@@ -64,6 +64,19 @@ class SqsQueue:
             return None
         return QueueMessage(messages[0], self.queue_resource)
 
+    def put_message(self, msg):
+        """Get a single message off the queue if it exists"""
+        try:
+            self.logger.info("Trying to put message from queue %s", self.queue_name)
+            messages = self.queue_resource.send_message(
+                MessageBody=msg
+            )
+        except ClientError as e:
+            self.logger.error("Failed to put message on SQS queue")
+            self.logger.exception(e)
+            raise SqsQueueException(f"Failed to put message on SQS queue {self.queue_name}")
+
+
     @staticmethod
     def get_sqs_queue(queue_name: str):
         import boto3
