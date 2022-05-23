@@ -101,7 +101,7 @@ class Poller(threading.Thread):
                     self.logger.info(solver_response)
 
                     self.logger.info("Writing response to output queue")
-                    self.output_queue.put_message(solver_response)
+                    self.output_queue.put_message(json.dumps(solver_response))
                     
                     self.logger.info(
                         "Cleaning up solver output directory %s",

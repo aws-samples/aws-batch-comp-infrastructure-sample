@@ -51,7 +51,7 @@ class CommandLineSolver(Solver):
         cmd_list = [cmd]
         if arguments is not None:
             cmd_list.extend(arguments)
-        process_result = self.command_runner.run(cmd_list, output_directory, PROCESS_TIMEOUT)
+        process_result = self.command_runner.run(cmd_list, output_directory, self.PROCESS_TIMEOUT)
         return process_result
 
     def _get_solver_result(self, request_directory_path):
@@ -91,8 +91,8 @@ class CommandLineSolver(Solver):
             "driver": {
                 "stdout": os.path.join(request_directory_path, process_result.get("stdout")),
                 "stderr": os.path.join(request_directory_path, process_result.get("stderr")),
-                "return_code": process_result.get("return_code")
-                "timed_out": process_result.get("timed_out")
+                "return_code": process_result.get("return_code"),
+                "timed_out": process_result.get("timed_out"),
                 "elapsed_time": process_result.get("elapsed_time")
             },
             "solver": {

@@ -3,6 +3,7 @@ import os
 import time
 import subprocess
 import threading
+import signal
 from dataclasses import dataclass
 
 from arg_satcomp_solver_base.utils import FileOperations
@@ -56,14 +57,14 @@ class CommandRunner:
                     except subprocess.TimeoutExpired:
                         self.logger.info("Process unresponsive.  Terminating process group w/sigkill")
                         os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
-                        return_code = TIMEOUT_RETURNCODE
+                        return_code = self.TIMEOUT_RETURNCODE
                 stdout_t.join()
                 stderr_t.join()
         return {
             "stdout": self.stdout_target_loc,
             "stderr": self.stderr_target_loc,
             "return_code": return_code,
-            "output_directory": output_directory
-            "elapsed_time": elapsed
+            "output_directory": output_directory,
+            "elapsed_time": elapsed,
             "timed_out": timed_out
         }
