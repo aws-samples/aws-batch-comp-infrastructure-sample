@@ -65,9 +65,9 @@ class SqsQueue:
         return QueueMessage(messages[0], self.queue_resource)
 
     def put_message(self, msg):
-        """Get a single message off the queue if it exists"""
+        """Put a single message on the queue"""
         try:
-            self.logger.info("Trying to put message from queue %s", self.queue_name)
+            self.logger.info("Trying to put message onto queue %s", self.queue_name)
             messages = self.queue_resource.send_message(
                 MessageBody=msg
             )
@@ -81,5 +81,12 @@ class SqsQueue:
     def get_sqs_queue(queue_name: str):
         import boto3
         sqs = boto3.resource('sqs')
+        queue = sqs.get_queue_by_name(QueueName=queue_name)
+        return SqsQueue(queue, queue_name)
+
+    @staticmethod
+    def get_sqs_queue_from_session(session, queue_name: str):
+        import boto3
+        sqs = session.resource('sqs')
         queue = sqs.get_queue_by_name(QueueName=queue_name)
         return SqsQueue(queue, queue_name)

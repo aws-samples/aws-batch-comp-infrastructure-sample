@@ -92,13 +92,17 @@ class Poller(threading.Thread):
                     self.logger.info("Created uuid directory in efs %s", efs_uuid_directory)
                     download_location = self.s3_file_system.download_file(msg_json.get("s3_uri"), efs_uuid_directory)
                     self.logger.info("Download problem to location: %s", download_location)
+
+                    # Start timing solver here...
                     solver_response = self.solver.solve(download_location, workers, task_uuid)
+                    # Stop timing solver here
 
                     self.logger.info("Solver response:")
                     self.logger.info(solver_response)
 
                     self.logger.info("Writing response to output queue")
                     self.output_queue.put_message(solver_response)
+                    
                     self.logger.info(
                         "Cleaning up solver output directory %s",
                         solver_response["solver"].get("request_directory_path")
