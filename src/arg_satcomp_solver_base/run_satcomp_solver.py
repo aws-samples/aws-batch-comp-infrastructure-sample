@@ -82,9 +82,10 @@ def run_problems(problem_queue, result_queue, bucket, input_files, csv_file, num
             result = result_queue.get_message()
             while result is None:
                 logger.info(f"Awaiting completion for file: {s3_uri}")
-                result = result.get_message()
+                result = result_queue.get_message()
 
-            print(f"Problem {s3_uri} completed!  result is: {result}")
+            result_json = json.loads(result.read())
+            print(f"Problem {s3_uri} completed!  result is: {json.dumps(result_json, indent=4)}")
 
             # TODO: Add different result cases here & add to result .csv file.
             done = True
