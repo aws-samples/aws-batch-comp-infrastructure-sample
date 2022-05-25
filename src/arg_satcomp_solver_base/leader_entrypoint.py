@@ -19,6 +19,7 @@ from arg_satcomp_solver_base.leader.leader import LeaderStatusChecker
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 QUEUE_NAME = os.getenv('SQS_QUEUE_NAME')
+OUTPUT_QUEUE_NAME = os.getenv('SQS_OUTPUT_QUEUE_NAME')
 
 def run_leader(path):
     cmd = os.path.join(path, "leader")
@@ -37,8 +38,12 @@ if __name__ == "__main__":
     run_leader(dir)  # Run script to save status to leader_node_status.json
     sleep(1)  # Wait for creation of leader_node_status.json file
 
-    logger.info("Getting queue: %s", QUEUE_NAME)
-    sqs_queue = SqsQueue.get_sqs_queue(QUEUE_NAME)
+    logger.info("Getting input queue: %s", QUEUE_NAME)
+    sqs_input_queue = SqsQueue.get_sqs_queue(QUEUE_NAME)
+
+    logger.info("Getting output queue: %s", QUEUE_NAME)
+    sqs_output_queue = SqsQueue.get_sqs_queue(OUTPUT_QUEUE_NAME)
+
 
     logger.info("Getting task end notifier")
     task_end_notifier = TaskEndNotifier.get_task_end_notifier()
@@ -58,6 +63,6 @@ if __name__ == "__main__":
     leader_status.start()
 
     logger.info("starting poller")
-    poller = Poller(1, local_ip_address, sqs_queue, node_manifest, task_end_notifier, solver)
+    poller = Poller(1, local_ip_address, sqs_input_queue, sqs_output_queue, node_manifest, task_end_notifier, solver)
     poller.start()
     poller.join()

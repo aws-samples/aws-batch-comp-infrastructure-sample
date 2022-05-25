@@ -33,6 +33,7 @@ class Poller(threading.Thread):
     worker_poll_timeout = 120
     worker_poll_sleep_time = 5
     queue: SqsQueue
+    output_queue: SqsQueue
     node_manifest: DynamodbManifest
     solver: Solver
     thread_id: int
@@ -45,11 +46,13 @@ class Poller(threading.Thread):
     def __init__(self, thread_id: int,
                  ip_address: str,
                  queue: SqsQueue,
+                 output_queue: SqsQueue,
                  node_manifest: DynamodbManifest,
                  task_end_notifier: TaskEndNotifier,
                  solver: Solver):
         threading.Thread.__init__(self)
         self.queue = queue
+        self.output_queue = output_queue
         self.node_manifest = node_manifest
         self.task_end_notifier = task_end_notifier
         self.solver = solver
@@ -93,6 +96,10 @@ class Poller(threading.Thread):
 
                     self.logger.info("Solver response:")
                     self.logger.info(solver_response)
+
+                    self.logger.info("Writing response to output queue")
+                    self.output_queue.put_message(json.dumps(solver_response))
+                    
                     self.logger.info(
                         "Cleaning up solver output directory %s",
                         solver_response["solver"].get("request_directory_path")
