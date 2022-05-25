@@ -12,6 +12,7 @@ Preparing tools for the competition involves four phases, described in this docu
 
 This project provides the infrastructure necessary to build and test solvers, including an example solver that will work with the infrastructure.  To create the resources within an account necessary to run distributed solvers, we provide CloudFormation templates [https://aws.amazon.com/cloudformation/](https://aws.amazon.com/cloudformation/), and Docker base images.  The CloudFormation templates create the account infrastructure necessary to run solvers, and the Docker base images simplify the construction of the solvers themselves.
 
+**NB: for the parallel track, you only need to build the 'leader' container.
 
 ## Prerequisites
 
@@ -595,7 +596,11 @@ By clicking on this stack, and choosing &quot;events&quot;, you can see the reso
 Although it is handy to get emails when certain account budget thresholds have been met, it is both useful and important to check by-the-minute account spending on the console: [https://console.aws.amazon.com/billing/home](https://console.aws.amazon.com/billing/home).
 
 
-## Troubleshooting
+## FAQ / Troubleshooting
+
+**Q: I'm only submitting to the parallel track and not the cloud track.  Do I need a worker image?**
+
+No.  If you are submitting to the parallel track only, you do not need a worker image.  For the parallel track, we will assume that the leader manages all threading and communications within the single (multi-core) compute node.
 
 **Q: I ran the infrastructure scripts, and they seemed to work, but when I go out to the console, I don't see any of the infrastructure: S3 buckets, ECS Queues, etc.  What happened?**
 
