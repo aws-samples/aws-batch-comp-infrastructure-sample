@@ -76,6 +76,14 @@ class SqsQueue:
             self.logger.exception(e)
             raise SqsQueueException(f"Failed to put message on SQS queue {self.queue_name}")
 
+    def purge(self): 
+        try:
+            self.logger.info(f"Trying to purge queue {self.queue_name}")
+            self.queue_resource.purge()
+        except ClientError as e:
+            self.logger.error(f"Failed to purge queue {self.queue_name}")
+            self.logger.exception(e)
+            raise SqsQueueException(f"Failed to purge queue {self.queue_name}")
 
     @staticmethod
     def get_sqs_queue(queue_name: str):
