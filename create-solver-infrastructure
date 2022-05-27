@@ -50,36 +50,56 @@ class CloudFormation:
     def __init__(self, stack_name: str) -> None:
         self.stack_name = stack_name
 
-    def creat_cloudformation_stack(self, cloudformation, project_name, instance_type, ami_id) -> None:
+    def create_parameters(self, project_name, instance_type, ami_id, container_memory): 
+        return [
+            {
+                'ParameterKey': "ProjectName",
+                'ParameterValue': project_name
+            },
+            {
+                'ParameterKey': "AvailZoneId",
+                'ParameterValue': "a"
+            },
+            {
+                'ParameterKey': "InstanceType",
+                'ParameterValue': instance_type
+            },
+            {
+                'ParameterKey': "AmiImageId",
+                'ParameterValue': ami_id
+            },
+            {
+                'ParameterKey': "ContainerMemory",
+                'ParameterValue': str(container_memory)
+            },
+        ]
+
+    def create_cloudformation_stack(self, cloudformation, project_name, instance_type, ami_id, container_memory) -> None:
         try:
             cf_template = open('create-solver-infrastructure.yaml').read()
             response = cloudformation.create_stack(
                 StackName=self.stack_name,
                 TemplateBody=cf_template,
                 Capabilities=["CAPABILITY_IAM"],
-                Parameters=[
-                    {
-                        'ParameterKey': "ProjectName",
-                        'ParameterValue': project_name
-                    },
-                    {
-                        'ParameterKey': "AvailZoneId",
-                        'ParameterValue': "a"
-                    },
-                    {
-                        'ParameterKey': "InstanceType",
-                        'ParameterValue': instance_type
-                    },
-                    {
-                        'ParameterKey': "AmiImageId",
-                        'ParameterValue': ami_id
-                    },
-                ]
+                Parameters=self.create_parameters(project_name, instance_type, ami_id, container_memory)
             )
         except Exception as e:
             logger.error(f"Failed to create stack: {e}")
             raise e
 
+    def update_cloudformation_stack(self, cloudformation, project_name, instance_type, ami_id, container_memory) -> None:
+        try:
+            cf_template = open('create-solver-infrastructure.yaml').read()
+            stack = cloudformation.Stack(self.stack_name)
+            response = stack.update(
+                StackName=self.stack_name,
+                TemplateBody=cf_template,
+                Capabilities=["CAPABILITY_IAM"],
+                Parameters=self.create_parameters(project_name, instance_type, ami_id, container_memory)
+            )
+        except Exception as e:
+            logger.error(f"Failed to create stack: {e}")
+            raise e
 
 if __name__ == "__main__":
 
@@ -88,6 +108,8 @@ if __name__ == "__main__":
     parser.add_argument('--project', required = True, help = "Name of the project")
     parser.add_argument('--instance', required = True, help = "Machine instance type")
     parser.add_argument('--ami', required = True, help = "Instance AMI")
+    parser.add_argument('--memory', type=int, required = True, help = "Max memory for container (61000 for cloud, 253000 for parallel)")
+    parser.add_argument('--update', type=bool, required = False, help = "Update existing template")
     
     args = parser.parse_args()
     
@@ -95,6 +117,8 @@ if __name__ == "__main__":
     project_name = args.project
     instance_type = args.instance
     ami_id = args.ami
+    memory = args.memory
+
     stack_name = f"solver-infrastructure-{project_name}"
     
     session = boto3.Session(profile_name=profile)
@@ -103,20 +127,24 @@ if __name__ == "__main__":
 
     cloudformation = session.resource('cloudformation')
     cfn = CloudFormation(stack_name)
-    cfn.creat_cloudformation_stack(cloudformation, project_name, instance_type, ami_id)
+
+    if args.update:
+        cfn.update_cloudformation_stack(cloudformation, project_name, instance_type, ami_id, memory)
+    else:
+        cfn.create_cloudformation_stack(cloudformation, project_name, instance_type, ami_id, memory)
         
-    logger.info("Waiting for cloudformation stack to create....")
+    logger.info("Waiting for cloudformation stack to create/update....")
     stack_created = False
     while not stack_created:
         # Sleep time added to reduce cloudformation api calls to get status
         time.sleep(60)
         stack = cloudformation.Stack(stack_name)
-        if stack.stack_status == "CREATE_COMPLETE":
+        if stack.stack_status == "CREATE_COMPLETE" or stack.stack_status == "UPDATE_COMPLETE":
             stack_created = True
-            logger.info("Finished creating Cloudformation stack.")
+            logger.info("Finished creating or updating Cloudformation stack.")
             logger.info("Uploading test file to S3 bucket..")
             bucket_name = s3_file_system.get_satcomp_bucket()
             s3_file_system.upload_file_to_s3(bucket_name, "test.cnf")
-        elif stack.stack_status == "CREATE_FAILED":
-            logger.info("Stack Creation failed")
+        elif stack.stack_status == "CREATE_FAILED" or stack.stack_status == "UPDATE_FAILED":
+            logger.info("Stack Creation/update failed")
             break
