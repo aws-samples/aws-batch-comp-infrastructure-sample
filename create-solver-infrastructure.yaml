@@ -13,6 +13,7 @@ Parameters:
     Type: String
     Default: "proofs"
     Description: "S3 bucket will be AccountId-Region-ProjectName"
+
   AvailZoneId:
     Type: String
     Default: "a"
@@ -22,6 +23,10 @@ Parameters:
     Type: String
     Default: "m6i.4xlarge"
     Description: "Instance type"
+  
+  ContainerMemory:
+    Type: String
+    Description: "Memory Size for containers (61000 for cloud, 253000 for parallel)"
 
   AmiImageId:
     Type: String
@@ -402,7 +407,8 @@ Resources:
         - Cpu: 16384
           Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ProjectName}-leader"
           Name: !Sub "${ProjectName}-leader"
-          Memory: 61000
+          Memory: 
+            Ref: ContainerMemory
           Environment:
             - Name: SQS_QUEUE_NAME
               Value: !GetAtt SatCompQueue.QueueName

@@ -108,7 +108,7 @@ For each of the services above, click the associated link to learn more about th
 To set up the account resources, run the `create-solver-infrastructure` script:
 
 ```text
-./create-solver-infrastructure --profile PROFILE_NAME --project PROJECT_NAME --instance INSTANCE_TYPE --ami INSTANCE_AMI
+./create-solver-infrastructure --profile PROFILE_NAME --project PROJECT_NAME --instance INSTANCE_TYPE --memory MEMORY --ami INSTANCE_AMI
 ```
 
 where:
@@ -118,6 +118,8 @@ where:
 **PROJECT\_NAME:** is the name of the project.  **N.B.:** `PROJECT_NAME` must start with a letter and can only contain lowercase letters, numbers, hyphens (-), underscores (_), and forward slashes (/).
 
 **INSTANCE\_TYPE:** is the machine instance type you wish to use.  A machine instance type describes the capabilities such as CPU, memory, and networking of a compute node.  EC2 has many [instance types](https://aws.amazon.com/ec2/instance-types/) for a variety of different compute workloads.  For the cloud track, the instance type should be `m6i.4xlarge`, and for parallel track it should be `m6i.16xlarge`.
+
+**MEMORY:** describes the maximum memory for the docker container.  For the cloud track, this parameter should be 61000 and for the parallel track, this parameter should be 253000.  
 
 **INSTANCE\_AMI:** The instance AMI describes the [Amazon Machine Image](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/AMIs.html), the basic software image to be loaded onto each EC2 instance, that describes the operating system and other configuration information.  To get the instance AMI to use for the competition resources, please use the following command:
 
@@ -149,6 +151,17 @@ For example, here is result from this call:
 and the instance AMI from the image_id is: `ami-0bb273345f0961e90`.  **N.B.: do *not* use** `ami-0bb273345f0961e90` as your instance AMI.  Instead, please use the result of the command above when you run it.  Instance AMIs are both region-specific and updated frequently, so we cannot provide a default.
 
 The `create-solver-infrastructure` script takes 5-10 minutes to run.  At this point, all the cloud resources should be created.
+
+### Updating the Infrastructure to Switch Between Cloud and Parallel Tracks
+
+Once the infrastructure has been created, if you want to update it to switch between machine configurations for the cloud and parallel tracks, you can run the `create-solver-infrastructure` command with the `--update` flag: 
+
+```text
+./create-solver-infrastructure --profile PROFILE_NAME --project PROJECT_NAME --instance INSTANCE_TYPE --memory MEMORY --ami INSTANCE_AMI --update True
+```
+
+This allows you to change the instance and memory configurations of the ECS images used.  
+
 
 ### Creating the Base Docker Leader and Worker Images for Solvers
 
