@@ -227,7 +227,7 @@ Resources:
     Type: AWS::AutoScaling::AutoScalingGroup
     UpdatePolicy:
       AutoScalingRollingUpdate:
-        MaxBatchSize: 1
+        MaxBatchSize: 10
         MinSuccessfulInstancesPercent: 95
         PauseTime: PT30M
         SuspendProcesses: [ HealthCheck, ReplaceUnhealthy, AZRebalance, AlarmNotification,

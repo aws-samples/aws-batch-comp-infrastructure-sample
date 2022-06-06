@@ -145,6 +145,9 @@ if __name__ == "__main__":
             logger.info("Uploading test file to S3 bucket..")
             bucket_name = s3_file_system.get_satcomp_bucket()
             s3_file_system.upload_file_to_s3(bucket_name, "test.cnf")
-        elif stack.stack_status == "CREATE_FAILED" or stack.stack_status == "UPDATE_FAILED":
+        elif (stack.stack_status == "CREATE_FAILED" or 
+             stack.stack_status == "UPDATE_FAILED" or 
+             stack.stack_status == "CREATE_ROLLBACK_COMPLETE" or 
+             stack.stack_status == "UPDATE_ROLLBACK_COMPLETE"):
             logger.info("Stack Creation/update failed")
             break
