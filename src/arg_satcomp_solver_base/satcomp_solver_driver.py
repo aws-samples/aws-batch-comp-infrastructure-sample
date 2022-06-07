@@ -90,6 +90,8 @@ class ProblemRunner:
                 done = True
             else:
                 result = (result_json["solver"]["output"]["result"]).lower()
+                retries = retries + 1
+                
                 if result == "unsatisfiable" or result == "satisfiable" or retries >= RETRIES_MAX:
                     done = True
         
