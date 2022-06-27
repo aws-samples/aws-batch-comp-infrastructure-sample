@@ -30,6 +30,7 @@ class LeaderStatusChecker(threading.Thread):
         self.node_manifest = node_manifest
         self.logger = logging.getLogger("LeaderPoller")
         self.logger.setLevel(logging.DEBUG)
+        self.setDaemon(True)
 
     def update_manifest(self, uuid: str, local_ip_address: str, status: str):
         self.logger.info(f"Giving node heartbeat for node {uuid} with ip {local_ip_address}")

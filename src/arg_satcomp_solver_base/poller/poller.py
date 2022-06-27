@@ -93,7 +93,7 @@ class Poller(threading.Thread):
                     download_location = self.s3_file_system.download_file(msg_json.get("s3_uri"), efs_uuid_directory)
                     self.logger.info("Download problem to location: %s", download_location)
                     solver_response = self.solver.solve(download_location, workers, task_uuid)
-
+                    solver_response["driver"]["s3_uri"] = msg_json.get("s3_uri")
                     self.logger.info("Solver response:")
                     self.logger.info(solver_response)
 
