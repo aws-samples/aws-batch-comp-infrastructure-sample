@@ -20,7 +20,7 @@ To install the infrastructure described in this document, you need the following
 - [boto3](https://aws.amazon.com/sdk-for-python/)
 - [docker](https://www.docker.com/)
 
-Some basic knowledge of AWS accounts and services is helpful, though we try to walk you through the necessary pieces. 
+Some basic knowledge of AWS accounts and services is helpful, but we will try to walk you through the necessary pieces. 
 
 
 ## Creating the Test Account
@@ -45,7 +45,7 @@ To use the AWS CLI, please follow the directions for your operating system here:
 
 ### Regions 
 
-AWS has many regions to allow low-latency access for customers all around the world.  Each region is independent from all other regions, and in almost all cases, resources created in one region are not shared with other regions to provide better resiliance.  In this document, we will install resources into the `us-east-1` region, which is the largest AWS region.  This is a good default choice, but you are welcome to use an alternate region; in this case, you should substitute the region that you have chosen whenever we use `us-east-1` as a parameter to a command in this document.
+AWS has many regions to allow low-latency access for customers all around the world.  Each region is independent from all other regions, and in almost all cases, resources created in one region are not shared with other regions to provide better resiliance.  In this document, we will install resources into the `us-east-1` region, which is the largest AWS region.  This is a good default choice, but you are welcome to use an alternate region; in this case, you should substitute the region that you have chosen whenever we use `us-east-1` as a parameter to commands in this document.
 
 ### Creating Credentials ###
 
@@ -54,23 +54,25 @@ access key_. This is NOT the best practice (which would be to create a user) but
 using the account beyond the competition, we recommend that you follow AWS best practices as described here:
     [https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html#create-iam-users](https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html#create-iam-users)
 
-To create a root level access key go to the [IAM Console](https://console.aws.amazon.com/iamv2/) (you can get there either by clicking the link or by searching for "IAM" in the search field on the top of the [AWS Console](https://console.aws.amazon.com) and then clicking the resulting link).
-On the Identity and Access Management page, click on "Delete your root access keys" and then choose "My Security Credentials" from the account drop down menu on the top right of the screen.
+To create a root level access key go to the [IAM Console](https://console.aws.amazon.com/iamv2/) (you can get there either by clicking the link or by searching for "IAM" in the search field on the top of the [AWS Console](https://console.aws.amazon.com) as shown [here](readme-images/iam-search.png) and then clicking the resulting link).
 
-Then click on "Access keys (access key ID and secret access key)" and then "Create New Access Key", and then "Show Access Key"
-This gives you an Access Key ID and a Secret Access Key.
+On the Identity and Access Management page, click on the "My Security Credentials" quick link on the right side of the IAM console page as shown [here](readme-images/iam-quicklinks.png).
 
-Create a `~/.aws/credentials` file with the following:
+Click on "Access keys (access key ID and secret access key)" and then "Create New Access Key", and then "Show Access Key"
+This gives you an Access Key ID and a Secret Access Key.  Copy these down to use in the next step.
 
-    [PROFILE-NAME]
+On your workstation, create a `~/.aws/credentials` file with the following information:
+
+    [sc-2023]
     aws_access_key_id=ACCESS_KEY_ID
-    aws_secret_access_key=ACCESS_KEY
+    aws_secret_access_key=SECRET_ACCESS_KEY
     region=us-east-1
 
+where ACCESS_KEY_ID and SECRET_ACCESS_KEY are the keys that you received from IAM, and sc-2023 is called a profile name that we can use to access the account. 
 
 After installing the AWS CLI and gaining credentials, make sure that the CLI is installed properly by attempting to run an AWS command.  An example command that should work is:
 ```text
-aws --profile [PROFILE_NAME] sts get-caller-identity
+aws --profile sc-2023 sts get-caller-identity
 ```
 
 In case you get an error message, see the [Troubleshooting](#troubleshooting) section at the bottom of this document.
@@ -587,7 +589,7 @@ After running the aws cloudformation command, you can monitor the installation p
 Make sure you are in the region you chose in your profile (Region is selected in the top right corner).
 You should see a stack named `setup-account-stack`.
 
- ![](images/cloudformation.png)
+ ![](readme-images/cloudformation.png)
 _Figure 1: Cloudformation result_
 
 By clicking on this stack, and choosing &quot;events&quot;, you can see the resources associated with the stack.  After a short time, you should see the &quot;CREATE\_SUCCEEDED&quot; event.   If not (e.g., the email address was not valid email address syntax), you will see a &quot;CREATE\_FAILED&quot; event.  In this case, delete the stack and try again.  If you have trouble, please email us at: [sat-comp-2022@amazon.com](mailto:sat-comp-2022@amazon.com) and we will walk you through the process.
@@ -605,7 +607,7 @@ No.  If you are submitting to the parallel track only, you do not need a worker 
 
 The most common mistake people make when starting with AWS is not choosing the correct *region* for executing their jobs.  In the console on the top right there is a selectable region:
 
-<img src="images/regions.png" alt="image of region selector" width="200"/>
+<img src="readme-images/regions.png" alt="image of region selector" width="200"/>
 
 The reason that you view has to be the same as the one referenced in your profile created at the beginning of this document (by default, it is us-east-1).  Make sure that the region selected in the top-right of the console page matches the region in your profile. 
 
