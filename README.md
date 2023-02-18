@@ -15,5 +15,3 @@ For step #3, we provide some guidance on running solvers locally within Docker. 
 The AWS-infrastructure steps are described in the [Infrastructure README](infrastructure/README.md), and the docker-related steps and debugging are covered in [SAT-Comp Docker Images](docker/README.md).
 
 
-This tutorial walks through setting up AWS infrastructure, installing the solver containers, and submitting queries.
-
