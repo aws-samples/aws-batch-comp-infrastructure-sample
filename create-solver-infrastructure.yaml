@@ -404,7 +404,7 @@ Resources:
               AccessPointId: !Ref AccessPoint
 
       ContainerDefinitions:
-        - Cpu: 16384
+        - Cpu: 4096
           Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ProjectName}-leader"
           Name: !Sub "${ProjectName}-leader"
           Memory: 
@@ -453,7 +453,7 @@ Resources:
               AccessPointId: !Ref AccessPoint
 
       ContainerDefinitions:
-        - Cpu: 16384
+        - Cpu: 4096
           Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ProjectName}-worker"
           Name: !Sub "${ProjectName}-worker"
           Memory: 61000

@@ -18,7 +18,7 @@ class TaskEndNotificationPoller(threading.Thread):
     def run(self):
         while True:
             self.wait_for_notification()
-            self.command_runner.run(cmd=["/competition/cleanup"], output_directory="/tmp")
+            self.command_runner.run(cmd=["/competition/cleanup"], output_directory="/tmp", time_out = 10)
 
     @polling2.poll_decorator(check_success=lambda has_notification: has_notification, step=0.5, poll_forever=True)
     def wait_for_notification(self):
