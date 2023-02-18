@@ -9,11 +9,10 @@ fi
 # user config
 DOCKER_NETWORK="mallob-test"
 HOST_RUNDIR="/home/rbtjones/dev/mallob/satcomp-infrastructure/docker/runner/experiment"
-DOCKER_RUNDIR="/rundir"
 
-# script config
+# config to match other scripts
 NODE_TYPE="worker"
-SSHD_CMD="/usr/sbin/sshd -D -f /home/ecs-user/.ssh/sshd_config"
+DOCKER_RUNDIR="/rundir"
 
 # summary
 echo "run_dist_worker.sh, running with"
@@ -29,12 +28,6 @@ if [[ ! -d "$HOST_RUNDIR" ]]; then
     exit 1
 fi
 
-# user instructions
-echo ""
-echo "After Docker launch, run: "
-echo "  /usr/sbin/sshd -D -f /home/ecs-user/.ssh/sshd_config &"
-echo ""
-
 # Run docker image. See comments in run_parallel.sh
 #
-docker run -i --shm-size=32g --name $NODE_TYPE --network $DOCKER_NETWORK --entrypoint bash --rm -v $HOST_RUNDIR:/$DOCKER_RUNDIR -t $1:$NODE_TYPE
+docker run -i --shm-size=32g --name $NODE_TYPE --network $DOCKER_NETWORK --entrypoint bash --rm -v $HOST_RUNDIR:/$DOCKER_RUNDIR -t $1:$NODE_TYPE -c "/competition/init_mallob.sh; exec bash"

@@ -14,11 +14,11 @@ fi
 # user config
 DOCKER_NETWORK="mallob-test"
 HOST_RUNDIR="/home/rbtjones/dev/mallob/satcomp-infrastructure/docker/runner/experiment"
-DOCKER_RUNDIR="/rundir"
 
-# script config
+# config to match other scripts
 NODE_TYPE="leader"
-SSHD_CMD="/usr/sbin/sshd -D -f /home/ecs-user/.ssh/sshd_config"
+#SSHD_CMD="/usr/sbin/sshd -D -f /home/ecs-user/.ssh/sshd_config"
+DOCKER_RUNDIR="/rundir"
 
 # summary
 echo "run_parallel.sh, running with"
@@ -46,25 +46,16 @@ fi
 #
 echo -e "{\n\"formula_file\": \"$DOCKER_RUNDIR/$2\",\n\"worker_node_ips\": [\"leader\"]\n}" > "$HOST_RUNDIR/input.json"
 
-# user instructions
-echo ""
-echo "After Docker launch, run: "
-echo "  /usr/sbin/sshd -D -f /home/ecs-user/.ssh/sshd_config &"
-echo "  /competition/solver $DOCKER_RUNDIR"
-echo ""
-
 #
 # Run docker image as container. Arguments:
 #   -i                    // keep STDIN open even if not attached
 #   --shm-size=XXg        // setting up shared memory (for clause DB) 
 #                         // default (1G?) is too small
 #   --network mallob-test // use the Docker bridge network called 'mallob-test'
-#   --entrypoint bash     // when the container starts, it runs bash; nothing
-#                         // happens until we call a solver script from inside the container
+#   --entrypoint bash     // when the container starts, it runs bash
 #   --rm                  // remove the docker container when exiting
 #   -v                    // mount $HOST_RUNDIR in the host filesystem at '/$DOCKER_RUNDIR' in docker image
 #   -t                    // Docker image name for leader (script hard-codes 'leader' tag)
-#
+#   -c <bash_command>     // gets passed to bash shell
 
-# echo docker run -i --shm-size=32g --name $NODE_TYPE --network mallob-test --entrypoint "bash --init-file <(echo $SSHD_CMD)" --rm -v $HOST_RUNDIR:/rundir  -t $1:$NODE_TYPE
-docker run -i --shm-size=32g --name $NODE_TYPE --network $DOCKER_NETWORK --entrypoint bash --rm -v $HOST_RUNDIR:/$DOCKER_RUNDIR -t $1:$NODE_TYPE
+docker run -i --shm-size=32g --name $NODE_TYPE --network $DOCKER_NETWORK --entrypoint bash --rm -v $HOST_RUNDIR:/$DOCKER_RUNDIR -t $1:$NODE_TYPE -c "/competition/init_mallob.sh; exec bash"
