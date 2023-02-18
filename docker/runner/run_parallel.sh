@@ -1,7 +1,7 @@
 # /bin/bash
 
 # run_parallel.sh: Use this script to launch Docker container 
-#                     for parallel Mallob. Arguments:
+#                  for parallel Mallob. Arguments:
 #   $1: docker image name (assumes a "leader" tag)
 #   $2: formula file (relative to HOST_RUNDIR)
 
@@ -17,7 +17,6 @@ HOST_RUNDIR="/home/rbtjones/dev/mallob/satcomp-infrastructure/docker/runner/expe
 
 # config to match other scripts
 NODE_TYPE="leader"
-#SSHD_CMD="/usr/sbin/sshd -D -f /home/ecs-user/.ssh/sshd_config"
 DOCKER_RUNDIR="/rundir"
 
 # summary

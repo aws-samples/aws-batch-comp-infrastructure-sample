@@ -125,30 +125,43 @@ Before running mallob we need to create a docker bridge network that our contain
 To run parallel Mallob, cd into the `runner` directory. We have created a simple shell script called `run_parallel.sh` to show you how to run the mallob_parallel docker image to create a running container. The script has several variables that you can configure:
 
 - `DOCKER_NETWORK`. Name of the docker bridge network, `mallob-test` for this example.
-- `HOST_RUNDIR`. Name of the host directory that will be mounted in the docker run directory. This should be an absolute pathname. Note that this enables you to persist the run directory over multiple docker container sessions. It is also the location where the docker solver will write results. If you use the example from the repo, this should be the absolute pathname to the `experiement` directory.
-- `DOCKER_RUNDIR`. Absolute pathname of the docker run directory, we suggest `rundir`. 
+- `HOST_RUNDIR`. Name of the host directory that will be mounted in the docker run directory. This should be an absolute pathname. Note that this enables you to persist the run directory over multiple docker container sessions. It is also the location where the docker solver will write results. If you use the example from the repo, this should be the absolute pathname to the `experiment` directory.
 
-The script takes two arguments.
+The script requires two command-line arguments.
 - <docker_image_name>, which is `satcomp-mallob` for this example. 
 - <query_file>, which is the name of the test file for the solver, `test.cnf` in the repository. Note that this file must appear in the host run directory `HOST_RUNDIR`.
 
-The script will create an `input.json` file in the host run directory. This file is consumed by the solver script.
+The script will create an `input.json` file in the host run directory. This file will be copied to the docker run directory `/rundir`, where it will be read by the solver script.
 
-The script comments explain the various arguments to the `docker run` command. The `docker run` invocation will initialize `sshd` in the docker container and then drops you, the user, into a bash shell. At that point, you can explore the docker container. You will see the `/competition` directory with the solver scripts. You will also see the `/rundir` (as specified by script variable `DOCKER_RUNDIR`) directory that includes your test file and the solver input file `input.json`. Again, note that this directory is mounted of the host run directory as specified by the script variable `HOST_RUNDIR`.
+The script comments explain the various arguments to the `docker run` command. The `docker run` invocation uses bash as the docker entrypoint and passes `init_mallob.sh` as a command to bash. The initialization script starts sshd and then runs `/competition/solver /rundir`, which will execute the solver on the query in `<query_file>`. At this point, you should see mallob STDOUT and STDERR on the terminal as mallob runs the solver query. 
 
-To run parallel mallob on the test file, simply run the competition solver script with an argument that specifies the docker run directory:
+### Running Distributed Mallob
 
-    % /competition/solver /rundir
+Running distributed mallob requires two docker invocations: one to start a leader container and one to start a worker container. 
 
-At this point, you should see mallob STDOUT and STDERR on the terminal as mallob runs the solver query. After mallob runs successfully, you will find three new files in `/rundir`:
+To run distributed Mallob, again cd into the `runner` directory. You will use two shell scripts, `run_dist_leader` and `run_dist_worker.sh`. 
+
+- Step 1. Invoke `run_dist_worker.sh`, which requires a single command-line argument <docker_image_name>, which is `satcomp-mallob` for this example. Notice that the script will launch a `satcomp-mallob:worker` container. You will be dropped into a bash shell for the worker container. No further commands are needed.
+- Step 2. From a different shell prompt on the host machine in the same `runner` directory, invoke `run_dist_leader.sh` This script requires the same two command-line arguments as `run_parallel.sh` in the previous section.
+
+The `run_dist_leader` script will again create an `input.json` file, with more fields than used for parallel mallob. Again, you should see mallob output on the terminal.
+
+### Debugging
+
+After the solver query runs, you will be left in a bash shell that is executing in the docker container. At that point, you can explore. You will see the `/competition` directory with the solver scripts. You will also see the `/rundir` directory that includes your test file, the solver input file `input.json`, and three output files:
+
+If mallob ran successfully, you will find three new files in `/rundir`:
 
 - `solver_out.json`
 - `stdout.log`
 - `stderr.log`
 
-You can perform additional experiments or exit the docker shell. The solver output files will persist in your `HOST_RUNDIR` directory.
+Again, note that this directory is mounted of the host run directory as specified by the script variable `HOST_RUNDIR`. These files will persist on the host.
 
-### Running Distributed Mallob
+At this point, you can perform additional experiments or exit the docker shell.
 
-TBD
+The competition infrastructure starts solver containers and keeps them running for multiple queries. Each query will have a new `input.json` file, and `/container/solver` will be run again.
 
+Your debugging should ensure that you don't leave extra processes running. Check for orphaned jobs with `ps -ax`. In addition, if you create temporary in the container, ensure they are cleaned up.
+
+If your solver doesn't run correctly in the docker container, you can remove the `/container/solver` commands from the `init_mallob.sh` files. Once you are dropped into the docker container's bash shell, you can explore and debug directly, including running `/container/solver /rundir` from the container shell command line.
