@@ -1,15 +1,4 @@
-1 Build Docker
-2 Get it running locally
-
-# (For other README)
-
-The competition runs on AWS. Getting your solver ready requires two stages: preparing docker containers and connecting to AWS infrastructure.
-
-To build up and run docker containers for parallel and distributed solvers, follow the README instructions in [SAT-Comp Docker Images](http:/foo). When completed, you are will be ready to connect your solver containers to AWS.
-
-This tutorial walks through setting up AWS infrastructure, installing the solver containers, and submitting queries.
-
-# SATComp Example: Mallob
+# Docker-Based SATComp Example: Mallob
 
 This tutorial covers the process of building your solver and embedding it in docker images. We cover two configurations: parallel (single node, multiple cores) and distributed (multiple nodes, multiple cores per node). Building a distributed solver is a superset of of building a parallel solver; we will note steps that are only required for a distributed solver. 
 

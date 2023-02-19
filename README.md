@@ -1,7 +1,14 @@
 # SAT-Comp and SMT-Comp Cloud Track Instructions
 
+The competition runs on Amazon Web Services (AWS). The goal of the SAT-Comp / SMT-Comp Cloud Track infrastructure is to make it straightforward to build distributed solvers that will run on the competition infrastructure.
 
-The goal of the SAT-Comp / SMT-Comp Cloud Track infrastructure is to make it straightforward to build distributed solvers that will be used in the competitions, and to run them at scale on Amazon Web Services (AWS) resources.
+Preparing for submission takes place in two stages: building docker containers and connecting to AWS infrastructure.
+
+To build up and run docker containers for parallel and distributed solvers, follow the README instructions in the [`docker`](/docker) folder. When completed, you are will be ready to connect your solver containers to AWS.
+
+This tutorial walks through setting up AWS infrastructure, installing the solver containers, and submitting queries.
+
+# (Move to new `infrastructure` directory)
 
 Preparing tools for the competition involves four phases, described in this document: 
 
@@ -36,8 +43,6 @@ To find your account ID, click on your account name in the top right corner, and
 **N.B.:** It is very important that you tell us your account number immediately after creating the account, so that we
 can assign you a resource budget for your experiments. We also need to grant you access to the shared problem set which is in a separate S3 bucket.
 Once we hear from you, we will email you an acknowledgment that the accounts have been set up with resources.
-
-
 
 ### Installing the AWS CLI
 
