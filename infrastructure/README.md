@@ -1,101 +1,94 @@
-# Building the SAT-Comp and SMT-Comp Parallel and Cloud Track Infrastructure
+# Configuring AWS Infrastructure for SAT-Comp and SMT-Comp
 
-This file describes how to build the infrastructure for the SAT and SMT parallel and cloud tracks so that it can run on AWS.  Preparing tools for the competition involves four phases, described in this document: 
+This README describes how to build and configure AWS infrastructure for the SAT and SMT parallel and cloud tracks. Preparing for the competition involves four phases: 
 
-1. Creating and configuring a test AWS Account 
-2. Setting up infrastructure to run an example distributed solver.
-3. Creating your own solver and running experiments.
-4. Once ready, sharing the solver repository and Docker image with us for the competition.
+1. Create and configure a dedicated AWS Account for the competition
+2. Set up AWS infrastructure to run an example distributed solver
+3. Create your own solver and run experiments
+4. When ready, share the solver repository and Docker image with us
 
-This project provides the infrastructure necessary to build and test solvers, including an example solver that will work with the infrastructure.  To create the resources within an account necessary to run distributed solvers, we provide CloudFormation templates [https://aws.amazon.com/cloudformation/](https://aws.amazon.com/cloudformation/), and Docker base images.  The CloudFormation templates create the account infrastructure necessary to run solvers, and the Docker base images simplify the construction of the solvers themselves.
+This directory provides the infrastructure necessary to build and test solvers. To configure an AWS account for run distributed solvers, we provide _CloudFormation_ templates [https://aws.amazon.com/cloudformation/](https://aws.amazon.com/cloudformation/), 
 
-**NB: This provides instructions for both the cloud and parallel track.  If you are only competing in the parallel track, a handful of the steps are unnecessary.  We will try to point these out as we go.**
+We also provide Docker images that will simplify your solver's connection to the AWS infrastructure. The [`docker`](../docker/README.md) directory contains Docker base images and an example solver that will work with the infrastructure. 
+
+Note: This provides instructions for both the cloud and parallel track. If you are only competing in the parallel track, a handful of the steps are unnecessary.  We will try to point these out as we go.
 
 ## Prerequisites
 
-To install the infrastructure described in this document, you need the following tools installed:
+To install the infrastructure described in this document, you will need the following tools installed:
 
 - [python3](https://www.python.org/)
+- [docker](https://www.docker.com/)
 - [awscli](https://aws.amazon.com/cli/)
 - [boto3](https://aws.amazon.com/sdk-for-python/)
-- [docker](https://www.docker.com/)
 
-Some basic knowledge of AWS accounts and services is helpful, but we will try to walk you through the necessary pieces. 
+Some basic knowledge of AWS accounts and services is helpful, but we will walk you through all of the necessary steps pieces. 
 
+We recommend that you run on Amazon Linux 2 (AL2) or Ubuntu 20. Other platforms may work, but have not been tested.
 
-## Creating the Test Account
+## Creating an AWS Account
 
-Please create a &quot;fresh&quot; account in order to simplify billing for the account.  If you have not created an AWS account previously, it is straightforward to do, requiring a cell phone #, credit card, and address.  Please navigate to [aws.amazon.com](https://aws.amazon.com) and follow the instructions on the web site to create an account.
+First, create a specific AWS account for the competition. If you have not created an AWS account previously, it is straightforward to do, requiring a cell phone number, credit card, and address.  Navigate to [aws.amazon.com](https://aws.amazon.com) and follow the instructions to create an account.
 
-If you have already created an account based on your email address, please create a separate AWS account for managing the SAT/SMT-Comp tool construction and testing.  This makes it straightforward for us to manage account credits and billing.   Once the account is created please email us the account number at: sat-comp-2023@amazon.com (for SAT-Comp) or aws-smtcomp-2023@googlegroups.com (for SMT-Comp) so that we can apply credits to your account.
+If you have already created an account based on your email address, we strongly advise that you create a separate AWS account for managing the SAT/SMT-Comp tool construction and testing. This makes it much easier for us to manage account credits and billing. Once the new account is created, email us the account number at: sat-comp-2023@amazon.com (for SAT-Comp) or aws-smtcomp-2023@googlegroups.com (for SMT-Comp) and we will apply the appropriate credits to your account.
 
 To find your account ID, click on your account name in the top right corner, and then click "My Account". You should see Account ID in the Account Settings
 
-**N.B.:** It is very important that you tell us your account number immediately after creating the account, so that we can assign you a resource budget for your experiments. We also need to grant you access to the shared problem set which is in a separate S3 bucket.
-Once we hear from you, we will email you an acknowledgment that the accounts have been set up with resources.
-
-
+Note: It is very important that you tell us your account number immediately after creating the account, so that we can assign you a resource budget for your experiments. We also need to grant you access to the shared problem set which is in a separate S3 bucket.
+Once we hear from you, we will email you an acknowledgment when resources have been added to your account.
 
 ### Installing the AWS CLI
 
-In order to work with AWS, you must install the [AWS CLI](https://aws.amazon.com/cli/) for your platform.
-
-To use the AWS CLI, please follow the directions for your operating system here:
+In order to work with AWS, you must install the [AWS CLI](https://aws.amazon.com/cli/) for your platform. To get started, follow the directions for your operating system here:
   [https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
+If you have previously installed the AWS CLI, you should ensure it is up-to-date.
 
-### Regions 
+### Choose a Region 
 
-AWS has many regions to allow low-latency access for customers all around the world.  Each region is independent from all other regions, and in almost all cases, resources created in one region are not shared with other regions to provide better resiliance.  In this document, we will install resources into the `us-east-1` region, which is the largest AWS region.  This is a good default choice, but you are welcome to use an alternate region; in this case, you should substitute the region that you have chosen whenever we use `us-east-1` as a parameter to commands in this document.
+AWS has many regions, which enables low-latency access for customers around the world. Each region is independent from all other regions, and in almost all cases, resources created in one region are not shared with other regions. In this document, we will work wtih `us-east-1`, which is the largest AWS region.  This is a good default choice, but you are welcome to use an alternate region. If you do, you will substitute the region that you have chosen whenever we use `us-east-1` as a parameter to commands in this document. If you are on the US West Coast, `us-west-2` is an ideal choice.
 
-### Creating Credentials ###
+### Creating AWS Credentials
 
-You also need to set up credentials to access the account. For the purposes of making the competition simple, you will use a so-called _root level
-access key_. This is NOT the best practice (which would be to create a user) but it suffices for the competition. If you continue
-using the account beyond the competition, we recommend that you follow AWS best practices as described here:
+You must configured AWS credentials to access the resources in your account. For the purposes of simplifying the competition configurations, you will use a so-called _root level access key_. This is NOT the best practice for security (which would be to create a separate user in your account) but it will sufficew for the competition. If you continue using your AWS account after the competition, we recommend that you follow AWS best practices as described here:
     [https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html#create-iam-users](https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html#create-iam-users)
 
-To create a root level access key go to the [IAM Console](https://console.aws.amazon.com/iamv2/) (you can get there either by clicking the link or by searching for "IAM" in the search field on the top of the [AWS Console](https://console.aws.amazon.com) as shown [here](readme-images/iam-search.png) and then clicking the resulting link).
+In this section, you will be working with the Identity and Access Management (IAM) console. To create a root level access key go to the [IAM Console](https://console.aws.amazon.com/iamv2/). You can get to the console by clicking previous link or by searching for "IAM" in the search field at the top of the [AWS Console](https://console.aws.amazon.com) as shown [here](readme-images/iam-search.png) and then clicking the resulting link).
 
-On the Identity and Access Management page, click on the "My Security Credentials" quick link on the right side of the IAM console page as shown [here](readme-images/iam-quicklinks.png).
+On IAM page, click "My Security Credentials" on the right side of the IAM console page as shown [here](readme-images/iam-quicklinks.png). Next, click on "Access keys (access key ID and secret access key)," then "Create New Access Key," and then "Show Access Key."
+This will create an Access Key ID and a Secret Access Key. Copy these for use in the next step.
 
-Click on "Access keys (access key ID and secret access key)" and then "Create New Access Key", and then "Show Access Key"
-This gives you an Access Key ID and a Secret Access Key.  Copy these down to use in the next step.
-
-On your workstation, create a `~/.aws/credentials` file with the following information:
+Next, on your workstation, create a `~/.aws/credentials` file with the following information:
 
     [sc-2023]
     aws_access_key_id=ACCESS_KEY_ID
     aws_secret_access_key=SECRET_ACCESS_KEY
     region=us-east-1
 
-where ACCESS_KEY_ID and SECRET_ACCESS_KEY are the keys that you received from IAM, and sc-2023 is what is called a 'profile name' that we can use to access the account.  We will refer to this as the PROFILE_NAME elsewhere in the document.
+ACCESS_KEY_ID and SECRET_ACCESS_KEY are the keys that you created in the previous step. `sc-2023` is a 'profile name' that you will use  to access the account.  We will refer to this as the PROFILE_NAME elsewhere.
 
-After installing the AWS CLI and gaining credentials, make sure that the CLI is installed properly by attempting to run an AWS command.  An example command that should work is:
+After installing the AWS CLI and creating credentials, check your configuration by attempting to run an AWS command.  An example command that should work is:
 ```text
 aws --profile sc-2023 sts get-caller-identity
 ```
 
-In case you get an error message, see the [Troubleshooting](#troubleshooting) section at the bottom of this document.
+If you receive an error message, see the [Troubleshooting](#troubleshooting) section at the bottom of this document.
 
-We recommend that once you've gone through the steps for setting up the AWS Solver Infrastructure, you follow the steps in the section [Basic Account Configuration](#basic-account-configuration) to track your spending. For now, we'll continue with the setup.
+We recommend that when you've completed account set-up, you follow the steps in the section [Basic Account Configuration](#basic-account-configuration) to track your spending. For now, we'll continue with the setup.
 
-### Creating the AWS Solver Infrastructure within the Account
+### Creating Solver Infrastructure
 
-The next step is to create the AWS infrastructure necessary to build and test solvers.  The SAT and SMT competitions use the following AWS capabilities to host distributed solvers: 
+Next, you will create the AWS infrastructure necessary to build and test solvers. The SAT and SMT competitions both use the following infrastructure elements: 
 
-* The compute resources necessary to host the solver, provided by the [Elastic Compute Cloud](https://aws.amazon.com/ec2/) (EC2) service,
-* A registry for the Docker image files containing the solver workers and leader, provided by the [Elastic Container Registry](https://aws.amazon.com/ecr/) (ECR) service,
-* A compute environment to support automating launching of containers on compute resources, provided by the [Elastic Container Service](https://aws.amazon.com/ecs/) (ECS) service,  
-* An archival storage location where CNF problems are stored, using the [Simple Storage Service](https://aws.amazon.com/s3/) (S3) service,
-* A distributed file system that can be used for communicating between the leader and worker solvers, using the [Elastic File System](https://aws.amazon.com/efs/) (EFS) service, and
-* A problem queue that the solver uses to extract the next problem to solve, provided by the [Simple Queue Service](https://aws.amazon.com/sqs/) (SQS).
+* Compute resources necessary to host solvers, provided by the [Elastic Compute Cloud](https://aws.amazon.com/ec2/) (EC2) service.
+* A registry for solver Docker image files, provided by the [Elastic Container Registry](https://aws.amazon.com/ecr/) (ECR) service.
+* A compute environment to support automated launching of containers on compute resources, provided by the [Elastic Container Service](https://aws.amazon.com/ecs/) (ECS) service.  
+* A storage location for solver queries that uses the [Simple Storage Service](https://aws.amazon.com/s3/) (S3) service.
+* A distributed file system that can be used for communication between leader and worker solvers, using the [Elastic File System](https://aws.amazon.com/efs/) (EFS) service.
+* A problem queue that the solver leader uses to extract the next problem to solve, provided by the [Simple Queue Service](https://aws.amazon.com/sqs/) (SQS).
 
+We provide a script to set up all of these resources. You can click the links about for more specifics on each each of the services.  [RBJ: fix next sentence] We also explain how these services interact in more detail in the &quot;Extending the Competition Base Container&quot; section of this document. 
 
-For each of the services above, click the associated link to learn more about the service.  We will also explain how these services interact in more detail in the &quot;Extending the Competition Base Container&quot; section of this document.
-
-
-To set up the account resources, run the `create-solver-infrastructure` script:
-
+To set up your resouces, simply need to run the  `create-solver-infrastructure` script that we have provided:
 ```text
 ./create-solver-infrastructure --profile PROFILE_NAME --project PROJECT_NAME --solver-type SOLVER_TYPE
 ```
@@ -104,31 +97,32 @@ where:
 
 **PROFILE\_NAME** is the name of the aws profile that you set up at the beginning of this document.  It is very likely 'sc-2023'
 
-**PROJECT\_NAME:** is the name of the project.  **N.B.:** `PROJECT_NAME` must start with a letter and can only contain lowercase letters, numbers, hyphens (-), underscores (_), and forward slashes (/).
+`PROJECT_NAME`: is the name of the project [RBJ: as chosen by the user for the life of the competition]. Note that `PROJECT_NAME` must start with a letter and can only contain lowercase letters, numbers, hyphens (-), underscores (_), and forward slashes (/).
 
-**SOLVER\_TYPE:** is either 'cloud' or 'parallel' depending on which kind of solver you want to run.  Cloud solvers run on multiple 16-core machines (m6i.4xlarge) with 64GB memory and parallel solvers run on a single 64-core machine (m6i.16xlarge) with 256GB memory.
+`SOLVER_TYPE`: is either `cloud` or `parallel` depending on which kind of solver you are running. Note that we will run cloud solvers run on multiple 16-core machines (m6i.4xlarge [RBJ: include links?]) with 64GB memory, while parallel solvers run on a single 64-core machine (m6i.16xlarge) with 256GB memory.
 
-The `create-solver-infrastructure` script takes 5-10 minutes to run.  At this point, all the cloud resources should be created.
+The script will take 5-10 minutes. When complete, all of the needed cloud resources should be created. [RBJ: provide instructions for checking/testing?]
 
-### Updating the infrastructure to Switch Between Cloud and Parallel Tracks
+### Switching Between Cloud and Parallel Tracks
 
-Once the infrastructure has been created, if you want to update it to switch between machine configurations for the cloud and parallel tracks, you can run the `update-solver-infrastructure` command: 
+Once the infrastructure has been created, if you want to update it to switch between machine configurations for the cloud and parallel tracks, you can run the `update-solver-infrastructure` script: 
 
 ```text
 ./update-solver-infrastructure --profile PROFILE_NAME --project PROJECT_NAME --solver-type SOLVER_TYPE
 ```
 
-This allows you to change the instance and memory configurations of the ECS images used.  
+This will change the instance type and memory configurations for the ECS images used. You can switch back and forth as needed.
 
 ### Deleting the infrastructure
 
-If something goes wrong and you want to start over, run the `delete-solver-infrastructure` command:
+If something goes wrong and you want to start over, simply run the `delete-solver-infrastructure` script:
 ```text
 ./delete-solver-infrastructure --profile PROFILE_NAME --project PROJECT_NAME 
 ```
 
-This will delete the infrastructure and associated resources.  
+This will delete the infrastructure and associated resources. It will not delete your AWS account or security credentials.
 
+[RBJ: stopped here]
 
 ### Creating the Base Docker Leader and Worker Images for Solvers
 
