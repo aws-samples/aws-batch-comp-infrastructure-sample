@@ -2,7 +2,7 @@
 import argparse
 import logging
 import boto3
-from botocore.exceptions import ClientError
+from botocore.exceptions import ClientError, ProfileNotFound
 import time
 import re
 import json
@@ -145,7 +145,7 @@ class CloudFormation:
 
     def create_cloudformation_stack(self, project_name, instance_type, ami_id, container_memory) -> None:
         try:
-            cf_template = open('create-solver-infrastructure.yaml').read()
+            cf_template = open('solver-infrastructure.yaml').read()
             response = self.cfn.create_stack(
                 StackName=self.stack_name,
                 TemplateBody=cf_template,
@@ -215,7 +215,12 @@ def delete_resources(session, s3, project_name, bucket) -> None:
     # delete s3 bucket
 
     logger.info(f"Deleting S3 bucket {bucket}")
-    s3.delete_bucket(bucket)
+    s3_client = session.client('s3')
+
+    try: 
+        s3.delete_bucket(bucket)
+    except s3_client.exceptions.NoSuchBucket as e:
+        logger.info(f"No bucket {bucket} exists; perhaps it was already deleted.")
 
     # delete ecr instances
     ecr_client = session.client('ecr')
@@ -264,7 +269,15 @@ def main() -> None:
 
     stack_name = f"solver-infrastructure-{project_name}"
     
-    session = boto3.Session(profile_name=profile)
+    try:
+        session = boto3.Session(profile_name=profile)
+    except ProfileNotFound as e:
+        logger.error(f"Unable to create AWS session.  Profile '{profile}' not found.  Please double check that this profile is set up in the ~/.aws/config file")
+        sys.exit(1)
+    
+    if not session.region_name:
+        logger.error(f"Profile does not have a region defined.  Please add a region (recommend: us-east-1) to profile '{profile}' in the ~/.aws/config file")
+        sys.exit(1)
 
     # link to AWS services
     ssm_client = session.client('ssm')

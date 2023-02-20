@@ -405,7 +405,7 @@ Resources:
 
       ContainerDefinitions:
         - Cpu: 4096
-          Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ProjectName}-leader"
+          Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ProjectName}:leader"
           Name: !Sub "${ProjectName}-leader"
           Memory: 
             Ref: ContainerMemory
@@ -454,7 +454,7 @@ Resources:
 
       ContainerDefinitions:
         - Cpu: 4096
-          Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ProjectName}-worker"
+          Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ProjectName}:worker"
           Name: !Sub "${ProjectName}-worker"
           Memory: 61000
           Environment:
@@ -617,7 +617,7 @@ Resources:
   SolverLeaderEcr:
     Type: AWS::ECR::Repository
     Properties:
-      RepositoryName: !Sub "${ProjectName}-leader"
+      RepositoryName: !Sub "${ProjectName}"
       LifecyclePolicy:
         LifecyclePolicyText: '
           {
@@ -635,26 +635,27 @@ Resources:
             } ]
           }'
 
-  SolverWorkerEcr:
-    Type: AWS::ECR::Repository
-    Properties:
-      RepositoryName: !Sub "${ProjectName}-worker"
-      LifecyclePolicy:
-        LifecyclePolicyText: '
-          {
-            "rules": [ {
-              "rulePriority": 10,
-              "description": "remove untagged images except the latest one",
-              "selection": {
-                "tagStatus": "untagged",
-                "countType": "imageCountMoreThan",
-                "countNumber": 1
-              },
-              "action": {
-                "type": "expire"
-              }
-            } ]
-          }'
+#  SolverWorkerEcr:
+#    Type: AWS::ECR::Repository
+#    Properties:
+#      RepositoryName: !Sub "${ProjectName}-worker"
+#      LifecyclePolicy:
+#        LifecyclePolicyText: '
+#          {
+#            "rules": [ {
+#              "rulePriority": 10,
+#              "description": "remove untagged images except the latest one",
+#              "selection": {
+#                "tagStatus": "untagged",
+#                "countType": "imageCountMoreThan",
+#                "countNumber": 1
+#              },
+#              "action": {
+#                "type": "expire"
+#              }
+#            } ]
+#          }'
+
   SatCompBucket:
     Type: AWS::S3::Bucket
     Properties:

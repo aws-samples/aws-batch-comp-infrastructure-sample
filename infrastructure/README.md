@@ -97,15 +97,16 @@ For each of the services above, click the associated link to learn more about th
 To set up the account resources, run the `create-solver-infrastructure` script:
 
 ```text
-./create-solver-infrastructure --profile sc-2023 --project PROJECT_NAME --solver-type SOLVER_TYPE
+./create-solver-infrastructure --profile PROFILE_NAME --project PROJECT_NAME --solver-type SOLVER_TYPE
 ```
 
 where:
 
+**PROFILE\_NAME** is the name of the aws profile that you set up at the beginning of this document.  It is very likely 'sc-2023'
+
 **PROJECT\_NAME:** is the name of the project.  **N.B.:** `PROJECT_NAME` must start with a letter and can only contain lowercase letters, numbers, hyphens (-), underscores (_), and forward slashes (/).
 
-**SOLVER\_TYPE:** is either 'cloud' or 'parallel' depending on which kind of solver you want to run.  Cloud
-solvers run on multiple 16-core machines (m6i.4xlarge) with 64GB memory and parallel solvers run on a single 64-core machine (m6i.16xlarge) with 256GB memory.
+**SOLVER\_TYPE:** is either 'cloud' or 'parallel' depending on which kind of solver you want to run.  Cloud solvers run on multiple 16-core machines (m6i.4xlarge) with 64GB memory and parallel solvers run on a single 64-core machine (m6i.16xlarge) with 256GB memory.
 
 The `create-solver-infrastructure` script takes 5-10 minutes to run.  At this point, all the cloud resources should be created.
 
@@ -114,7 +115,7 @@ The `create-solver-infrastructure` script takes 5-10 minutes to run.  At this po
 Once the infrastructure has been created, if you want to update it to switch between machine configurations for the cloud and parallel tracks, you can run the `update-solver-infrastructure` command: 
 
 ```text
-./update-solver-infrastructure --profile sc-2023 --project PROJECT_NAME --solver-type SOLVER_TYPE
+./update-solver-infrastructure --profile PROFILE_NAME --project PROJECT_NAME --solver-type SOLVER_TYPE
 ```
 
 This allows you to change the instance and memory configurations of the ECS images used.  
@@ -123,7 +124,7 @@ This allows you to change the instance and memory configurations of the ECS imag
 
 If something goes wrong and you want to start over, run the `delete-solver-infrastructure` command:
 ```text
-./delete-solver-infrastructure --profile sc-2023 --project PROJECT_NAME
+./delete-solver-infrastructure --profile PROFILE_NAME --project PROJECT_NAME 
 ```
 
 This will delete the infrastructure and associated resources.  
@@ -138,33 +139,40 @@ Please see the [SAT-Comp Docker Images README.md file](../Docker/README.md)  for
 
 Amazon stores your solver images in the [Elastic Container Registry (ECR)](https://console.aws.amazon.com/ecr).
 
-The `create-solver-infrastructure` command described earlier creates two ECR repositories:
+The `create-solver-infrastructure` command described earlier creates an ECR repository with the same name as the project (PROJECT_NAME).
+
+This repository will store the images for the leader and worker.  Once you have created and tested a docker image (or images, for the cloud leader and worker) as described in the [SAT-Comp Docker Images README.md file](../Docker/README.md), you can upload them to your AWS account with the `push-ecr` script:
 
 ```text
-[PROJECT_NAME]-leader
-[PROJECT_NAME]-worker
+./push-ecr --profile PROFILE_NAME --project PROJECT_NAME [--leader LEADER_IMAGE_TAG] [--worker WORKER_IMAGE_TAG]
 ```
 
-These repositories store the images for the leader and worker.  We have added a script to help you upload
-[START HERE TOMORROW]
+where:
 
-[MWW: CREATE A PYTHON SCRIPT THAT CALLS THE DOCKER SHELL SCRIPT TO MAKE IT SIMPLER]
+**PROFILE\_NAME** is the name of the aws profile that you set up at the beginning of this document.  It is very likely 'sc-2023'
 
+**PROJECT\_NAME:** is the name of the project that you used earlier when creating the account.
+
+**LEADER\_IMAGE\_TAG:** is the tagged name of the leader docker image.
+
+**WORKER\_IMAGE\_TAG:** is the tagged name of the leader docker image.
+
+The leader and worker tags are optional; you can upload one or both docker images with this command (though if neither is specified, the script exits with an error).
 
 ## Adding Problems to an S3 Bucket.
 
-Before you can run the solver, you have to add the problems to be solved to an S3 bucket that is accessible by your account. As part of the `create-solver-infrastructure` CloudFormation script, we have created a bucket for you where you can store files: `[ACCOUNT\_ID]-us-east-1-[PROJECT-NAME]`, and added a `test.cnf` file to this bucket for testing (if you chose a different region than `us-east-1`, the part `us-east-1` in the bucket name my vary accordingly).  You can start with this `test.cnf` example and skip the rest of this section until you wish to add additional files or buckets for testing your solver.
+Before you can run the solver, you have to add the problems to be solved to an S3 bucket that is accessible by your account. As part of the `create-solver-infrastructure` CloudFormation script, we have created a bucket for you where you can store files: `ACCOUNT\_ID-us-east-1-PROJECT-NAME`, and added a `test.cnf` file to this bucket for testing (if you chose a different region than `us-east-1`, the part `us-east-1` in the bucket name my vary accordingly).  You can start with this `test.cnf` example and skip the rest of this section until you wish to add additional files or buckets for testing your solver.
 
 You can copy files to the bucket with a command similar to this one (when executed from the root directory of this repsository, this re-copies the `my-problem.cnf` file to the default bucket):
 
 ```text
-aws --profile [PROFILE_NAME] s3 cp my-problem.cnf s3://[ACCOUNT_ID]-us-east-1-satcompbucket
+aws --profile PROFILE_NAME s3 cp my-problem.cnf s3://ACCOUNT_ID-us-east-1-[PROJECT-NAME]
 ```
 
 Once this command completes successfully, you should see this object in the list of objects in the bucket:
 
 ```text
-aws --profile [PROFILE_NAME] s3 ls [ACCOUNT_ID]-us-east-1-satcompbucket
+aws --profile PROFILE_NAME s3 ls ACCOUNT_ID-us-east-1-[PROJECT-NAME]
 ```
 
 More information on creating and managing S3 buckets is found here: [https://aws.amazon.com/s3/](https://aws.amazon.com/s3/),
@@ -173,7 +181,7 @@ and the command line is described in more detail here: [https://docs.aws.amazon.
 
 ## Running the Distributed Solver
 
-Once you have populated a bucket with at least one CNF file in DIMACS format, and stored a docker image for both `[PROJECT_NAME]-leader` and `[PROJECT_NAME]-worker`, you can try to run your solver.
+Once you have populated a bucket with at least one CNF file in DIMACS format, and stored a docker image for both `PROJECT_NAME-leader` and `PROJECT_NAME-worker`, you can try to run your solver.
 
 Running the solver consists of three steps:
 
@@ -198,7 +206,7 @@ To set up and tear down the cluster, we have provided a script called `update_in
 To run the script: 
 
 ```text
-update_instances --profile [PROFILE_NAME] --option setup --workers [NUM_WORKERS]
+update_instances --profile PROFILE_NAME --option setup --workers [NUM_WORKERS]
 ```
 
 where: 
@@ -227,19 +235,19 @@ The service is running and available when the number of running tasks for the le
 
 First, ensure a cluster is set up and running, and the desired .cnf problem is available in an accessible S3 bucket.
 
-To submit a job by sending a SQS message.  We have provided a script called `send_message` that will submit an SQS job.  You provide the location of the file to run and number of desired worker nodes, and it will submit a SQS request to the `[ACCOUNT_NUMBER]-[REGION]-SatCompQueue` queue which will trigger execution of the solver.
+To submit a job by sending a SQS message.  We have provided a script called `send_message` that will submit an SQS job.  You provide the location of the file to run and number of desired worker nodes, and it will submit a SQS request to the `ACCOUNT_NUMBER-REGION-SatCompQueue` queue which will trigger execution of the solver.
 
 
 To run the script: 
 
 ```text
-send_message --profile [PROFILE_NAME] --location [S3_LOCATION] --workers [NUM_WORKERS]
+send_message --profile PROFILE_NAME --location [S3_LOCATION] --workers [NUM_WORKERS]
 ```
 
 where: 
 
 * **PROFILE\_NAME** is the profile name for the account.
-* **LOCATION** is the s3 location of the .cnf file.  For example, for the bucket we described earlier, the location would be s3://[ACCOUNT_ID]-us-east-1-satcompbucket/test.cnf (where ACCOUNT_ID is the account number you used).
+* **LOCATION** is the s3 location of the .cnf file.  For example, for the bucket we described earlier, the location would be s3://ACCOUNT_ID-us-east-1-satcompbucket/test.cnf (where ACCOUNT_ID is the account number you used).
 * **NUM\_WORKERS** is the number of worker nodes you would like to allocate. To avoid any problems with possible resource limits for your AWS account, we recommend that you set `NUM\_WORKERS` to `1` when going through the steps of this document for the first time.  If you are building for the parallel track rather than the cloud track, then set `NUM\_WORKERS` to `0`: all solving should be performed by the leader node.
 
 
@@ -247,7 +255,7 @@ The leader base container infrastructure will pull the message off of the queue,
 
 ### Monitoring and Logging
 
-Currently, the best way to examine the status of the solvers is by examining the logs.  These are available from the CloudWatch log groups.  There should be logs related to `/ecs/[PROJECT_NAME]-leader` and `/ecs/[PROJECT_NAME]-worker`.  These logs will capture both stdout and stderr from the container images.
+Currently, the best way to examine the status of the solvers is by examining the logs.  These are available from the CloudWatch log groups.  There should be logs related to `/ecs/PROJECT_NAME-leader` and `/ecs/PROJECT_NAME-worker`.  These logs will capture both stdout and stderr from the container images.
 
 The ECS console allows you to monitor the logs of all running tasks. For information about the ECS console please refer to the documentation: [https://aws.amazon.com/ecs/](https://aws.amazon.com/ecs/).
 
@@ -257,7 +265,7 @@ The ECS console allows you to monitor the logs of all running tasks. For informa
 After testing, tear down the cluster by running: 
 
 ```text
-update_instances --profile [PROFILE_NAME] --option shutdown
+update_instances --profile PROFILE_NAME --option shutdown
 ```
 
 This will terminate all EC2 instances and reset the number of leaders and workers to zero in the ECS service. 
@@ -306,7 +314,7 @@ This means that participants are only responsible for invoking their solver, and
 #### Leader Base Container
 The Leader Base Container does the following steps: 
 
-1. Pull and parse a message from the `[ACCOUNT\_NUMBER]-[REGION]-SatCompQueue` SQS queue with the format described in the Job Submission and Execution section above,  
+1. Pull and parse a message from the `[ACCOUNT\_NUMBER]-REGION-SatCompQueue` SQS queue with the format described in the Job Submission and Execution section above,  
 1. Pull a competition problem from S3 from the location provided in the SQS message,
 1. Save the competition problem on a shared EFS drive so that it can be accessed by all of the worker nodes,
 1. Wait until the requested number of workers have reported their status as READY along with their IP address,
@@ -462,7 +470,7 @@ When doing the basic account setup, we use [AWS CloudFormation](https://aws.amaz
 
 Here is the command to run it:
 
-    aws --profile [PROFILE_NAME] cloudformation create-stack --stack-name setup-account-stack --template-body file://setup-account.yaml --parameters ParameterKey=emailAddress,ParameterValue=[ENTER EMAIL ADDRESS HERE]
+    aws --profile PROFILE_NAME cloudformation create-stack --stack-name setup-account-stack --template-body file://setup-account.yaml --parameters ParameterKey=emailAddress,ParameterValue=[ENTER EMAIL ADDRESS HERE]
 
 **N.B.:** Be sure to double check the email address is correct!
 
@@ -553,7 +561,7 @@ In the next page, you will see an autoscaling group called something like job-qu
 
 Submit a job using the [Simple Queue Service (SQS) console](https://console.aws.amazon.com/sqs/).
 
-1. Navigate to the SQS console, and select the queue named `[ACCOUNT_NUMBER]-[REGION]-SatCompQueue`.
+1. Navigate to the SQS console, and select the queue named `ACCOUNT_NUMBER-REGION-SatCompQueue`.
 2. Click the *SendAndReceiveMessages* button
 3. Set the message body to something matching the following structure:
 
@@ -565,16 +573,16 @@ Submit a job using the [Simple Queue Service (SQS) console](https://console.aws.
 For example, for the bucket we described earlier, given a cluster with two nodes (one worker), it would be:
 
 ```text
-{"s3_uri":"s3://[ACCOUNT_ID]-us-east-1-satcompbucket/test.cnf",
+{"s3_uri":"s3://ACCOUNT_ID-us-east-1-satcompbucket/test.cnf",
 "num_workers": 1}
 ```
 
 **Q: What if I want to create different buckets other than the one provided for storing problems in?**
 
-In case you wish to create a different bucket, here is a command to create a bucket named `[PROJECT_NAME]-satcomp-examples`:
+In case you wish to create a different bucket, here is a command to create a bucket named `PROJECT_NAME-satcomp-examples`:
 
 ```text
-aws --profile [PROFILE_NAME] s3api create-bucket --bucket [PROJECT_NAME]-satcomp-examples
+aws --profile PROFILE_NAME s3api create-bucket --bucket PROJECT_NAME-satcomp-examples
 ```
 
 **Note: this creates the bucket in the AWS region specified in your named profile**
@@ -591,8 +599,8 @@ Amazon stores your solver images in the [Elastic Container Registry (ECR)](https
 The `create-solver-infrastructure` command described earlier creates two ECR repositories:
 
 ```text
-[PROJECT_NAME]-leader
-[PROJECT_NAME]-worker
+PROJECT_NAME-leader
+PROJECT_NAME-worker
 ```
 
 These repositories store the images for the leader and worker.  
@@ -612,7 +620,7 @@ You will use these URIs to describe where to store our Docker images in AWS.
 To store a Docker image in ECR from your local machine, first you need to login to ECR:
 
 ```text
-aws --profile [PROFILE_NAME] ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin [AWS_ACCOUNT_ID].dkr.ecr.us-east-1.amazonaws.com
+aws --profile PROFILE_NAME ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin [AWS_ACCOUNT_ID].dkr.ecr.us-east-1.amazonaws.com
 ```
 
 Next, you need to tag the image to match the ECR repository.  For the worker, tag the image as:
@@ -630,7 +638,7 @@ where
 For the leader, tag the image as:
 
 ```text
-docker tag [LOCAL_LEADER_IMAGE_ID] [AWS_ACCOUNT_ID].dkr.ecr.us-east-1.amazonaws.com/[PROJECT_NAME]-leader
+docker tag [LOCAL_LEADER_IMAGE_ID] [AWS_ACCOUNT_ID].dkr.ecr.us-east-1.amazonaws.com/PROJECT_NAME-leader
 ```
 
 where 
@@ -640,8 +648,8 @@ where
 After these steps, you can docker push the images:
 
 ```text
-docker push [AWS_ACCOUNT_ID].dkr.ecr.us-east-1.amazonaws.com/[PROJECT_NAME]-leader
-docker push [AWS_ACCOUNT_ID].dkr.ecr.us-east-1.amazonaws.com/[PROJECT_NAME]-worker
+docker push [AWS_ACCOUNT_ID].dkr.ecr.us-east-1.amazonaws.com/PROJECT_NAME-leader
+docker push [AWS_ACCOUNT_ID].dkr.ecr.us-east-1.amazonaws.com/PROJECT_NAME-worker
 ```
 
 You should see network progress bars for both images.
