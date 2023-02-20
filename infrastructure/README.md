@@ -68,7 +68,7 @@ On your workstation, create a `~/.aws/credentials` file with the following infor
     aws_secret_access_key=SECRET_ACCESS_KEY
     region=us-east-1
 
-where ACCESS_KEY_ID and SECRET_ACCESS_KEY are the keys that you received from IAM, and sc-2023 is called a profile name that we can use to access the account. 
+where ACCESS_KEY_ID and SECRET_ACCESS_KEY are the keys that you received from IAM, and sc-2023 is what is called a 'profile name' that we can use to access the account.  We will refer to this as the PROFILE_NAME elsewhere in the document.
 
 After installing the AWS CLI and gaining credentials, make sure that the CLI is installed properly by attempting to run an AWS command.  An example command that should work is:
 ```text
@@ -97,95 +97,46 @@ For each of the services above, click the associated link to learn more about th
 To set up the account resources, run the `create-solver-infrastructure` script:
 
 ```text
-./create-solver-infrastructure --profile PROFILE_NAME --project PROJECT_NAME --instance INSTANCE_TYPE --memory MEMORY --ami INSTANCE_AMI
+./create-solver-infrastructure --profile sc-2023 --project PROJECT_NAME --solver-type SOLVER_TYPE
 ```
 
 where:
 
-**PROFILE\_NAME:** is the name of the AWS Profile you created and used in the steps above.
-
 **PROJECT\_NAME:** is the name of the project.  **N.B.:** `PROJECT_NAME` must start with a letter and can only contain lowercase letters, numbers, hyphens (-), underscores (_), and forward slashes (/).
 
-**INSTANCE\_TYPE:** is the machine instance type you wish to use.  A machine instance type describes the capabilities such as CPU, memory, and networking of a compute node.  EC2 has many [instance types](https://aws.amazon.com/ec2/instance-types/) for a variety of different compute workloads.  For the cloud track, the instance type should be `m6i.4xlarge`, and for parallel track it should be `m6i.16xlarge`.
-
-**MEMORY:** describes the maximum memory for the docker container.  For the cloud track, this parameter should be 61000 and for the parallel track, this parameter should be 253000.  
-
-**INSTANCE\_AMI:** The instance AMI describes the [Amazon Machine Image](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/AMIs.html), the basic software image to be loaded onto each EC2 instance, that describes the operating system and other configuration information.  To get the instance AMI to use for the competition resources, please use the following command:
-
-```text
-    aws --profile [PROFILE_NAME] ssm get-parameters --names /aws/service/ecs/optimized-ami/amazon-linux-2/recommended
-```
-
-in the result, the AMI is the "image_id" field.
-
-For example, here is result from this call:
-
-```text
-{
-    "Parameters": [
-        {
-            "Name": "/aws/service/ecs/optimized-ami/amazon-linux-2/recommended",
-            "Type": "String",
-            "Value": "{\"ecs_agent_version\":\"1.60.0\",\"ecs_runtime_version\":\"Docker version 20.10.7\",\"image_id\":\"ami-0bb273345f0961e90\",\"image_name\":\"amzn2-ami-ecs-hvm-2.0.20220304-x86_64-ebs\",\"image_version\":\"2.0.20220304\",\"os\":\"Amazon Linux 2\",\"schema_version\":1,\"source_image_name\":\"amzn2-ami-minimal-hvm-2.0.20220218.1-x86_64-ebs\"}",
-            "Version": 83,
-            "LastModifiedDate": "2022-03-07T12:52:55.037000-06:00",
-            "ARN": "arn:aws:ssm:us-east-1::parameter/aws/service/ecs/optimized-ami/amazon-linux-2/recommended",
-            "DataType": "text"
-        }
-    ],
-    "InvalidParameters": []
-}
-```
-
-and the instance AMI from the image_id is: `ami-0bb273345f0961e90`.  **N.B.: do *not* use** `ami-0bb273345f0961e90` as your instance AMI.  Instead, please use the result of the command above when you run it.  Instance AMIs are both region-specific and updated frequently, so we cannot provide a default.
+**SOLVER\_TYPE:** is either 'cloud' or 'parallel' depending on which kind of solver you want to run.  Cloud
+solvers run on multiple 16-core machines (m6i.4xlarge) with 64GB memory and parallel solvers run on a single 64-core machine (m6i.16xlarge) with 256GB memory.
 
 The `create-solver-infrastructure` script takes 5-10 minutes to run.  At this point, all the cloud resources should be created.
 
-### Updating the Infrastructure to Switch Between Cloud and Parallel Tracks
+### Updating the infrastructure to Switch Between Cloud and Parallel Tracks
 
-Once the infrastructure has been created, if you want to update it to switch between machine configurations for the cloud and parallel tracks, you can run the `create-solver-infrastructure` command with the `--update` flag: 
+Once the infrastructure has been created, if you want to update it to switch between machine configurations for the cloud and parallel tracks, you can run the `update-solver-infrastructure` command: 
 
 ```text
-./create-solver-infrastructure --profile PROFILE_NAME --project PROJECT_NAME --instance INSTANCE_TYPE --memory MEMORY --ami INSTANCE_AMI --update True
+./update-solver-infrastructure --profile sc-2023 --project PROJECT_NAME --solver-type SOLVER_TYPE
 ```
 
 This allows you to change the instance and memory configurations of the ECS images used.  
 
+### Deleting the infrastructure
+
+If something goes wrong and you want to start over, run the `delete-solver-infrastructure` command:
+```text
+./delete-solver-infrastructure --profile sc-2023 --project PROJECT_NAME
+```
+
+This will delete the infrastructure and associated resources.  
+
 
 ### Creating the Base Docker Leader and Worker Images for Solvers
 
-To simplify the solver construction process, this year we are providing two base Docker images that manage most of the infrastructure necessary for solvers and mediate access to AWS resources.  You must extend these images in order to create the leader and worker images to use for the competition.  Teams will build these images on their local workstation and extend the images to construct their solvers.  **N.B.:** if you are entering the parallel track only, you do not need to build a worker image or store it in ECS.  For the parallel case, set the number of workers to zero when you run the solver.
-
-
-#### Build `satcomp-common-base:latest` image
-
-1. from the repo root directory, cd to the `src/satcomp-common-base-image` directory.
-2. run `docker build -t satcomp-common-base-image .`
-
-#### Build `satcompbase:leader` image
-
-1. from the repo root directory, cd to the `src` directory
-2. run `docker build -f satcomp-leader-image/Dockerfile -t satcomp-base:leader .`
-
-#### Build `satcompbase:worker` image
-
-1. from the repo root directory, cd to the `src` directory
-2. run `docker build -f satcomp-worker-image/Dockerfile -t satcomp-base:worker .`
-
-#### Check to make sure the images have built successfully:
-1. run `docker image ls`
-2. make sure that you see `satcomp-common-base-image`, `satcomp-base:leader`, and `satcomp-base:worker` in the list of images.
-
-## Building and Running a Solver 
-
-We provide an example repository with a Dockerfile that builds a distributed solver from the base images in the following git repo: [https://github.com/aws-samples/aws-satcomp-solver-sample](https://github.com/aws-samples/aws-satcomp-solver-sample).  In order to test the infrastructure here, please follow the build steps detailed in the `README.md` file for that repository.   
-
-After following the build steps in that repository described in the `README.md` file, the sample solver should work &quot;out of the box&quot; on the steps below.   After you have this solver working, you can create your own solver as described in the section on &quot;extending solvers&quot; below.
-
-Once you have built the leader and worker images locally following the directions for the sample, we need to upload them to the Elastic Container Registry.
+Please see the [SAT-Comp Docker Images README.md file](../Docker/README.md)  for instructions on how to build and test Docker images.
 
 
 ### Storing Solver Images in the ECR repository
+
+[MWW: WE SHOULD SIMPLIFY THIS WITH A SCRIPT!]
 
 Navigate to the [Elastic Container Registry (ECR) console](https://console.aws.amazon.com/ecr) for your solver account.
 
@@ -286,14 +237,13 @@ and the command line is described in more detail here: [https://docs.aws.amazon.
 
 
 ## Running the Distributed Solver
+
 Once you have populated a bucket with at least one CNF file in DIMACS format, and stored a docker image for both `[PROJECT_NAME]-leader` and `[PROJECT_NAME]-worker`, you can try to run your solver.
 
 Running the solver consists of three steps:
 
 1. Setup:
-   
     a. Setting capacity for the cluster in [EC2](https://aws.amazon.com/ec2/).
-    
     b. Setting the desired number of workers in [ECS](https://aws.amazon.com/ecs/).
     
 2. Run: submitting a solve job to the SQS queue by specifying the S3 location of the problem and the desired number of workers.
@@ -356,8 +306,6 @@ where:
 * **PROFILE\_NAME** is the profile name for the account.
 * **LOCATION** is the s3 location of the .cnf file.  For example, for the bucket we described earlier, the location would be s3://[ACCOUNT_ID]-us-east-1-satcompbucket/test.cnf (where ACCOUNT_ID is the account number you used).
 * **NUM\_WORKERS** is the number of worker nodes you would like to allocate. To avoid any problems with possible resource limits for your AWS account, we recommend that you set `NUM\_WORKERS` to `1` when going through the steps of this document for the first time.  If you are building for the parallel track rather than the cloud track, then set `NUM\_WORKERS` to `0`: all solving should be performed by the leader node.
-
-
 
 
 The leader base container infrastructure will pull the message off of the queue, find the problem in S3 and begin running it.  For more information on the steps performed, please read the [section on Extending the Solver Base Container](#understanding-the-solver-architecture-and-extending-the-competition-base-leader-container) below.  
