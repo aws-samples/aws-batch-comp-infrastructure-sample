@@ -136,9 +136,7 @@ Please see the [SAT-Comp Docker Images README.md file](../Docker/README.md)  for
 
 ### Storing Solver Images in the ECR repository
 
-[MWW: WE SHOULD SIMPLIFY THIS WITH A SCRIPT!]
-
-Navigate to the [Elastic Container Registry (ECR) console](https://console.aws.amazon.com/ecr) for your solver account.
+Amazon stores your solver images in the [Elastic Container Registry (ECR)](https://console.aws.amazon.com/ecr).
 
 The `create-solver-infrastructure` command described earlier creates two ECR repositories:
 
@@ -147,83 +145,20 @@ The `create-solver-infrastructure` command described earlier creates two ECR rep
 [PROJECT_NAME]-worker
 ```
 
-These repositories store the images for the leader and worker.
+These repositories store the images for the leader and worker.  We have added a script to help you upload
+[START HERE TOMORROW]
 
-Each of these repositories has an associated URI (shown on the console page), which is what we use to push docker images to ECR.
-The format for URIs is
-
-```text
-[AWS_ACCOUNT_ID].dkr.ecr.[REGION_NAME].amazonaws.com/[REPOSITORY_NAME]
-```
-
-You will use these URIs to describe where to store our Docker images in AWS.  
-
-**N.B.:** a good way to make sure that you type these URI names correctly is to navigate to the Elastic Container Registry (ECR) console in AWS and copy them from the page (the names are in the URI column).   
-
-
-To store a Docker image in ECR from your local machine, first you need to login to ECR:
-
-```text
-aws --profile [PROFILE_NAME] ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin [AWS_ACCOUNT_ID].dkr.ecr.us-east-1.amazonaws.com
-```
-
-Next, you need to tag the image to match the ECR repository.  For the worker, tag the image as:
-
-```text
-docker tag [LOCAL_WORKER_IMAGE_ID] [AWS_ACCOUNT_ID].dkr.ecr.us-east-1.amazonaws.com/[PROJECT\_NAME]-worker
-```
-
-where 
-
-* **LOCAL\_WORKER\_IMAGE\_ID** is the local worker image tag (e.g., `my-solver:leader`).  For the sample solver, this image tag is described in the `README.md` instructions.  
-* **AWS\_ACCOUNT\_ID** is the account ID where you want to store the image.
-* **PROJECT\_NAME** is the name of the project that you chose in the &quot;Creating the AWS Infrastructure&quot; section above.
-
-For the leader, tag the image as:
-
-```text
-docker tag [LOCAL_LEADER_IMAGE_ID] [AWS_ACCOUNT_ID].dkr.ecr.us-east-1.amazonaws.com/[PROJECT_NAME]-leader
-```
-
-where 
-
-* **LOCAL\_LEADER\_IMAGE\_ID** is the local image for the leader, and the other parameters are the same as for the worker.
-
-After these steps, you can docker push the images:
-
-```text
-docker push [AWS_ACCOUNT_ID].dkr.ecr.us-east-1.amazonaws.com/[PROJECT_NAME]-leader
-docker push [AWS_ACCOUNT_ID].dkr.ecr.us-east-1.amazonaws.com/[PROJECT_NAME]-worker
-```
-
-You should see network progress bars for both images.
-
-More information related to the ECR procedures is described here: [https://docs.aws.amazon.com/AmazonECR/latest/userguide/docker-push-ecr-image.html](https://docs.aws.amazon.com/AmazonECR/latest/userguide/docker-push-ecr-image.html).
-
-If you have trouble, please email us at: [sat-comp-2022@amazon.com](mailto:sat-comp-2022@amazon.com) and we will walk you through the process.
+[MWW: CREATE A PYTHON SCRIPT THAT CALLS THE DOCKER SHELL SCRIPT TO MAKE IT SIMPLER]
 
 
 ## Adding Problems to an S3 Bucket.
 
-Before you can run the solver, you have to add the problems to be solved to an S3 bucket that is accessible by your account. As part of the `create-solver-infrastructure` CloudFormation script, we have created a bucket for you where you can store files: `[ACCOUNT\_ID]-us-east-1-satcompbucket`, and added a `test.cnf` file to this bucket for testing (if you chose a different region than `us-east-1`, the part `us-east-1` in the bucket name my vary accordingly).  You can start with this `test.cnf` example and skip the rest of this section until you wish to add additional files or buckets for testing your solver.
+Before you can run the solver, you have to add the problems to be solved to an S3 bucket that is accessible by your account. As part of the `create-solver-infrastructure` CloudFormation script, we have created a bucket for you where you can store files: `[ACCOUNT\_ID]-us-east-1-[PROJECT-NAME]`, and added a `test.cnf` file to this bucket for testing (if you chose a different region than `us-east-1`, the part `us-east-1` in the bucket name my vary accordingly).  You can start with this `test.cnf` example and skip the rest of this section until you wish to add additional files or buckets for testing your solver.
 
-
-In case you wish to create a bucket, here is a command to create a bucket named `[PROJECT_NAME]-satcomp-examples`:
-
-```text
-aws --profile [PROFILE_NAME] s3api create-bucket --bucket [PROJECT_NAME]-satcomp-examples
-```
-
-**Note: this creates the bucket in the AWS region specified in your named profile**
-
-**Note: If you chose a different region than `us-east-1`, you might get an `IllegalLocationConstraintException`. To deal with the problem, you have to append the argument `--create-bucket-configuration {"LocationConstraint": "YOUR-REGION-NAME"}` to the command, where `YOUR-REGION-NAME` is replaced with the name of the region you chose.**
-
-**Note: S3 buckets are globally unique across all of AWS, which means that the command will fail if someone else is already using the same bucket name.  A simple fix is to add the AWS account number to the bucket name, which will likely yield a unique bucket name.**
-
-Once the bucket is created, you can copy files to the bucket with a command similar to this one (when executed from the root directory of this repsository, this re-copies the `test.cnf` file to the default bucket):
+You can copy files to the bucket with a command similar to this one (when executed from the root directory of this repsository, this re-copies the `my-problem.cnf` file to the default bucket):
 
 ```text
-aws --profile [PROFILE_NAME] s3 cp test.cnf s3://[ACCOUNT_ID]-us-east-1-satcompbucket
+aws --profile [PROFILE_NAME] s3 cp my-problem.cnf s3://[ACCOUNT_ID]-us-east-1-satcompbucket
 ```
 
 Once this command completes successfully, you should see this object in the list of objects in the bucket:
@@ -633,3 +568,84 @@ For example, for the bucket we described earlier, given a cluster with two nodes
 {"s3_uri":"s3://[ACCOUNT_ID]-us-east-1-satcompbucket/test.cnf",
 "num_workers": 1}
 ```
+
+**Q: What if I want to create different buckets other than the one provided for storing problems in?**
+
+In case you wish to create a different bucket, here is a command to create a bucket named `[PROJECT_NAME]-satcomp-examples`:
+
+```text
+aws --profile [PROFILE_NAME] s3api create-bucket --bucket [PROJECT_NAME]-satcomp-examples
+```
+
+**Note: this creates the bucket in the AWS region specified in your named profile**
+
+**Note: If you chose a different region than `us-east-1`, you might get an `IllegalLocationConstraintException`. To deal with the problem, you have to append the argument `--create-bucket-configuration {"LocationConstraint": "YOUR-REGION-NAME"}` to the command, where `YOUR-REGION-NAME` is replaced with the name of the region you chose.**
+
+**Note: S3 buckets are globally unique across all of AWS, which means that the command will fail if someone else is already using the same bucket name.  A simple fix is to add the AWS account number to the bucket name, which will likely yield a unique bucket name.**
+
+
+**Q: I'd like to know more about how the Elastic Container Registry works.  Can I do the steps to upload files by hand?**
+
+Amazon stores your solver images in the [Elastic Container Registry (ECR)](https://console.aws.amazon.com/ecr).
+
+The `create-solver-infrastructure` command described earlier creates two ECR repositories:
+
+```text
+[PROJECT_NAME]-leader
+[PROJECT_NAME]-worker
+```
+
+These repositories store the images for the leader and worker.  
+
+Each of these repositories has an associated URI (shown on the console page), which is what we use to push docker images to ECR.
+The format for URIs is
+
+```text
+[AWS_ACCOUNT_ID].dkr.ecr.[REGION_NAME].amazonaws.com/[REPOSITORY_NAME]
+```
+
+You will use these URIs to describe where to store our Docker images in AWS.  
+
+**N.B.:** a good way to make sure that you type these URI names correctly is to navigate to the Elastic Container Registry (ECR) console in AWS and copy them from the page (the names are in the URI column).   
+
+
+To store a Docker image in ECR from your local machine, first you need to login to ECR:
+
+```text
+aws --profile [PROFILE_NAME] ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin [AWS_ACCOUNT_ID].dkr.ecr.us-east-1.amazonaws.com
+```
+
+Next, you need to tag the image to match the ECR repository.  For the worker, tag the image as:
+
+```text
+docker tag [LOCAL_WORKER_IMAGE_ID] [AWS_ACCOUNT_ID].dkr.ecr.us-east-1.amazonaws.com/[PROJECT\_NAME]-worker
+```
+
+where 
+
+* **LOCAL\_WORKER\_IMAGE\_ID** is the local worker image tag (e.g., `my-solver:leader`).  For the sample solver, this image tag is described in the `README.md` instructions.  
+* **AWS\_ACCOUNT\_ID** is the account ID where you want to store the image.
+* **PROJECT\_NAME** is the name of the project that you chose in the &quot;Creating the AWS Infrastructure&quot; section above.
+
+For the leader, tag the image as:
+
+```text
+docker tag [LOCAL_LEADER_IMAGE_ID] [AWS_ACCOUNT_ID].dkr.ecr.us-east-1.amazonaws.com/[PROJECT_NAME]-leader
+```
+
+where 
+
+* **LOCAL\_LEADER\_IMAGE\_ID** is the local image for the leader, and the other parameters are the same as for the worker.
+
+After these steps, you can docker push the images:
+
+```text
+docker push [AWS_ACCOUNT_ID].dkr.ecr.us-east-1.amazonaws.com/[PROJECT_NAME]-leader
+docker push [AWS_ACCOUNT_ID].dkr.ecr.us-east-1.amazonaws.com/[PROJECT_NAME]-worker
+```
+
+You should see network progress bars for both images.
+
+More information related to the ECR procedures is described here: [https://docs.aws.amazon.com/AmazonECR/latest/userguide/docker-push-ecr-image.html](https://docs.aws.amazon.com/AmazonECR/latest/userguide/docker-push-ecr-image.html).
+
+If you have trouble, please email us at: [sat-comp-2022@amazon.com](mailto:sat-comp-2022@amazon.com) and we will walk you through the process.

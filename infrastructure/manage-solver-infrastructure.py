@@ -207,6 +207,22 @@ class CloudFormation:
                 logger.error(f"Unexpected cloudformation state {stack.stack_status}")
                 raise Exception(f"Unexpected cloudformation state when awaiting completion: {stack.stack_status}")
 
+def get_satcomp_bucket(account_number, region, project_name) -> str: 
+    # needs to be synched with CloudFormation
+    return str(account_number) + '-' + region + '-' + project_name
+
+def delete_resources(session, s3, project_name, bucket) -> None: 
+    # delete s3 bucket
+
+    logger.info(f"Deleting S3 bucket {bucket}")
+    s3.delete_bucket(bucket)
+
+    # delete ecr instances
+    ecr_client = session.client('ecr')
+    ecr = ECR(ecr_client)
+    logger.info(f"Deleting all images within ECR repository")
+    ecr.delete_project_repositories(project_name)
+
 def arg_parser() -> dict: 
     parser = argparse.ArgumentParser()
     parser.add_argument('--profile', required = True, help = "AWS profile")
@@ -229,22 +245,6 @@ def arg_parser() -> dict:
         sys.exit(-1)
     
     return args
-
-def get_satcomp_bucket(account_number, region, project_name) -> str: 
-    # needs to be synched with CloudFormation
-    return str(account_number) + '-' + region + '-' + project_name
-
-def delete_resources(session, s3, project_name, bucket) -> None: 
-    # delete s3 bucket
-
-    logger.info(f"Deleting S3 bucket {bucket}")
-    s3.delete_bucket(bucket)
-
-    # delete ecr instances
-    ecr_client = session.client('ecr')
-    ecr = ECR(ecr_client)
-    logger.info(f"Deleting all images within ECR repository")
-    ecr.delete_project_repositories(project_name)
 
 
 def main() -> None: 
@@ -299,10 +299,8 @@ def main() -> None:
         cfn.create_cloudformation_stack(project_name, instance_type, ami_id, memory)
         ok = cfn.await_completion("create")
         if ok:
-            bucket_name = s3_file_system.get_satcomp_bucket()
-            logger.info(f"Uploading test.cnf file to the {bucket_name} bucket")
-            bucket_name = s3_file_system.get_satcomp_bucket()
-            s3_file_system.upload_file_to_s3(bucket_name, "test.cnf")
+            logger.info(f"Uploading test.cnf file to the {satcomp_bucket} bucket")
+            s3_file_system.upload_file_to_s3(satcomp_bucket, "test.cnf")
 
     else:
         logger.error(f"Unexpected operation {args.mode}")
