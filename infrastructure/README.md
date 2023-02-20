@@ -264,13 +264,13 @@ You should verify that no EC2 instances are running after running the teardown s
 
 Note: You are responsible for any charges made to your AWS account.  While we have tested the shutdown script and believe it to be robust, you are responsible for monitoring the EC2 cluster to make sure resources have shutdown properly. We have alternate directions to shutdown resources using the console in the Q&A section.
 
-
-
 ## Additional Steps
 
 ### Basic Account Configuration
 
 [RBJ: shouldn't this be in the first section above?]
+
+[RBJ: stopped here, except for minor formatting below.]
 
 When doing the basic account setup, we use [AWS CloudFormation](https://aws.amazon.com/cloudformation/).  The file `setup-account.yaml` in this repository is an optional CloudFormation script that can help you track your spending.  It sets up notification emails to be sent to an email address you provide when the account reaches 20%, 40%, 60%, 80%, 90%, 95%, and 100% of the monthly account budget so that you have a window into the current spend rate for building and testing your solver.
 
@@ -296,11 +296,11 @@ Although it is handy to get emails when certain account budget thresholds have b
 
 ## FAQ / Troubleshooting
 
-**Q: I'm only submitting to the parallel track and not the cloud track.  Do I need a worker image?**
+#### Q: I'm only submitting to the parallel track and not the cloud track.  Do I need a worker image?
 
 No. If you are submitting to the parallel track only, you do not need a worker image.  For the parallel track, we will assume that the leader manages all threading and communications within the single (multi-core) compute node.
 
-**Q: I ran the infrastructure scripts, and they seemed to work, but when I go out to the console, I don't see any of the infrastructure: S3 buckets, ECS Queues, etc. What happened?**
+#### Q: I ran the infrastructure scripts, and they seemed to work, but when I go out to the console, I don't see any of the infrastructure: S3 buckets, ECS Queues, etc. What happened?
 
 The most common mistake people make when starting with AWS is not choosing the correct *region* for executing their jobs.  In the console on the top right there is a selectable region:
 
@@ -308,16 +308,14 @@ The most common mistake people make when starting with AWS is not choosing the c
 
 The reason that you view has to be the same as the one referenced in your profile created at the beginning of this document (by default, it is us-east-1).  Make sure that the region selected in the top-right of the console page matches the region in your profile. 
 
-**Q: I created a leader node and submitted a job, but the leader keeps saying it is waiting for worker nodes and not running my solver.  What happened?**
+#### Q: I created a leader node and submitted a job, but the leader keeps saying it is waiting for worker nodes and not running my solver.  What happened?
 
-**A:** There are two likely causes.  First it could be that you submitted an SQS that asked for more workers than you configured when you set up your cluster.  Make sure that the number of worker nodes equals or exceeds the number of worker nodes that were requested in the SQS message.  Second, if you just set up the ECS cluster, then it is likely that either the requested EC2 servers have not yet initialized, or that the ECS cluster has not yet started running on them.  It takes 2-5 minutes for the resources to become available after they are requested.
+There are two likely causes.  First it could be that you submitted an SQS that asked for more workers than you configured when you set up your cluster.  Make sure that the number of worker nodes equals or exceeds the number of worker nodes that were requested in the SQS message.  Second, if you just set up the ECS cluster, then it is likely that either the requested EC2 servers have not yet initialized, or that the ECS cluster has not yet started running on them.  It takes 2-5 minutes for the resources to become available after they are requested.
 
 There is also a less-likely cause, involving capacity limits.  EC2 sets default capacity limits on the number of compute nodes that are available to an account.  If you are running large-scale tests, it may be that you have exceeded the default number of nodes.  To check, navigate to the EC2 console for the account, and click on "Limits" on the left side.  Type "All standard" in the search bar and determine the current limit.  The limit is specified in terms of vCPUs, so each m6i-4xlarge image uses 16 vCPUs, and every m6i-16xlarge uses 64 CPUs.  If you need additional vCPUs, click on the "All Standard" link and request a limit increase.  **N.B.** Running a large cluster can become expensive.  Make sure you limit your large-scale testing to preserve your AWS credits.
 
+#### Q: Suppose I want to use the console to setup my ECS clusters, or to monitor them.  How do I do that?
 
-**Q: Suppose I want to use the console to setup my ECS clusters, or to monitor them.  How do I do that?**
-
-**A:** 
 __Cluster Setup Step 1:__  Update the size of the EC2 cluster using the EC2 console
 
 To control the instances in your cluster, go to the EC2 console and scroll down on the left side of the console and click on the link that says "Auto Scaling Groups".
@@ -352,9 +350,8 @@ If they fail to boot up after 5 minutes, please verify that both Desired Capacit
 
 You incur costs for the time the machines are running. [RBJ: allocated?]
 
-**Q: Suppose I want to use the console to tear down my ECS clusters.  How do I do that?**
+#### Q: Suppose I want to use the console to tear down my ECS clusters.  How do I do that?
 
-**A:**
 To control the instances in your cluster, go to the EC2 console and scroll down on the left side of the console and click on the link that says "Auto Scaling Groups".
  
 In the next page, you will see an autoscaling group called something like job-queue-PROJECT_NAME-EcsInstance.
@@ -363,7 +360,7 @@ In the next page, you will see an autoscaling group called something like job-qu
 1. Set the desired and maximum task capacity to 0.  This shuts down any EC2 instances.
  
 
-**Q: Suppose I want to use the console to send SQS messages to start executing jobs.  How do I do that?**
+#### Q: Suppose I want to use the console to send SQS messages to start executing jobs. How do I do that?
 
 Submit a job using the [Simple Queue Service (SQS) console](https://console.aws.amazon.com/sqs/).
 
