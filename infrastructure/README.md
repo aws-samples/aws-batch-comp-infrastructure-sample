@@ -99,7 +99,7 @@ where:
 
 `PROJECT_NAME`: is the name of the project [RBJ: as chosen by the user for the life of the competition]. Note that `PROJECT_NAME` must start with a letter and can only contain lowercase letters, numbers, hyphens (-), underscores (_), and forward slashes (/).
 
-`SOLVER_TYPE`: is either `cloud` or `parallel` depending on which kind of solver you are running. Note that we will run cloud solvers run on multiple 16-core machines (m6i.4xlarge [RBJ: include links?]) with 64GB memory, while parallel solvers run on a single 64-core machine (m6i.16xlarge) with 256GB memory.
+* `SOLVER_TYPE`: is either `cloud` or `parallel` depending on which kind of solver you are running. Note that we will run cloud solvers run on multiple 16-core machines (m6i.4xlarge [RBJ: include links?]) with 64GB memory, while parallel solvers run on a single 64-core machine (m6i.16xlarge) with 256GB memory.
 
 The script will take 5-10 minutes. When complete, all of the needed cloud resources should be created. [RBJ: provide instructions for checking/testing?]
 
@@ -122,12 +122,11 @@ If something goes wrong and you want to start over, simply run the `delete-solve
 
 This will delete the infrastructure and associated resources. It will not delete your AWS account or security credentials.
 
-[RBJ: stopped here]
+## Docker Images
 
 ### Creating the Base Docker Leader and Worker Images for Solvers
 
-Please see the [SAT-Comp Docker Images README.md file](../Docker/README.md)  for instructions on how to build and test Docker images.
-
+See the [SAT-Comp Docker Images README.md file](../Docker/README.md) in the `docker` directory for instructions on how to build and test Docker images.
 
 ### Storing Solver Images in the ECR repository
 
@@ -153,7 +152,7 @@ where:
 
 The leader and worker tags are optional; you can upload one or both docker images with this command (though if neither is specified, the script exits with an error).
 
-## Adding Problems to an S3 Bucket.
+## Storing Queries in S3
 
 Before you can run the solver, you have to add the problems to be solved to an S3 bucket that is accessible by your account. As part of the `create-solver-infrastructure` CloudFormation script, we have created a bucket for you where you can store files: `ACCOUNT\_ID-us-east-1-PROJECT-NAME`, and added a `test.cnf` file to this bucket for testing (if you chose a different region than `us-east-1`, the part `us-east-1` in the bucket name my vary accordingly).  You can start with this `test.cnf` example and skip the rest of this section until you wish to add additional files or buckets for testing your solver.
 
@@ -163,39 +162,42 @@ You can copy files to the bucket with a command similar to this one (when execut
 aws --profile PROFILE_NAME s3 cp my-problem.cnf s3://ACCOUNT_ID-us-east-1-[PROJECT-NAME]
 ```
 
-Once this command completes successfully, you should see this object in the list of objects in the bucket:
+When `s3 cp` is compelte, you will see your file(s) in the list of objects in the bucket:
 
 ```text
 aws --profile PROFILE_NAME s3 ls ACCOUNT_ID-us-east-1-[PROJECT-NAME]
 ```
 
-More information on creating and managing S3 buckets is found here: [https://aws.amazon.com/s3/](https://aws.amazon.com/s3/),
-and the command line is described in more detail here: [https://docs.aws.amazon.com/cli/latest/userguide/cli-services-s3-commands.html](https://docs.aws.amazon.com/cli/latest/userguide/cli-services-s3-commands.html).
+[RBJ: why is `s3://` required for cp, but not for ls?]
 
+More information on creating and managing S3 buckets is found here: [https://aws.amazon.com/s3/](https://aws.amazon.com/s3/). The S3 command line interface is described in more detail here: [https://docs.aws.amazon.com/cli/latest/userguide/cli-services-s3-commands.html](https://docs.aws.amazon.com/cli/latest/userguide/cli-services-s3-commands.html).
 
-## Running the Distributed Solver
+## Running Your Solver
 
-Once you have populated a bucket with at least one CNF file in DIMACS format, and stored a docker image for both `PROJECT_NAME-leader` and `PROJECT_NAME-worker`, you can try to run your solver.
+After storing docker images (`[PROJECT_NAME]-leader` and `[PROJECT_NAME]-worker`) and placing at least one query file in your S3 bucket, you are ready to run your solver.
 
 Running the solver consists of three steps:
 
-1. Setup:
+1. Setup.
+
     a. Setting capacity for the cluster in [EC2](https://aws.amazon.com/ec2/).
+
     b. Setting the desired number of workers in [ECS](https://aws.amazon.com/ecs/).
     
-2. Run: submitting a solve job to the SQS queue by specifying the S3 location of the problem and the desired number of workers.
-3. Cleanup: setting the capacity in EC2 for the cluster back to zero.
+2. Run. submitting a solve job to the SQS queue by specifying the S3 location of the problem and the desired number of workers.
 
-After setup, you should be able to run any number of solve jobs before cleaning up.
+3. Cleanup. Setting EC2 [RBJ: and ECS?] capacity for cluster back to zero.
 
-**It is important that you [clean up](#cluster-teardown) once you are done.  EC2 nodes that remain active continue to be charged against your account.**
+After setup, you can run any number of solve jobs before cleaning up.
+
+Note: It is very important that you [clean up](#cluster-teardown) once you are done. EC2 nodes that remain active continue to be charged against your account.
 
 ### Cluster Setup
 
-To set up and tear down the cluster, we have provided a script called `update_instances`.  You provide the number of desired worker nodes, and it will:
+To set up and tear down the cluster, we have provided a script called `update_instances`.  You provide the number of desired worker nodes as an argument. The script:
  
-1. create an EC2 fleet large enough to run the experiment (number of workers + 1 leader node)
-2. create the correct number of desired tasks in the ECS service for the workers and the leader.
+1. Creates an EC2 fleet large enough to run the experiment (number of workers + a leader node)
+2. Creates the correct number of tasks in the ECS service for the leader and workers.
 
 To run the script: 
 
@@ -205,32 +207,27 @@ update_instances --profile PROFILE_NAME --option setup --workers [NUM_WORKERS]
 
 where: 
 
-* **PROFILE\_NAME** is the profile name for the account
-* **NUM\_WORKERS** is the number of worker nodes you would like to allocate. To avoid any problems with possible resource limits for your AWS account, we recommend that you set `NUM\_WORKERS` to `1` when going through the steps of this document for the first time.  If you are building for the parallel track rather than the cloud track, then set `NUM\_WORKERS` to `0`: all solving should be performed by the leader node.
+* `PROFILE_NAME` is the profile name for the account
+* `NUM_WORKERS` is the number of worker nodes you want to allocate. To avoid  problems with possible resource limits for your AWS account, we recommend that you set `NUM_WORKERS` to `1` when working through this document for the first time. If you are building for the parallel track, set `NUM_WORKERS` to `0`, as all solving will be performed by the leader node.
 
-After requesting the nodes from EC2 and ECS, AWS normally requires between 2-5 minutes to allocate the machines and host the ECS cluster.  
+AWS typically requires 2-5 minutes to allocate nodes and host the ECS cluster. You can monitor the creation process by navigating to the [ECS console](https://us-east-2.console.aws.amazon.com/ecs), and selecting select the SatCompCluster [RBJ: will this name potentially vary?] link.
 
-If you wish, you can monitor the creation process from the ECS console as follows: 
-
-Navigate to the [ECS console](https://us-east-2.console.aws.amazon.com/ecs), then select the SatCompCluster link.
-
-The next page should show a list of job queues, including:
+The next page will show a list of job queues, including:
 
 ```text
 job-queue-PROJECT_NAME-SolverLeaderService-...
 job-queue-PROJECT_NAME-SolverWorkerService-...
 ```
 
-The service is running and available when the number of running tasks for the leader is `1` and that the number of running tasks for the Worker service is `n`, where _n_ is the number of desired tasks, which should match `NUM_WORKERS` from the script arguments.
+The service is running and available when the number of running tasks for the leader is `1` and the number of running tasks for the Worker service is `n`, as chosen with `NUM_WORKERS` in the `update_instances` script above.
 
-**N.B.:** you are charged for the number of EC2 instances that you run, so the bill for computation is directly proportional to the number of workers that you allocate.  
+Note: Your AWS account is charged for the number of EC2 instances that you run, so your bill will rise with the number of workers that you allocate.  
 
 ### Job Submission and Execution
 
-First, ensure a cluster is set up and running, and the desired .cnf problem is available in an accessible S3 bucket.
+Before submitting a job, check that a cluster is set up and running, and the desired problem is available in an accessible S3 bucket.
 
-To submit a job by sending a SQS message.  We have provided a script called `send_message` that will submit an SQS job.  You provide the location of the file to run and number of desired worker nodes, and it will submit a SQS request to the `ACCOUNT_NUMBER-REGION-SatCompQueue` queue which will trigger execution of the solver.
-
+Solver jobs are submitted by sending SQS messages. We have provided a `send_message` script to do this for you. You provide the S3 location of the file to run and number of desired worker nodes. The script submits an SQS request to the `[ACCOUNT_NUMBER]-[REGION]-SatCompQueue` queue, which the solver leader container is monitoring. 
 
 To run the script: 
 
@@ -240,23 +237,22 @@ send_message --profile PROFILE_NAME --location [S3_LOCATION] --workers [NUM_WORK
 
 where: 
 
-* **PROFILE\_NAME** is the profile name for the account.
-* **LOCATION** is the s3 location of the .cnf file.  For example, for the bucket we described earlier, the location would be s3://ACCOUNT_ID-us-east-1-satcompbucket/test.cnf (where ACCOUNT_ID is the account number you used).
-* **NUM\_WORKERS** is the number of worker nodes you would like to allocate. To avoid any problems with possible resource limits for your AWS account, we recommend that you set `NUM\_WORKERS` to `1` when going through the steps of this document for the first time.  If you are building for the parallel track rather than the cloud track, then set `NUM\_WORKERS` to `0`: all solving should be performed by the leader node.
+* `PROFILE_NAME` is the profile name for the account
+* `LOCATION` is the S3 location of the query file. For example, for the bucket we described earlier, the location would be `S3://[ACCOUNT_ID]-us-east-1-satcompbucket/test.cnf`.
+* `NUM_WORKERS` is the number of worker nodes to allocate for this problem. Again, we recommend that you start with `NUM_WORKERS` as `1` when beginning. For parallel solvers, you should set `NUM_WORKERS` to `0`.
 
-
-The leader base container infrastructure will pull the message off of the queue, find the problem in S3 and begin running it.  For more information on the steps performed, please read the [section on Extending the Solver Base Container](#understanding-the-solver-architecture-and-extending-the-competition-base-leader-container) below.  
+The leader container will pull the message off of the queue, fetch the problem from S3, and begin execution. For more information on the steps performed, see [Extending the Solver Base Container](#understanding-the-solver-architecture-and-extending-the-competition-base-leader-container) below.  
 
 ### Monitoring and Logging
 
-Currently, the best way to examine the status of the solvers is by examining the logs.  These are available from the CloudWatch log groups.  There should be logs related to `/ecs/PROJECT_NAME-leader` and `/ecs/PROJECT_NAME-worker`.  These logs will capture both stdout and stderr from the container images.
+The best way to see solver status is by examining the logs. These are available from CloudWatch log groups. There should be logs related to `/ecs/[PROJECT_NAME]-leader` and `/ecs/[PROJECT_NAME]-worker`.  These logs will capture both stdout and stderr from your solver containers.
 
-The ECS console allows you to monitor the logs of all running tasks. For information about the ECS console please refer to the documentation: [https://aws.amazon.com/ecs/](https://aws.amazon.com/ecs/).
+The ECS console allows you to monitor the logs of all running tasks. You can learn more about the ECS console at: [https://aws.amazon.com/ecs/](https://aws.amazon.com/ecs/).
 
 
 ### Cluster Teardown
 
-After testing, tear down the cluster by running: 
+After testing, remember to tear down the cluster by running: 
 
 ```text
 update_instances --profile PROFILE_NAME --option shutdown
@@ -264,201 +260,17 @@ update_instances --profile PROFILE_NAME --option shutdown
 
 This will terminate all EC2 instances and reset the number of leaders and workers to zero in the ECS service. 
 
-Be sure to check that no EC2 instances are running after running the teardown script.  Navigate to the [EC2 console](https://console.aws.amazon.com/ec2) for the account and check the Instances tab.  There should be no running instances.  Note that it might take a minute or two for the instances to shut down after running the script.
+You should verify that no EC2 instances are running after running the teardown script. Navigate to the [EC2 console](https://console.aws.amazon.com/ec2) and check the `Instances` tab.  There should be no running instances.  Note that it might take a minute or two for the instances to shut down after running the script.
 
-**N.B.: You are responsible for any charges made to your account.  While we have tested the shutdown script and believe it to be robust, you are responsible for monitoring the EC2 cluster to make sure resources have shutdown properly.  We have alternate directions to shutdown resources using the console in the Q&A section.**
-
-
-## Understanding the Solver Architecture and Extending the Competition Base Leader Container
-
-In previous years, we asked participants to provide a Dockerfile which would build a container that would handle all of the coordination between nodes, as well as downloading problems from S3 and all interactions with AWS.
-This meant that the Dockerfiles were quite complicated and included things which are common to all solvers such as retrieving problems from S3 or setting up openssh-server.  This required duplicate effort on the part of each team.
-It also meant that when running the competition, we often found bugs that were not related to the solvers themselves, but rather to environments that had not been configured properly.
-
-This year, we have modified the architecture used in previous competitions to try to make it simpler for competitors to build solvers.  Most of the infrastructure necessary for interacting with AWS services is managed in separate Docker base images for the leader node of the solver and the worker nodes.
-
-The Leader Node base container is responsible for pulling work off a queue, downloading the problem instance from S3, sharing the problem with Worker Nodes, and collecting the IP addresses of all the available worker nodes before starting the solving process.
-
-The Worker Node base container is responsible for reporting its status and IP address to the Leader Node.
+Note: You are responsible for any charges made to your AWS account.  While we have tested the shutdown script and believe it to be robust, you are responsible for monitoring the EC2 cluster to make sure resources have shutdown properly. We have alternate directions to shutdown resources using the console in the Q&A section.
 
 
-### Building from Competition Base Containers
-
-Solvers must be buildable from source code using a standard process.  We use Docker to create a build process that can easily be standardized.  Docker removes many of the platform-specific problems with building under one operating system and running in another.
-
-You must provide a GitHub repo that has a Dockerfile in the top directory that we will use to build your solver. The following Github repo is an example: [https://github.com/aws-samples/aws-satcomp-solver-sample](https://github.com/aws-samples/aws-satcomp-solver-sample).
-
-This year we will ask participants to supply two Dockerfiles for their solver, one that acts as a Leader Node and one that acts as a Worker Node.
-
-Participants should begin their Dockerfiles with:
-
-```text
-    FROM satcomp-base:leader
-```
-or
-
-```text
-    FROM satcomp-base:worker
-```
-
-The base images (which are based on ubuntu:20.04) have predefined entrypoints which start when the container is invoked.
-This entrypoint handles all interaction with the competition infrastructure.
-This means that participants are only responsible for invoking their solver, and should not have to write code for most of the interactions with AWS resources.
-
-#### Leader Base Container
-The Leader Base Container does the following steps: 
-
-1. Pull and parse a message from the `[ACCOUNT\_NUMBER]-REGION-SatCompQueue` SQS queue with the format described in the Job Submission and Execution section above,  
-1. Pull a competition problem from S3 from the location provided in the SQS message,
-1. Save the competition problem on a shared EFS drive so that it can be accessed by all of the worker nodes,
-1. Wait until the requested number of workers have reported their status as READY along with their IP address,
-1. Create a working directory for this problem task,
-1. Write an `input.json` with the IP addresses of the worker nodes as well as the location of the problem to the working directory,
-1. Invoke the executable script located at path `/competition/solver` with a single parameter: the path to the working directory, and
-1. Upon task completion, notify all workers that the task has ended.
-
-The competition participant must provide the `/competition/solver` script which contains
-the code to invoke their solver and to coordinate with the Worker nodes if needed.
-
-Here is an example of the `input.json` file:
-
-```text
-{
-  "problem_path": "/mount/efs/problem.cnf",
-  "worker_node_ips": ["192.158.1.38", "192.158.2.39", ...]
-}
-```
-
-The Leader Base Container waits until the `/competition/solver` script has completed, and looks for a `solver_out.json` file with the following format:
-
-```text
-{
-  "return_code": Number, // of running the solve command
-  "result": String,      // Should be one of {"SAT", "UNSAT", "UNKNOWN", "ERROR"}
-  "artifacts": {
-    "stdout_path": String, // Where to find the stdout of the solve run
-    "stderr_path": String  // Where to find the stderr of the solve run
-  }
-}
-```
-
-
-You can extend the competition base image (either Leader or Worker) by writing your own `/competition/solver` script and copying it to a new container which is based on the Competition Base Container.
-
-NOTE: We have provided a fully fleshed out example of how to do this in the following github repo: [https://github.com/aws-samples/aws-satcomp-solver-sample](https://github.com/aws-samples/aws-satcomp-solver-sample).
-
-For example:
-
-```text
-FROM satcomp-base:leader
-
-# Do all steps necessary to build your solver
-RUN apt-get install my-amazing-solver
-
-# Add your solver script
-COPY solver /competition/solver
-RUN chmod +x /competition/solver
-```
-
-Note that you do not have to provide an entrypoint or a CMD because the entrypoint is provided in the base container.
-
-### Worker Base Container
-
-The Worker Base Container does the following things:
-
-1. Reports its status as READY, BUSY, or ERROR and its IP address to a global Node Manifest
-2. Monitor the Task Notifier for a notification that a solving task has ended
-
-Although the base container handles all interaction with the Node Manifest and the Task Notifier, competition participants are responsible for defining what it means to be "READY".
-When the container comes up, it immediately runs the executable script at path `/competition/worker` in a separate process.
-
-This worker must update the `worker_node_status.json` file on the file system once per second with a heartbeat as well as the current status (READY, BUSY, ERROR) and a timestamp (the unix epoch time as returned by the linux time() function) .
-
-If the worker fails to update this status for more than 5 seconds, then the node will be declared failed and the competition infrastructure will restart the node.
-Repeated failures of worker nodes (currently under discussion, but likely a maximum of three) will cause the system to score the problem as 'error'.
-
-Here is an example of the format for worker_node_status.json:
-
-```text
-{
-    "status": "READY",  // one of {"READY", "BUSY", "ERROR"}
-    "timestamp": "1644545117" // linux epoch time as returned by the C time() function
-}
-```
-
-A 'bare bones' example of status reporting (from the aws-satcomp-sample-solver example) just checks the status of the worker process and the sshd process:
-
-```python
-    #!/usr/bin/env python3
-
-    import json
-    import subprocess
-    import time
-    import logging
-
-    logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-
-    def check_process_status():
-        status = 'READY'
-        output = subprocess.check_output(['ps', 'ax', '-ocomm']).decode("utf-8").strip()
-
-        if 'orted' in output:
-            status = 'BUSY'
-
-        if 'sshd' not in output:
-            status = 'ERROR'
-
-        return status
-
-
-    def update_worker_status():
-        while True:
-            status = check_process_status()
-
-            data = {"status": status, "timestamp": int(time.time())}
-            with open(
-                    "/competition/worker_node_status.json",
-                    "w+",
-            ) as statusfile:
-                statusfile.write(json.dumps(data))
-            time.sleep(1)
-
-
-    if __name__ == "__main__":
-        update_worker_status()
-```
-
-The participant is also responsible for writing the script that is executed when a task is complete, to perform cleanup tasks and make sure the node is ready for more work.
-
-This script must be placed at path `/competition/cleanup` and is executed after a problem completes.
-The 'default' script does nothing. In a normal termination, it assumes the solver cleans up. However, it can be used to forcibly terminate a solver process.
-
-In normal operation, this script is executed when the leader process completes, but could alternatively, in case of a failure, be executed by the competition infrastructure.
-The script must reset the worker state so that it is ready to solve the next problem.
-
-
-Participants must extend the competition worker container by adding their own `/competition/worker` and `/competition/cleanup` scripts.
-NOTE: We provide a complete working example of how to do this in the following git repo:  https://github.com/aws-samples/aws-satcomp-sample-solver
-
-For example:
-
-```text
-FROM satcomp-base:worker
-
-# Do all steps necessary to build your solver
-RUN apt-get install my-amazing-solver
-
-# Add your solver script
-COPY worker /competition/worker
-RUN chmod +x /competition/worker
-
-COPY cleanup /competition/cleanup
-RUN chmod +x /competition/cleanup
-```
 
 ## Additional Steps
 
 ### Basic Account Configuration
+
+[RBJ: shouldn't this be in the first section above?]
 
 When doing the basic account setup, we use [AWS CloudFormation](https://aws.amazon.com/cloudformation/).  The file `setup-account.yaml` in this repository is an optional CloudFormation script that can help you track your spending.  It sets up notification emails to be sent to an email address you provide when the account reaches 20%, 40%, 60%, 80%, 90%, 95%, and 100% of the monthly account budget so that you have a window into the current spend rate for building and testing your solver.
 
@@ -486,9 +298,9 @@ Although it is handy to get emails when certain account budget thresholds have b
 
 **Q: I'm only submitting to the parallel track and not the cloud track.  Do I need a worker image?**
 
-No.  If you are submitting to the parallel track only, you do not need a worker image.  For the parallel track, we will assume that the leader manages all threading and communications within the single (multi-core) compute node.
+No. If you are submitting to the parallel track only, you do not need a worker image.  For the parallel track, we will assume that the leader manages all threading and communications within the single (multi-core) compute node.
 
-**Q: I ran the infrastructure scripts, and they seemed to work, but when I go out to the console, I don't see any of the infrastructure: S3 buckets, ECS Queues, etc.  What happened?**
+**Q: I ran the infrastructure scripts, and they seemed to work, but when I go out to the console, I don't see any of the infrastructure: S3 buckets, ECS Queues, etc. What happened?**
 
 The most common mistake people make when starting with AWS is not choosing the correct *region* for executing their jobs.  In the console on the top right there is a selectable region:
 
@@ -538,7 +350,7 @@ An error occurred (InvalidParameterException) when calling the RunTask operation
 
 If they fail to boot up after 5 minutes, please verify that both Desired Capacity and Maximum Capacity are set correctly.
 
-You incur costs for the time the machines are running.
+You incur costs for the time the machines are running. [RBJ: allocated?]
 
 **Q: Suppose I want to use the console to tear down my ECS clusters.  How do I do that?**
 

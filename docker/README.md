@@ -1,14 +1,18 @@
-# SATComp Example: Mallob
+# Overview
 
-This tutorial covers the process of building your solver and embedding it in docker images. We cover two configurations: parallel (single node, multiple cores) and distributed (multiple nodes, multiple cores per node). Building a distributed solver is a superset of of building a parallel solver; we will note steps that are only required for a distributed solver. 
+This tutorial covers the process of building your solver and embedding it in docker images. We suggest that you proceed in two stages: build the Mallob example and test it with the infrastructure you have [just created]. When you have it working, return to this README and follow the instructions in the second section [RBJ:link fixme](link).  
 
-We use Mallob as the running example for both parallel and distributed solvers. This repository contains a version of Mallob that we have tested with the AWS infrastructure. You will build Mallob later in the tutorial.
+# Example: Mallob
 
-This README proceeds in four steps:
+This example covers two configurations: parallel (single node, multiple cores) and distributed (multiple nodes, multiple cores per node). Because building a distributed solver is a superset of of building a parallel solver; we will note steps that are only required for a distributed solver. 
+
+We use Mallob as the running example for both parallel and distributed solvers. This example pulls a version of Mallob that we have tested with the AWS infrastructure. 
+
+This section proceeds in four steps:
 - Preparing your system
-- Building Base SATcomp docker images
-- Building Mallob docker images
-- Running Mallob
+- Building base SATcomp Docker images
+- Building Mallob Docker images
+- Running Mallob in Docker
 
 ## Prerequisites
 
@@ -16,9 +20,9 @@ This README proceeds in four steps:
 
 2. Install Docker.  
 
-We assume some basic familiarity with Docker. If you need more information, there are a number of excellent tutorials, such as [this one](https://docs.docker.com/get-started/).
+Basic familiarity with Docker will be helpful, but we will walk you through step-by-step. If you need more information, there are a number of excellent tutorials, such as [this one](https://docs.docker.com/get-started/).
 
-## Building the SATComp Images
+## Building the SATComp Base Images
 
 To simplify the solver construction process, we provide base Docker images that manage the infrastructure necessary for solvers and mediate access to AWS resources. We will build three images, a common image, a leader, and a worker. One leader coordinates multiple workers. The Dockerfiles and needed resources are contained in the [satcomp-images](satcomp-images) directory.
 
@@ -104,7 +108,6 @@ In the this section, we will use `docker run` to create docker _containers_ (pro
 
 To find out which docker containers are running, use the command `docker ps`. The command `docker ps -a` will include containers that have already exited. To remove a container, run `docker rm <CONTAINER_ID>`. To remove all containers, run `docker rm $(docker ps -aq)`.
 
-
 ### Creating a Docker Network
 
 Before running mallob we need to create a docker bridge network that our containers can attach to. This is necessary for both parallel and distributed mallob. Create a network named `mallob-test` by running the command `docker network create mallob-test`.
@@ -154,3 +157,192 @@ The competition infrastructure starts solver containers and keeps them running f
 Your debugging should ensure that you don't leave extra processes running. Check for orphaned jobs with `ps -ax`. In addition, if you create temporary in the container, ensure they are cleaned up.
 
 If your solver doesn't run correctly in the docker container, you can remove the `/container/solver` commands from the `init_mallob.sh` files. Once you are dropped into the docker container's bash shell, you can explore and debug directly, including running `/container/solver /rundir` from the container shell command line.
+
+# Preparing Your Own Solver Images
+
+#### Understanding the Solver Architecture and Extending the Competition Base Leader Container
+
+In previous years, we asked participants to provide a Dockerfile which would build a container that would handle all of the coordination between nodes, as well as downloading problems from S3 and all interactions with AWS.
+This meant that the Dockerfiles were quite complicated and included things which are common to all solvers such as retrieving problems from S3 or setting up openssh-server.  This required duplicate effort on the part of each team.
+It also meant that when running the competition, we often found bugs that were not related to the solvers themselves, but rather to environments that had not been configured properly.
+
+This year, we have modified the architecture used in previous competitions to try to make it simpler for competitors to build solvers.  Most of the infrastructure necessary for interacting with AWS services is managed in separate Docker base images for the leader node of the solver and the worker nodes.
+
+The Leader Node base container is responsible for pulling work off a queue, downloading the problem instance from S3, sharing the problem with Worker Nodes, and collecting the IP addresses of all the available worker nodes before starting the solving process.
+
+The Worker Node base container is responsible for reporting its status and IP address to the Leader Node.
+
+
+### Building from Competition Base Containers
+
+Solvers must be buildable from source code using a standard process.  We use Docker to create a build process that can easily be standardized.  Docker removes many of the platform-specific problems with building under one operating system and running in another.
+
+You must provide a GitHub repo that has a Dockerfile in the top directory that we will use to build your solver. The following Github repo is an example: [https://github.com/aws-samples/aws-satcomp-solver-sample](https://github.com/aws-samples/aws-satcomp-solver-sample).
+
+This year we will ask participants to supply two Dockerfiles for their solver, one that acts as a Leader Node and one that acts as a Worker Node.
+
+Participants should begin their Dockerfiles with:
+
+```text
+    FROM satcomp-base:leader
+```
+or
+
+```text
+    FROM satcomp-base:worker
+```
+
+The base images (which are based on ubuntu:20.04) have predefined entrypoints which start when the container is invoked.
+This entrypoint handles all interaction with the competition infrastructure.
+This means that participants are only responsible for invoking their solver, and should not have to write code for most of the interactions with AWS resources.
+
+#### Leader Base Container
+The Leader Base Container does the following steps: 
+
+1. Pull and parse a message from the `[ACCOUNT\_NUMBER]-[REGION]-SatCompQueue` SQS queue with the format described in the Job Submission and Execution section above,  
+1. Pull a competition problem from S3 from the location provided in the SQS message,
+1. Save the competition problem on a shared EFS drive so that it can be accessed by all of the worker nodes,
+1. Wait until the requested number of workers have reported their status as READY along with their IP address,
+1. Create a working directory for this problem task,
+1. Write an `input.json` with the IP addresses of the worker nodes as well as the location of the problem to the working directory,
+1. Invoke the executable script located at path `/competition/solver` with a single parameter: the path to the working directory, and
+1. Upon task completion, notify all workers that the task has ended.
+
+The competition participant must provide the `/competition/solver` script which contains
+the code to invoke their solver and to coordinate with the Worker nodes if needed.
+
+Here is an example of the `input.json` file:
+
+```text
+{
+  "problem_path": "/mount/efs/problem.cnf",
+  "worker_node_ips": ["192.158.1.38", "192.158.2.39", ...]
+}
+```
+
+The Leader Base Container waits until the `/competition/solver` script has completed, and looks for a `solver_out.json` file with the following format:
+
+```text
+{
+  "return_code": Number, // of running the solve command
+  "result": String,      // Should be one of {"SAT", "UNSAT", "UNKNOWN", "ERROR"}
+  "artifacts": {
+    "stdout_path": String, // Where to find the stdout of the solve run
+    "stderr_path": String  // Where to find the stderr of the solve run
+  }
+}
+```
+
+
+You can extend the competition base image (either Leader or Worker) by writing your own `/competition/solver` script and copying it to a new container which is based on the Competition Base Container.
+
+NOTE: We have provided a fully fleshed out example of how to do this in the following github repo: [https://github.com/aws-samples/aws-satcomp-solver-sample](https://github.com/aws-samples/aws-satcomp-solver-sample).
+
+For example:
+
+```text
+FROM satcomp-base:leader
+
+# Do all steps necessary to build your solver
+RUN apt-get install my-amazing-solver
+
+# Add your solver script
+COPY solver /competition/solver
+RUN chmod +x /competition/solver
+```
+
+Note that you do not have to provide an entrypoint or a CMD because the entrypoint is provided in the base container.
+
+### Worker Base Container
+
+The Worker Base Container does the following things:
+
+1. Reports its status as READY, BUSY, or ERROR and its IP address to a global Node Manifest
+2. Monitor the Task Notifier for a notification that a solving task has ended
+
+Although the base container handles all interaction with the Node Manifest and the Task Notifier, competition participants are responsible for defining what it means to be "READY".
+When the container comes up, it immediately runs the executable script at path `/competition/worker` in a separate process.
+
+This worker must update the `worker_node_status.json` file on the file system once per second with a heartbeat as well as the current status (READY, BUSY, ERROR) and a timestamp (the unix epoch time as returned by the linux time() function) .
+
+If the worker fails to update this status for more than 5 seconds, then the node will be declared failed and the competition infrastructure will restart the node.
+Repeated failures of worker nodes (currently under discussion, but likely a maximum of three) will cause the system to score the problem as 'error'.
+
+Here is an example of the format for worker_node_status.json:
+
+```text
+{
+    "status": "READY",  // one of {"READY", "BUSY", "ERROR"}
+    "timestamp": "1644545117" // linux epoch time as returned by the C time() function
+}
+```
+
+A 'bare bones' example of status reporting (from the aws-satcomp-sample-solver example) just checks the status of the worker process and the sshd process:
+
+```python
+    #!/usr/bin/env python3
+
+    import json
+    import subprocess
+    import time
+    import logging
+
+    logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+    def check_process_status():
+        status = 'READY'
+        output = subprocess.check_output(['ps', 'ax', '-ocomm']).decode("utf-8").strip()
+
+        if 'orted' in output:
+            status = 'BUSY'
+
+        if 'sshd' not in output:
+            status = 'ERROR'
+
+        return status
+
+
+    def update_worker_status():
+        while True:
+            status = check_process_status()
+
+            data = {"status": status, "timestamp": int(time.time())}
+            with open(
+                    "/competition/worker_node_status.json",
+                    "w+",
+            ) as statusfile:
+                statusfile.write(json.dumps(data))
+            time.sleep(1)
+
+
+    if __name__ == "__main__":
+        update_worker_status()
+```
+
+The participant is also responsible for writing the script that is executed when a task is complete, to perform cleanup tasks and make sure the node is ready for more work.
+
+This script must be placed at path `/competition/cleanup` and is executed after a problem completes.
+The 'default' script does nothing. In a normal termination, it assumes the solver cleans up. However, it can be used to forcibly terminate a solver process.
+
+In normal operation, this script is executed when the leader process completes, but could alternatively, in case of a failure, be executed by the competition infrastructure.
+The script must reset the worker state so that it is ready to solve the next problem.
+
+
+Participants must extend the competition worker container by adding their own `/competition/worker` and `/competition/cleanup` scripts.
+NOTE: We provide a complete working example of how to do this in the following git repo:  https://github.com/aws-samples/aws-satcomp-sample-solver
+
+For example:
+
+```text
+FROM satcomp-base:worker
+
+# Do all steps necessary to build your solver
+RUN apt-get install my-amazing-solver
+
+# Add your solver script
+COPY worker /competition/worker
+RUN chmod +x /competition/worker
+
+COPY cleanup /competition/cleanup
+RUN chmod +x /competition/cleanup
+```
