@@ -11,7 +11,7 @@ This directory provides the infrastructure necessary to build and test solvers. 
 
 We also provide Docker images that will simplify your solver's connection to the AWS infrastructure. The [`docker`](../docker/README.md) directory contains Docker base images and an example solver that will work with the infrastructure. 
 
-Note: This provides instructions for both the cloud and parallel track. If you are only competing in the parallel track, a handful of the steps are unnecessary.  We will try to point these out as we go.
+Note: This provides instructions for both the cloud and parallel track. If you are only competing in the parallel track, a handful of the steps are unnecessary.  We will point these cloud-only steps as we go.
 
 ## Prerequisites
 
@@ -24,7 +24,7 @@ To install the infrastructure described in this document, you will need the foll
 
 Some basic knowledge of AWS accounts and services is helpful, but we will walk you through all of the necessary steps pieces. 
 
-We recommend that you run on Amazon Linux 2 (AL2) or Ubuntu 20. Other platforms may work, but have not been tested.
+We recommend that your development environment is hosted on Mac OS, Amazon Linux 2 (AL2) or Ubuntu 20. Other platforms may work, but have not been tested.
 
 ## Creating an AWS Account
 

@@ -169,7 +169,7 @@ class CloudFormation:
 
     def update_cloudformation_stack(self, project_name, instance_type, ami_id, container_memory) -> None:
         try:
-            cf_template = open('create-solver-infrastructure.yaml').read()
+            cf_template = open('solver-infrastructure.yaml').read()
             stack = self.cfn.Stack(self.stack_name)
             response = stack.update(
                 StackName=self.stack_name,
