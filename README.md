@@ -11,6 +11,6 @@ We recommend that you work in four steps:
 3. Create your own solver and run experiments
 4. When ready, share the solver repository and Docker image with us
 
-For step #3, we provide some guidance on running solvers locally within Docker.  This allows you to perform your initial debugging locally prior to uploading to the cloud.
+For step #3, we provide guidance on running solvers locally within Docker.  This allows you to perform your initial debugging locally prior to uploading to the cloud.
 
 The AWS-infrastructure steps are described in the [Infrastructure README](infrastructure/README.md), and the docker-related steps and debugging are covered in [SAT-Comp Docker Images](docker/README.md).
