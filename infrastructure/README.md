@@ -24,7 +24,7 @@ To install the infrastructure described in this document, you will need the foll
 
 Some basic knowledge of AWS accounts and services is helpful, but we will walk you through all of the necessary steps pieces. 
 
-We recommend that your development environment is hosted on Mac OS, Amazon Linux 2 (AL2) or Ubuntu 20. Other platforms may work, but have not been tested.
+We recommend that your development environment is hosted on Amazon Linux 2 (AL2) or Ubuntu 20. Other platforms may work, but have not been tested.  We know that Mallob does not build cleanly on Mac OS running M1 and M2 processors, even when building within a Docker container, due to missing FPU flags.
 
 ## Creating an AWS Account
 
@@ -88,20 +88,20 @@ Next, you will create the AWS infrastructure necessary to build and test solvers
 
 We provide a script to set up all of these resources. You can click the links about for more specifics on each each of the services.  [RBJ: fix next sentence] We also explain how these services interact in more detail in the &quot;Extending the Competition Base Container&quot; section of this document. 
 
-To set up your resouces, simply need to run the  `create-solver-infrastructure` script that we have provided:
+To set up your resouces, simply run the  `create-solver-infrastructure` script that we have provided:
 ```text
 ./create-solver-infrastructure --profile PROFILE_NAME --project PROJECT_NAME --solver-type SOLVER_TYPE
 ```
 
 where:
 
-**PROFILE\_NAME** is the name of the aws profile that you set up at the beginning of this document.  It is very likely 'sc-2023'
+`PROFILE\_NAME` is the name of the aws profile that you set up at the beginning of this document.  It is very likely 'sc-2023'
 
 `PROJECT_NAME`: is the name of the project [RBJ: as chosen by the user for the life of the competition]. Note that `PROJECT_NAME` must start with a letter and can only contain lowercase letters, numbers, hyphens (-), underscores (_), and forward slashes (/).
 
-* `SOLVER_TYPE`: is either `cloud` or `parallel` depending on which kind of solver you are running. Note that we will run cloud solvers run on multiple 16-core machines (m6i.4xlarge [RBJ: include links?]) with 64GB memory, while parallel solvers run on a single 64-core machine (m6i.16xlarge) with 256GB memory.
+`SOLVER_TYPE`: is either `cloud` or `parallel` depending on which kind of solver you are running. Note that we will run cloud solvers run on multiple 16-core machines (m6i.4xlarge [RBJ: include links?]) with 64GB memory, while parallel solvers run on a single 64-core machine (m6i.16xlarge) with 256GB memory.
 
-The script will take 5-10 minutes. When complete, all of the needed cloud resources should be created. [RBJ: provide instructions for checking/testing?]
+The script will take 5-10 minutes. When complete, all of the needed cloud resources should be created.  The script polls until the creation is complete.  
 
 ### Switching Between Cloud and Parallel Tracks
 
@@ -120,7 +120,7 @@ If something goes wrong and you want to start over, simply run the `delete-solve
 ./delete-solver-infrastructure --profile PROFILE_NAME --project PROJECT_NAME 
 ```
 
-This will delete the infrastructure and associated resources. It will not delete your AWS account or security credentials.
+This will delete the infrastructure and associated resources.  **Note that this deletion includes any files that have been uploaded to your S3 bucket and also any ECR docker images that you have created.** It will not delete your AWS account or security credentials.
 
 ## Docker Images
 
@@ -142,13 +142,13 @@ This repository will store the images for the leader and worker.  Once you have 
 
 where:
 
-**PROFILE\_NAME** is the name of the aws profile that you set up at the beginning of this document.  It is very likely 'sc-2023'
+`PROFILE\_NAME` is the name of the aws profile that you set up at the beginning of this document.  It is very likely 'sc-2023'
 
-**PROJECT\_NAME:** is the name of the project that you used earlier when creating the account.
+`PROJECT\_NAME` is the name of the project that you used earlier when creating the account.
 
-**LEADER\_IMAGE\_TAG:** is the tagged name of the leader docker image.
+`LEADER\_IMAGE\_TAG` is the tagged name of the leader docker image.
 
-**WORKER\_IMAGE\_TAG:** is the tagged name of the leader docker image.
+`WORKER\_IMAGE\_TAG` is the tagged name of the leader docker image.
 
 The leader and worker tags are optional; you can upload one or both docker images with this command (though if neither is specified, the script exits with an error).
 
@@ -174,7 +174,7 @@ More information on creating and managing S3 buckets is found here: [https://aws
 
 ## Running Your Solver
 
-After storing docker images (`[PROJECT_NAME]-leader` and `[PROJECT_NAME]-worker`) and placing at least one query file in your S3 bucket, you are ready to run your solver.
+After storing docker images: `[PROJECT_NAME]:leader` (and for the cloud solver: `[PROJECT_NAME]:worker`) and placing at least one query file in your S3 bucket, you are ready to run your solver.
 
 Running the solver consists of three steps:
 
@@ -317,6 +317,11 @@ The reason that you view has to be the same as the one referenced in your profil
 There are two likely causes.  First it could be that you submitted an SQS that asked for more workers than you configured when you set up your cluster.  Make sure that the number of worker nodes equals or exceeds the number of worker nodes that were requested in the SQS message.  Second, if you just set up the ECS cluster, then it is likely that either the requested EC2 servers have not yet initialized, or that the ECS cluster has not yet started running on them.  It takes 2-5 minutes for the resources to become available after they are requested.
 
 There is also a less-likely cause, involving capacity limits.  EC2 sets default capacity limits on the number of compute nodes that are available to an account.  If you are running large-scale tests, it may be that you have exceeded the default number of nodes.  To check, navigate to the EC2 console for the account, and click on "Limits" on the left side.  Type "All standard" in the search bar and determine the current limit.  The limit is specified in terms of vCPUs, so each m6i-4xlarge image uses 16 vCPUs, and every m6i-16xlarge uses 64 CPUs.  If you need additional vCPUs, click on the "All Standard" link and request a limit increase.  **N.B.** Running a large cluster can become expensive.  Make sure you limit your large-scale testing to preserve your AWS credits.
+
+#### Q: I'm watching the ECS cluster, but nothing is happening; no nodes are being created.  What happened?
+
+This can happen if you try to start up a cloud solver when the infrastructure is configured for parallel execution or vice versa.  In this case, the machine image where you want to deploy does not match the requirements of the ECS task.  Make sure that if you are running a cloud solver, you have not configured the infrastructure for parallel.  If you are unsure, you can always run `update-solver-infrastructure` with the expected type.  If the infrastructure is already set up for this type, it will be a no-op.
+
 
 #### Q: Suppose I want to use the console to setup my ECS clusters, or to monitor them.  How do I do that?
 
@@ -463,4 +468,4 @@ You should see network progress bars for both images.
 
 More information related to the ECR procedures is described here: [https://docs.aws.amazon.com/AmazonECR/latest/userguide/docker-push-ecr-image.html](https://docs.aws.amazon.com/AmazonECR/latest/userguide/docker-push-ecr-image.html).
 
-If you have trouble, please email us at: [sat-comp-2022@amazon.com](mailto:sat-comp-2022@amazon.com) and we will walk you through the process.
+If you have trouble, please email us at: [sat-comp-2023@amazon.com](mailto:sat-comp-2023@amazon.com) and we will walk you through the process.

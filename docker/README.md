@@ -119,6 +119,10 @@ To run parallel Mallob, cd into the `runner` directory. We have created a simple
 - `DOCKER_NETWORK`. Name of the docker bridge network, `mallob-test` for this example.
 - `HOST_RUNDIR`. Name of the host directory that will be mounted in the docker run directory. This should be an absolute pathname. Note that this enables you to persist the run directory over multiple docker container sessions. It is also the location where the docker solver will write results. If you use the example from the repo, this should be the absolute pathname to the `experiment` directory.
 
+[MWW: we need to add instructions chmod 777 this directory so that is world-writeable/executable so Docker can use it.]
+
+[MWW: if you make the 'rundir' the base dir where the script runs, then you can use path completion to describe the relative path to the query file.  However, the way the files are placed, you also have to make the directory containg the script is chmod 777. ]
+
 The script requires two command-line arguments.
 - <docker_image_name>, which is `satcomp-mallob` for this example. 
 - <query_file>, which is the name of the test file for the solver, `test.cnf` in the repository. Note that this file must appear in the host run directory `HOST_RUNDIR`.

@@ -47,10 +47,8 @@ class ECR:
 
     def delete_project_repositories(self, project_name) -> None: 
         # These must be kept synchronized with Cfn.
-        leader_repository_name = project_name + "-leader"
-        worker_repository_name = project_name + "-worker"
-        self.delete_repository_images(leader_repository_name)
-        self.delete_repository_images(worker_repository_name)
+        repository_name = project_name
+        self.delete_repository_images(repository_name)
 
 
 class S3Filesystem:
@@ -104,7 +102,7 @@ class SSM:
             logger.debug(f"Result of get_parameters is {result}")
             result_value = json.loads(result["Parameters"][0]["Value"])
             image_id = result_value["image_id"]
-            logger.debug(f"image id: {image_id}")
+            logger.info(f"Recommended image id: {image_id}")
             return result_value["image_id"]
         except Exception as e:
             logger.error(f"Failed to call ssm.get_parameters to find the recommended AMI for linux: {e}")
