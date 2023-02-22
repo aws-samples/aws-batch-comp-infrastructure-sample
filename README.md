@@ -11,4 +11,4 @@ We recommend that you work in four steps:
 3. Create your own solver and run experiments
 4. When ready, share the solver repository and Docker image with us
 
-The AWS-infrastructure steps are described in the [Infrastructure README](infrastructure/README.md), and the docker-related steps and debugging are covered in [SAT-Comp Docker Images](docker/README.md).
+You should begin with the AWS infrastructure steps as described in the [Infrastructure README](infrastructure/README.md). That README will direct you to Docker-related steps and debugging that are covered in [Docker Images for SAT/SMT-Comp](docker/README.md).
