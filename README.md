@@ -2,7 +2,7 @@
 
 This repository will help you get your parallel or distributed solver running efficiently on AWS.  You will build docker containers with your solver and the connect them to the AWS infrastructure.
 
-Last year, we received feedback that it was challenging to debug solvers on AWS.  This year, we provide some guidance and scripts to allow you to debug your parallel and distributed solvers locally using Docker prior to running at larger scale on AWS resources. This will enable participants to get solvers running in a stable way before uploading to AWS, which should reduce the overhead of preparing your solver for submission.
+Last year, we received feedback that it was challenging to debug solvers on AWS.  This year, we provide some guidance and scripts to enable debugging your parallel and distributed solvers locally using Docker prior to running at larger scale on AWS resources. This will enable you to get solvers running in a stable way before uploading to AWS, which should reduce the overhead of preparing your solver for submission.
 
 We recommend that you work in four steps:
 

@@ -7,7 +7,7 @@ This README describes how to build and configure AWS infrastructure for the SAT 
 3. Create your own solver and run experiments
 4. When ready, share the solver repository and Docker image with us
 
-This directory provides the infrastructure necessary to build and test solvers. To configure an AWS account for run distributed solvers, we provide _CloudFormation_ templates [https://aws.amazon.com/cloudformation/](https://aws.amazon.com/cloudformation/), 
+This directory provides the infrastructure necessary to build and test solvers. To configure an AWS account for running distributed solvers, we provide _CloudFormation_ templates [https://aws.amazon.com/cloudformation/](https://aws.amazon.com/cloudformation/), 
 
 We also provide Docker images that will simplify your solver's connection to the AWS infrastructure. The [`docker`](../docker/README.md) directory contains Docker base images and an example solver that will work with the infrastructure. 
 
@@ -34,8 +34,9 @@ If you have already created an account based on your email address, we strongly 
 
 To find your account ID, click on your account name in the top right corner, and then click "My Account". You should see Account ID in the Account Settings
 
-Note: It is very important that you tell us your account number immediately after creating the account, so that we can assign you a resource budget for your experiments. We also need to grant you access to the shared problem set which is in a separate S3 bucket.
-Once we hear from you, we will email you an acknowledgment when resources have been added to your account.
+It is important that you tell us your account number immediately after creating the account, so that we can assign you a resource budget for your experiments. We also need to grant you access to the shared problem set which is in a separate S3 bucket. Once we hear from you, we will email you an acknowledgment when resources have been added to your account.
+
+Note: If you choose to use an existing AWS account (not recommended), you should create a competition-specific profile, for example `sc-2023`. Instead of using `default` in the .aws/credentials file below, you would use `sc-2023` as a profile name.  You would then include `--profile sc-2023` with every AWS command in this README.
 
 ### Installing the AWS CLI
 
@@ -49,7 +50,7 @@ AWS has many regions, which enables low-latency access for customers around the 
 
 ### Creating AWS Credentials
 
-You must configured AWS credentials to access the resources in your account. For the purposes of simplifying the competition configurations, you will use a so-called _root level access key_. This is NOT the best practice for security (which would be to create a separate user in your account) but it will sufficew for the competition. If you continue using your AWS account after the competition, we recommend that you follow AWS best practices as described here:
+You must configure AWS credentials to access the resources in your account. For the purposes of simplifying the competition configurations, you will use a so-called _root level access key_. This is NOT the best practice for security (which would be to create a separate user in your account) but it will suffice for the competition. If you continue using your AWS account after the competition, we recommend that you follow AWS best practices as described here:
     [https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html#create-iam-users](https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html#create-iam-users)
 
 In this section, you will be working with the Identity and Access Management (IAM) console. To create a root level access key go to the [IAM Console](https://console.aws.amazon.com/iamv2/). You can get to the console by clicking previous link or by searching for "IAM" in the search field at the top of the [AWS Console](https://console.aws.amazon.com) as shown [here](readme-images/iam-search.png) and then clicking the resulting link).
@@ -57,18 +58,18 @@ In this section, you will be working with the Identity and Access Management (IA
 On IAM page, click "My Security Credentials" on the right side of the IAM console page as shown [here](readme-images/iam-quicklinks.png). Next, click on "Access keys (access key ID and secret access key)," then "Create New Access Key," and then "Show Access Key."
 This will create an Access Key ID and a Secret Access Key. Copy these for use in the next step.
 
-Next, on your workstation, create a `~/.aws/credentials` file with the following information:
+Next, on your local workstation, create a `~/.aws/credentials` file with the following information:
 
-    [sc-2023]
+    [default]
     aws_access_key_id=ACCESS_KEY_ID
     aws_secret_access_key=SECRET_ACCESS_KEY
     region=us-east-1
 
-ACCESS_KEY_ID and SECRET_ACCESS_KEY are the keys that you created in the previous step. `sc-2023` is a 'profile name' that you will use  to access the account.  We will refer to this as the PROFILE_NAME elsewhere.
+ACCESS_KEY_ID and SECRET_ACCESS_KEY are the keys that you created in the previous step. 
 
 After installing the AWS CLI and creating credentials, check your configuration by attempting to run an AWS command.  An example command that should work is:
 ```text
-aws --profile sc-2023 sts get-caller-identity
+aws sts get-caller-identity
 ```
 
 If you receive an error message, see the [Troubleshooting](#troubleshooting) section at the bottom of this document.
@@ -90,16 +91,14 @@ We provide a script to set up all of these resources. You can click the links ab
 
 To set up your resouces, simply run the  `create-solver-infrastructure` script that we have provided:
 ```text
-./create-solver-infrastructure --profile PROFILE_NAME --project PROJECT_NAME --solver-type SOLVER_TYPE
+./create-solver-infrastructure --project PROJECT_NAME --solver-type SOLVER_TYPE
 ```
 
 where:
 
-`PROFILE\_NAME` is the name of the aws profile that you set up at the beginning of this document.  It is very likely 'sc-2023'
+* `PROJECT_NAME`: is the name of the project [RBJ: as chosen by the user for the life of the competition]. Note that `PROJECT_NAME` must start with a letter and can only contain lowercase letters, numbers, hyphens (-), underscores (_), and forward slashes (/).
 
-`PROJECT_NAME`: is the name of the project [RBJ: as chosen by the user for the life of the competition]. Note that `PROJECT_NAME` must start with a letter and can only contain lowercase letters, numbers, hyphens (-), underscores (_), and forward slashes (/).
-
-`SOLVER_TYPE`: is either `cloud` or `parallel` depending on which kind of solver you are running. Note that we will run cloud solvers run on multiple 16-core machines (m6i.4xlarge [RBJ: include links?]) with 64GB memory, while parallel solvers run on a single 64-core machine (m6i.16xlarge) with 256GB memory.
+* `SOLVER_TYPE`: is either `cloud` or `parallel` depending on which kind of solver you are running. Note that we will run cloud solvers run on multiple 16-core machines (m6i.4xlarge [RBJ: include links?]) with 64GB memory, while parallel solvers run on a single 64-core machine (m6i.16xlarge) with 256GB memory.
 
 The script will take 5-10 minutes. When complete, all of the needed cloud resources should be created.  The script polls until the creation is complete.  
 
@@ -108,7 +107,7 @@ The script will take 5-10 minutes. When complete, all of the needed cloud resour
 Once the infrastructure has been created, if you want to update it to switch between machine configurations for the cloud and parallel tracks, you can run the `update-solver-infrastructure` script: 
 
 ```text
-./update-solver-infrastructure --profile PROFILE_NAME --project PROJECT_NAME --solver-type SOLVER_TYPE
+./update-solver-infrastructure --project PROJECT_NAME --solver-type SOLVER_TYPE
 ```
 
 This will change the instance type and memory configurations for the ECS images used. You can switch back and forth as needed.
@@ -117,7 +116,7 @@ This will change the instance type and memory configurations for the ECS images 
 
 If something goes wrong and you want to start over, simply run the `delete-solver-infrastructure` script:
 ```text
-./delete-solver-infrastructure --profile PROFILE_NAME --project PROJECT_NAME 
+./delete-solver-infrastructure --project PROJECT_NAME 
 ```
 
 This will delete the infrastructure and associated resources.  **Note that this deletion includes any files that have been uploaded to your S3 bucket and also any ECR docker images that you have created.** It will not delete your AWS account or security credentials.
@@ -137,18 +136,16 @@ The `create-solver-infrastructure` command described earlier creates an ECR repo
 This repository will store the images for the leader and worker.  Once you have created and tested a docker image (or images, for the cloud leader and worker) as described in the [SAT-Comp Docker Images README.md file](../Docker/README.md), you can upload them to your AWS account with the `push-ecr` script:
 
 ```text
-./push-ecr --profile PROFILE_NAME --project PROJECT_NAME [--leader LEADER_IMAGE_TAG] [--worker WORKER_IMAGE_TAG]
+./push-ecr --project PROJECT_NAME [--leader LEADER_IMAGE_TAG] [--worker WORKER_IMAGE_TAG]
 ```
 
 where:
 
-`PROFILE\_NAME` is the name of the aws profile that you set up at the beginning of this document.  It is very likely 'sc-2023'
+* `PROJECT_NAME` is the name of the project that you used earlier when creating the account.
 
-`PROJECT\_NAME` is the name of the project that you used earlier when creating the account.
+* `LEADER\_IMAGE\_TAG` is the tagged name of the leader docker image.
 
-`LEADER\_IMAGE\_TAG` is the tagged name of the leader docker image.
-
-`WORKER\_IMAGE\_TAG` is the tagged name of the leader docker image.
+* `WORKER\_IMAGE\_TAG` is the tagged name of the leader docker image.
 
 The leader and worker tags are optional; you can upload one or both docker images with this command (though if neither is specified, the script exits with an error).
 
@@ -159,13 +156,13 @@ Before you can run the solver, you have to add the problems to be solved to an S
 You can copy files to the bucket with a command similar to this one (when executed from the root directory of this repsository, this re-copies the `my-problem.cnf` file to the default bucket):
 
 ```text
-aws --profile PROFILE_NAME s3 cp my-problem.cnf s3://ACCOUNT_ID-us-east-1-[PROJECT-NAME]
+aws s3 cp my-problem.cnf s3://ACCOUNT_ID-us-east-1-[PROJECT-NAME]
 ```
 
 When `s3 cp` is compelte, you will see your file(s) in the list of objects in the bucket:
 
 ```text
-aws --profile PROFILE_NAME s3 ls s3://ACCOUNT_ID-us-east-1-[PROJECT-NAME]
+aws s3 ls s3://ACCOUNT_ID-us-east-1-[PROJECT-NAME]
 ```
 
 [RBJ: why is `s3://` required for cp, but not for ls?  MWW: added to ls for consistency, though not required.  For cp, you need to know which paths are local file system vs. s3]
@@ -202,12 +199,11 @@ To set up and tear down the cluster, we have provided a script called `update_in
 To run the script: 
 
 ```text
-update_instances --profile PROFILE_NAME --option setup --workers NUM_WORKERS
+update_instances --option setup --workers [NUM_WORKERS]
 ```
 
 where: 
 
-* `PROFILE_NAME` is the profile name for the account
 * `NUM_WORKERS` is the number of worker nodes you want to allocate. To avoid  problems with possible resource limits for your AWS account, we recommend that you set `NUM_WORKERS` to `1` when working through this document for the first time. If you are building for the parallel track, set `NUM_WORKERS` to `0`, as all solving will be performed by the leader node.
 
 AWS typically requires 2-5 minutes to allocate nodes and host the ECS cluster. You can monitor the creation process by navigating to the [ECS console](https://us-east-2.console.aws.amazon.com/ecs), and selecting select the SatCompCluster [RBJ: will this name potentially vary?] link.
@@ -232,12 +228,11 @@ Solver jobs are submitted by sending SQS messages. We have provided a `send_mess
 To run the script: 
 
 ```text
-send_message --profile PROFILE_NAME --location S3_LOCATION --workers NUM_WORKERS [--timeout TIMEOUT] [--name SOLVER_NAME] [--format FORMAT] [--args SOLVER_ARGUMENTS] 
+send_message --location [S3_LOCATION] --workers [NUM_WORKERS]
 ```
 
 where: 
 
-* `PROFILE_NAME` is the profile name for the account
 * `LOCATION` is the S3 location of the query file. For example, for the bucket we described earlier, the location would be `S3://[ACCOUNT_ID]-us-east-1-satcompbucket/test.cnf`.
 * `NUM_WORKERS` is the number of worker nodes to allocate for this problem. Again, we recommend that you start with `NUM_WORKERS` as `1` when beginning. For parallel solvers, you should set `NUM_WORKERS` to `0`.
 * `TIMEOUT` is an optional parameter that sets the timeout in seconds for the solver.  Defaults to 60s.
@@ -259,7 +254,7 @@ The ECS console allows you to monitor the logs of all running tasks. You can lea
 After testing, remember to tear down the cluster by running: 
 
 ```text
-update_instances --profile PROFILE_NAME --option shutdown
+update_instances --option shutdown
 ```
 
 This will terminate all EC2 instances and reset the number of leaders and workers to zero in the ECS service. 
@@ -280,11 +275,11 @@ When doing the basic account setup, we use [AWS CloudFormation](https://aws.amaz
 
 Here is the command to run it:
 
-    aws --profile PROFILE_NAME cloudformation create-stack --stack-name setup-account-stack --template-body file://setup-account.yaml --parameters ParameterKey=emailAddress,ParameterValue=[ENTER EMAIL ADDRESS HERE]
+    aws cloudformation create-stack --stack-name setup-account-stack --template-body file://setup-account.yaml --parameters ParameterKey=emailAddress,ParameterValue=[ENTER EMAIL ADDRESS HERE]
 
-**N.B.:** Be sure to double check the email address is correct!
+Note: Be sure to double check the email address is correct!
 
-The `--profile` argument should be the profile associated with the account, and the emailAddress parameter is the email address to which notification messages related to budgeting and account spending will be sent.
+The emailAddress parameter is the email address to which notification messages related to budgeting and account spending will be sent.
 
 After running the aws cloudformation command, you can monitor the installation process by logging into your AWS account and navigating to the [CloudFormation console](https://console.aws.amazon.com/cloudformation).
 Make sure you are in the region you chose in your profile (Region is selected in the top right corner).
@@ -389,12 +384,12 @@ For example, for the bucket we described earlier, given a cluster with two nodes
 "num_workers": 1}
 ```
 
-**Q: What if I want to create different buckets other than the one provided for storing problems in?**
+#### Q: What if I want to create different buckets other than the one provided for storing problems in?
 
 In case you wish to create a different bucket, here is a command to create a bucket named `PROJECT_NAME-satcomp-examples`:
 
 ```text
-aws --profile PROFILE_NAME s3api create-bucket --bucket PROJECT_NAME-satcomp-examples
+aws s3api create-bucket --bucket PROJECT_NAME-satcomp-examples
 ```
 
 **Note: this creates the bucket in the AWS region specified in your named profile**
@@ -402,7 +397,6 @@ aws --profile PROFILE_NAME s3api create-bucket --bucket PROJECT_NAME-satcomp-exa
 **Note: If you chose a different region than `us-east-1`, you might get an `IllegalLocationConstraintException`. To deal with the problem, you have to append the argument `--create-bucket-configuration {"LocationConstraint": "YOUR-REGION-NAME"}` to the command, where `YOUR-REGION-NAME` is replaced with the name of the region you chose.**
 
 **Note: S3 buckets are globally unique across all of AWS, which means that the command will fail if someone else is already using the same bucket name.  A simple fix is to add the AWS account number to the bucket name, which will likely yield a unique bucket name.**
-
 
 **Q: I'd like to know more about how the Elastic Container Registry works.  Can I do the steps to upload files by hand?**
 
@@ -426,13 +420,13 @@ The format for URIs is
 
 You will use these URIs to describe where to store our Docker images in AWS.  
 
-**N.B.:** a good way to make sure that you type these URI names correctly is to navigate to the Elastic Container Registry (ECR) console in AWS and copy them from the page (the names are in the URI column).   
+Note: a good way to make sure that you type these URI names correctly is to navigate to the Elastic Container Registry (ECR) console in AWS and copy them from the page (the names are in the URI column).   
 
 
 To store a Docker image in ECR from your local machine, first you need to login to ECR:
 
 ```text
-aws --profile PROFILE_NAME ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin [AWS_ACCOUNT_ID].dkr.ecr.us-east-1.amazonaws.com
+aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin [AWS_ACCOUNT_ID].dkr.ecr.us-east-1.amazonaws.com
 ```
 
 Next, you need to tag the image to match the ECR repository.  For the worker, tag the image as:
