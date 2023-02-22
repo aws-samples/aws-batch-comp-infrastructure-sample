@@ -1,4 +1,4 @@
-# Configuring AWS Infrastructure for SAT-Comp and SMT-Comp
+# Configuring AWS Infrastructure for SAT/SMT-Comp
 
 This README describes how to build and configure AWS infrastructure for the SAT and SMT parallel and cloud tracks. Preparing for the competition involves four phases: 
 
@@ -7,11 +7,24 @@ This README describes how to build and configure AWS infrastructure for the SAT 
 3. Create your own solver and run experiments
 4. When ready, share the solver repository and Docker image with us
 
-This directory provides the infrastructure necessary to build and test solvers. To configure an AWS account for running distributed solvers, we provide _CloudFormation_ templates [https://aws.amazon.com/cloudformation/](https://aws.amazon.com/cloudformation/), 
+[RBJ: remove paragraph] This `infrastructure` directory provides the infrastructure necessary to build and test solvers. To configure an AWS account for running distributed solvers, we provide _CloudFormation_ templates [https://aws.amazon.com/cloudformation/](https://aws.amazon.com/cloudformation/).
 
-We also provide Docker images that will simplify your solver's connection to the AWS infrastructure. The [`docker`](../docker/README.md) directory contains Docker base images and an example solver that will work with the infrastructure. 
+[RBJ: remove paragraph] We also provide Docker images that will simplify your solver's connection to the AWS infrastructure. The [`docker`](../docker/README.md) directory contains Docker base images and an example solver that will work with the infrastructure. 
 
-Note: This provides instructions for both the cloud and parallel track. If you are only competing in the parallel track, a handful of the steps are unnecessary.  We will point these cloud-only steps as we go.
+Note: The READMEs provide instructions for both the cloud and parallel track. If you are only competing in the parallel track, a handful of the steps are unnecessary. We will point out these cloud-only steps as we go.
+
+We will proceed with the following steps.
+
+* [Prerequisites](#prerequisites)
+* [Creating an AWS Account](#creating-an-aws-account)
+* [Creating Solver Infrastructure](#creating-solver-infrastructure)
+* [Preparing Docker Images](#preparing-docker-images)
+* [Working with S3](#working-with-s3)
+* [Running your Solver](#running-your-solver)
+
+Additional resources are available in an FAQ:
+
+* [FAQ/Troubleshooting](#faq--troubleshooting)
 
 ## Prerequisites
 
@@ -22,35 +35,35 @@ To install the infrastructure described in this document, you will need the foll
 - [awscli](https://aws.amazon.com/cli/)
 - [boto3](https://aws.amazon.com/sdk-for-python/)
 
-Some basic knowledge of AWS accounts and services is helpful, but we will walk you through all of the necessary steps pieces. 
+Basic knowledge of AWS accounts and services is helpful, but we will walk you through all of the necessary steps. 
 
-We recommend that your development environment is hosted on Amazon Linux 2 (AL2) or Ubuntu 20. Other platforms may work, but have not been tested.  We know that Mallob does not build cleanly on Mac OS running M1 and M2 processors, even when building within a Docker container, due to missing FPU flags.
+We recommend that your development environment be hosted on Amazon Linux 2 (AL2) or Ubuntu 20. Other platforms may work, but have not been tested. Note that Mallob will not build cleanly on Mac OS running M1 and M2 processors, even when building within a Docker container, due to missing FPU flags.
 
 ## Creating an AWS Account
 
 First, create a specific AWS account for the competition. If you have not created an AWS account previously, it is straightforward to do, requiring a cell phone number, credit card, and address.  Navigate to [aws.amazon.com](https://aws.amazon.com) and follow the instructions to create an account.
 
-If you have already created an account based on your email address, we strongly advise that you create a separate AWS account for managing the SAT/SMT-Comp tool construction and testing. This makes it much easier for us to manage account credits and billing. Once the new account is created, email us the account number at: sat-comp-2023@amazon.com (for SAT-Comp) or aws-smtcomp-2023@googlegroups.com (for SMT-Comp) and we will apply the appropriate credits to your account.
+If you have previously created an AWS account, we strongly advise that you create a separate AWS account for managing the SAT/SMT-Comp tool construction and testing. This makes it much easier for us to manage account credits and billing. Once the new account is created, email us the account number at: sat-comp-2023@amazon.com (for SAT-Comp) or aws-smtcomp-2023@googlegroups.com (for SMT-Comp) and we will apply the appropriate credits to your account.
 
 To find your account ID, click on your account name in the top right corner, and then click "My Account". You should see Account ID in the Account Settings
 
-It is important that you tell us your account number immediately after creating the account, so that we can assign you a resource budget for your experiments. We also need to grant you access to the shared problem set which is in a separate S3 bucket. Once we hear from you, we will email you an acknowledgment when resources have been added to your account.
+It is important that you tell us your account number immediately after creating the account, so that we can assign you a resource budget for your experiments. We also need to grant you access to the shared problem sets. Once we hear from you, we will email you an acknowledgment when resources have been added to your account.
 
-Note: If you choose to use an existing AWS account (not recommended), you should create a competition-specific profile, for example `sc-2023`. Instead of using `default` in the .aws/credentials file below, you would use `sc-2023` as a profile name.  You would then include `--profile sc-2023` with every AWS command in this README.
+_Note_: If you choose to use an existing AWS account (_not_ recommended), you should create a competition-specific profile, for example `sc-2023`. Instead of using `default` in the `.aws/credentials` file below, you would use `sc-2023` as a profile name.  You would then include `--profile sc-2023` with every AWS command in this README.
 
 ### Installing the AWS CLI
 
 In order to work with AWS, you must install the [AWS CLI](https://aws.amazon.com/cli/) for your platform. To get started, follow the directions for your operating system here:
   [https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
-If you have previously installed the AWS CLI, you should ensure it is up-to-date.
+If you have previously installed the AWS CLI, you should ensure it is up to date.
 
 ### Choose a Region 
 
-AWS has many regions, which enables low-latency access for customers around the world. Each region is independent from all other regions, and in almost all cases, resources created in one region are not shared with other regions. In this document, we will work wtih `us-east-1`, which is the largest AWS region.  This is a good default choice, but you are welcome to use an alternate region. If you do, you will substitute the region that you have chosen whenever we use `us-east-1` as a parameter to commands in this document. If you are on the US West Coast, `us-west-2` is an ideal choice.
+AWS has many regions, which enables low-latency access for customers around the world. Each region is independent from all other regions, and in almost all cases, resources created in one region are not shared with other regions. In this document, we will work wtih `us-east-1`, which is the largest AWS region.  This is a good default choice, but you are welcome to use an alternate region. If you do, you should substitute the region that you have chosen whenever we use `us-east-1` as a parameter to commands in this README. If you are on the US West Coast, `us-west-2` is an ideal choice.
 
 ### Creating AWS Credentials
 
-You must configure AWS credentials to access the resources in your account. For the purposes of simplifying the competition configurations, you will use a so-called _root level access key_. This is NOT the best practice for security (which would be to create a separate user in your account) but it will suffice for the competition. If you continue using your AWS account after the competition, we recommend that you follow AWS best practices as described here:
+You must configure AWS credentials to access the resources in your account. For the purposes of simplifying the competition configurations, you will use a so-called _root level access key_. This is _not_ the best practice for security (which would be to create a separate user in your account) but it will suffice for the competition. If you continue using your AWS account after the competition, we recommend that you follow AWS best practices as described here:
     [https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html#create-iam-users](https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html#create-iam-users)
 
 In this section, you will be working with the Identity and Access Management (IAM) console. To create a root level access key go to the [IAM Console](https://console.aws.amazon.com/iamv2/). You can get to the console by clicking previous link or by searching for "IAM" in the search field at the top of the [AWS Console](https://console.aws.amazon.com) as shown [here](readme-images/iam-search.png) and then clicking the resulting link).
@@ -65,18 +78,18 @@ Next, on your local workstation, create a `~/.aws/credentials` file with the fol
     aws_secret_access_key=SECRET_ACCESS_KEY
     region=us-east-1
 
-ACCESS_KEY_ID and SECRET_ACCESS_KEY are the keys that you created in the previous step. 
+`ACCESS_KEY_ID` and `SECRET_ACCESS_KEY` are the keys that you created in the previous step. 
 
 After installing the AWS CLI and creating credentials, check your configuration by attempting to run an AWS command.  An example command that should work is:
 ```text
 aws sts get-caller-identity
 ```
 
-If you receive an error message, see the [Troubleshooting](#troubleshooting) section at the bottom of this document.
+If you receive an error message, see the [FAQ/Troubleshooting](#faq--troubleshooting) section at the bottom of this document.
 
-We recommend that when you've completed account set-up, you follow the steps in the section [Basic Account Configuration](#basic-account-configuration) to track your spending. For now, we'll continue with the setup.
+We recommend that when you've completed account set-up, you follow the steps in the FAQ [How Do I Track My Spending?](#how-do-i-track-my-spending) to track your spending. For now, we'll continue with the setup.
 
-### Creating Solver Infrastructure
+## Creating Solver Infrastructure
 
 Next, you will create the AWS infrastructure necessary to build and test solvers. The SAT and SMT competitions both use the following infrastructure elements: 
 
@@ -121,7 +134,7 @@ If something goes wrong and you want to start over, simply run the `delete-solve
 
 This will delete the infrastructure and associated resources.  **Note that this deletion includes any files that have been uploaded to your S3 bucket and also any ECR docker images that you have created.** It will not delete your AWS account or security credentials.
 
-## Docker Images
+## Preparing Docker Images
 
 ### Creating the Base Docker Leader and Worker Images for Solvers
 
@@ -149,7 +162,7 @@ where:
 
 The leader and worker tags are optional; you can upload one or both docker images with this command (though if neither is specified, the script exits with an error).
 
-## Storing Queries in S3
+## Working with S3
 
 Before you can run the solver, you have to add the problems to be solved to an S3 bucket that is accessible by your account. As part of the `create-solver-infrastructure` CloudFormation script, we have created a bucket for you where you can store files: `ACCOUNT\_ID-us-east-1-PROJECT-NAME`, and added a `test.cnf` file to this bucket for testing (if you chose a different region than `us-east-1`, the part `us-east-1` in the bucket name my vary accordingly).  You can start with this `test.cnf` example and skip the rest of this section until you wish to add additional files or buckets for testing your solver.
 
@@ -263,37 +276,32 @@ You should verify that no EC2 instances are running after running the teardown s
 
 Note: You are responsible for any charges made to your AWS account.  While we have tested the shutdown script and believe it to be robust, you are responsible for monitoring the EC2 cluster to make sure resources have shutdown properly. We have alternate directions to shutdown resources using the console in the Q&A section.
 
-## Additional Steps
 
-### Basic Account Configuration
+## FAQ / Troubleshooting
 
-[RBJ: shouldn't this be in the first section above?]
+#### How Do I Track My Spending?
 
-[RBJ: stopped here, except for minor formatting below.]
-
-When doing the basic account setup, we use [AWS CloudFormation](https://aws.amazon.com/cloudformation/).  The file `setup-account.yaml` in this repository is an optional CloudFormation script that can help you track your spending.  It sets up notification emails to be sent to an email address you provide when the account reaches 20%, 40%, 60%, 80%, 90%, 95%, and 100% of the monthly account budget so that you have a window into the current spend rate for building and testing your solver.
+[AWS CloudFormation](https://aws.amazon.com/cloudformation/) can be used to automate many cloud configuration activities. The file `setup-account.yaml`[setup-account.yaml] in this repository is an optional CloudFormation script that can help you track your spending.  It sets up notification emails to be sent via  email when your account reaches 20%, 40%, 60%, 80%, 90%, 95%, and 100% of the monthly account budget. This will provide a window into the current spend rate for building and testing your solver.
 
 Here is the command to run it:
 
-    aws cloudformation create-stack --stack-name setup-account-stack --template-body file://setup-account.yaml --parameters ParameterKey=emailAddress,ParameterValue=[ENTER EMAIL ADDRESS HERE]
+    aws cloudformation create-stack --stack-name setup-account-stack --template-body file://setup-account.yaml --parameters ParameterKey=emailAddress,ParameterValue=[YOUR_EMAIL_ADDRESS]
 
-Note: Be sure to double check the email address is correct!
-
-The emailAddress parameter is the email address to which notification messages related to budgeting and account spending will be sent.
+_Note_: Be sure to double check the email address is correct! 
 
 After running the aws cloudformation command, you can monitor the installation process by logging into your AWS account and navigating to the [CloudFormation console](https://console.aws.amazon.com/cloudformation).
-Make sure you are in the region you chose in your profile (Region is selected in the top right corner).
+Make sure you are in the region you chose in your profile (region is selected in the top right corner).
 You should see a stack named `setup-account-stack`.
 
  ![](readme-images/cloudformation.png)
 _Figure 1: Cloudformation result_
 
-By clicking on this stack, and choosing &quot;events&quot;, you can see the resources associated with the stack.  After a short time, you should see the &quot;CREATE\_SUCCEEDED&quot; event.   If not (e.g., the email address was not valid email address syntax), you will see a &quot;CREATE\_FAILED&quot; event.  In this case, delete the stack and try again.  If you have trouble, please email us at: [sat-comp-2022@amazon.com](mailto:sat-comp-2022@amazon.com) and we will walk you through the process.
+By clicking on this stack, and choosing `events`, you can see the resources associated with the stack.  After a short time, you should see the `CREATE_SUCCEEDED` event. If not (e.g., the email address was not valid email address syntax), you will see a `CREATE_FAILED` event. In this case, delete the stack and try again. If you have trouble, email us at: [sat-comp-2022@amazon.com](mailto:sat-comp-2022@amazon.com) and we will walk you through the process.
 
 Although it is handy to get emails when certain account budget thresholds have been met, it is both useful and important to check by-the-minute account spending on the console: [https://console.aws.amazon.com/billing/home](https://console.aws.amazon.com/billing/home).
 
+[RBJ: stopped here, except for minor formatting.]
 
-## FAQ / Troubleshooting
 
 #### Q: I'm only submitting to the parallel track and not the cloud track.  Do I need a worker image?
 
@@ -320,7 +328,7 @@ This can happen if you try to start up a cloud solver when the infrastructure is
 
 #### Q: Suppose I want to use the console to setup my ECS clusters, or to monitor them.  How do I do that?
 
-__Cluster Setup Step 1:__  Update the size of the EC2 cluster using the EC2 console
+__Step 1:__  Update the size of the EC2 cluster using the EC2 console
 
 To control the instances in your cluster, go to the EC2 console and scroll down on the left side of the console and click on the link that says "Auto Scaling Groups".
 
@@ -329,7 +337,7 @@ In the next page, you will see an autoscaling group called something like `job-q
 1. Select the queue by clicking on it, then click the "Edit" button in the "Group details" section.
 1. Set the desired, and maximum task capacity to n (where n includes 1 leader and n-1 workers, so there is a minimum useful size of 2), and click "Update".
 
-__Cluster Setup Step 2:__ Update the size of the ECS task pool for the leader and workers
+__Step 2:__ Update the size of the ECS task pool for the leader and workers
 
 Navigate to the ECS console, then select the SatCompCluster link.
 
@@ -392,13 +400,15 @@ In case you wish to create a different bucket, here is a command to create a buc
 aws s3api create-bucket --bucket PROJECT_NAME-satcomp-examples
 ```
 
-**Note: this creates the bucket in the AWS region specified in your named profile**
+Notes: 
+ 
+ - This will create the bucket in the AWS region specified in your named profile
 
-**Note: If you chose a different region than `us-east-1`, you might get an `IllegalLocationConstraintException`. To deal with the problem, you have to append the argument `--create-bucket-configuration {"LocationConstraint": "YOUR-REGION-NAME"}` to the command, where `YOUR-REGION-NAME` is replaced with the name of the region you chose.**
+- If you chose a different region than `us-east-1`, you might get an `IllegalLocationConstraintException`. To deal with the problem, you have to append the argument `--create-bucket-configuration {"LocationConstraint": "YOUR-REGION-NAME"}` to the command, where `YOUR-REGION-NAME` is replaced with the name of the region you chose.
 
-**Note: S3 buckets are globally unique across all of AWS, which means that the command will fail if someone else is already using the same bucket name.  A simple fix is to add the AWS account number to the bucket name, which will likely yield a unique bucket name.**
+- S3 buckets are globally unique across all of AWS, which means that the command will fail if someone else is already using the same bucket name.  A simple fix is to add the AWS account number to the bucket name, which will likely yield a unique bucket name.
 
-**Q: I'd like to know more about how the Elastic Container Registry works.  Can I do the steps to upload files by hand?**
+#### Q: I'd like to know more about how the Elastic Container Registry works.  Can I do the steps to upload files by hand?
 
 Amazon stores your solver images in the [Elastic Container Registry (ECR)](https://console.aws.amazon.com/ecr).
 
