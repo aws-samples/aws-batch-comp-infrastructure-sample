@@ -31,11 +31,35 @@ class SqsService:
             logger.error(f"Failed to get SQS queue: {e}")
             raise e
 
-    def send_message(self, location, workers):
+    def send_message(self, location, workers, timeout, solverName, language, solverOptions):
+        # Expected message structure:
+        """{
+            "formula" : {
+                "value" : <s3 url>,
+                "language": "SMTLIB2" | "DIMACS",
+            },
+            "solverConfig" : {
+                "solverName" : "",
+                "solverOptions" : [],
+                "taskTimeoutSeconds" : 5
+            },
+            "num_workers": 0
+        }"""
         queue = self.get_satcomp_queue()
 
-        message_body = {"s3_uri": f"{location}",
-                        "num_workers": int(workers) }
+        message_body = { \
+                "formula": { \
+                    "value": location, \
+                    "language": language \
+                }, \
+                "solverConfig" : { \
+                    "solverName" : solverName, \
+                    "solverOptions" : solverOptions, \
+                    "taskTimeoutSeconds" : timeout, \
+                }, \
+                "num_workers": workers \
+            }
+
         message_body_str = json.dumps(message_body, indent = 4)
         try:
             response = self.sqs.send_message(
@@ -44,7 +68,7 @@ class SqsService:
             )
             print(f"Message sent: {message_body_str} to queue {queue}, with response: {str(response)}")
         except Exception as e:
-            logger.error(f"Failed to send message: {e}")
+            logger.error(f"Failed to send message: Exception: {e}")
             raise e
 
 
@@ -53,8 +77,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--profile', required = True, help = "AWS profile")
     parser.add_argument('--location', required = True, help = "S3 location for CNF file")
-    parser.add_argument('--workers', required = True, help = "Required Worker nodes count")
-    
+    parser.add_argument('--workers', required = True, type=int, help = "Required Worker nodes count")
+    parser.add_argument('--timeout', type=int,  help = "Timeout value for the infrastructure to interrupt the solver", default = 60)
+    parser.add_argument('--name', help = "Name of solver to be invoked (passed through to the solver).  Default: empty string", default = "")
+    parser.add_argument('--format', help = "Problem format for the problem to be solved.", default = "")
+    parser.add_argument('--args', nargs='+', help="Arguments to pass through to the solver (--args accepts a space-delimited list of arguments).  Default: empty list", default = [])    
     args = parser.parse_args()
 
 
@@ -65,7 +92,7 @@ if __name__ == "__main__":
     sqs_client = session.client('sqs')
     sqs = SqsService(sqs_client)
     try:
-        sqs.send_message(args.location, args.workers)
+        sqs.send_message(args.location, args.workers, args.timeout, args.name, args.format, args.args)
     except Exception as e:
         logger.info(f"Failed to send message. {e}")
         

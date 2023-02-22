@@ -25,8 +25,7 @@ class CommandLineSolver(Solver):
     stdout_target_loc: str = "base_container_stdout.log"
     stderr_target_loc: str = "base_container_stderr.log"
 
-    PROCESS_STARTUP_DELTA = 5
-    PROCESS_TIMEOUT: int = 1000 + PROCESS_STARTUP_DELTA
+    DEFAULT_TIMEOUT_SECONDS: int = 3600
 
     def __init__(self, solver_command: str):
         self.solver_command = solver_command
@@ -35,10 +34,13 @@ class CommandLineSolver(Solver):
         self.logger = logging.getLogger("CommandLineSolver")
         self.logger.setLevel(logging.DEBUG)
 
-    def _save_input_json(self, problem_loc: str, directory_path: str, workers: list):
+    def _save_input_json(self, formula_file: str, directory_path: str, workers: list, formula_language: str, solver_argument_list: list, timeout_seconds: str):
         input_json = {
-            "problem_path": problem_loc,
-            "worker_node_ips": list(map(lambda w: w["nodeIp"], workers))
+            "formula_file": formula_file,
+            "worker_node_ips": list(map(lambda w: w["nodeIp"], workers)),
+            "formula_language": formula_language, 
+            "solver_argument_list": solver_argument_list,
+            "timeout_seconds": timeout_seconds,
         }
         try:
             self.file_operations.write_json_file(os.path.join(directory_path, "input.json"), input_json)
@@ -46,12 +48,12 @@ class CommandLineSolver(Solver):
             self.logger.exception(e)
             raise SolverException(FAILED_TO_WRITE_PROBLEM_TEXT)
 
-    def _run_command(self, cmd: str, arguments: list, output_directory: str):
+    def _run_command(self, cmd: str, arguments: list, output_directory: str, timeout: int):
         """Run a command as a subprocess and save logs"""
         cmd_list = [cmd]
         if arguments is not None:
             cmd_list.extend(arguments)
-        process_result = self.command_runner.run(cmd_list, output_directory, self.PROCESS_TIMEOUT)
+        process_result = self.command_runner.run(cmd_list, output_directory, timeout)
         return process_result
 
     def _get_solver_result(self, request_directory_path):
@@ -68,13 +70,16 @@ class CommandLineSolver(Solver):
         # since it is user provided and may not work
         return None
 
-    def solve(self, problem_loc: str, workers: list, task_uuid: str):
+    def solve(self, formula_file: str, request_directory_path: str, workers: list, task_uuid: str, timeout: int, formula_language: str, solver_argument_list: list):
         """Solve implementation that shells out to a subprocess"""
-        request_directory_path = self.file_operations.create_directory(task_uuid)
-        self._save_input_json(problem_loc, request_directory_path, workers)
+   
+        self._save_input_json(formula_file, request_directory_path, workers, formula_language, solver_argument_list, timeout)
+
+        if not timeout:
+            timeout = CommandLineSolver.DEFAULT_TIMEOUT_SECONDS
         try:
             process_result = self._run_command(self.solver_command, [request_directory_path],
-                                               request_directory_path)
+                                               request_directory_path, timeout)
         except FileNotFoundError:
             self.logger.error(f"Failed to execute solver script at path: {self.solver_command}. "
                               f"Solver executable does not exist")
@@ -82,21 +87,34 @@ class CommandLineSolver(Solver):
                                   f"Solver executable does not exist")
 
         solver_result = self._get_solver_result(request_directory_path)
+        self.logger.info(solver_result)
+        if solver_result is None:
+            task_state = {
+                "status": "FAILED",
+                "message": "Error retrieving solver result"
+            }
+        else:
+            task_state = process_result.get("task_state")
 
+        solver_runtime_millis = None
+        run_time_ns = process_result.get("run_time_ns")
+        if run_time_ns:
+            solver_runtime_millis = round(process_result.get("run_time_ns") / 1000000)
         """
         Our output includes the stdout and stderr logs of the driver (the /satcomp/solver executable),
         as well as whatever JSON output is provided once that solver finishes.
         """
         return {
+            "task_id": task_uuid,
             "driver": {
                 "stdout": os.path.join(request_directory_path, process_result.get("stdout")),
                 "stderr": os.path.join(request_directory_path, process_result.get("stderr")),
                 "return_code": process_result.get("return_code"),
-                "timed_out": process_result.get("timed_out"),
-                "elapsed_time": process_result.get("elapsed_time")
+                "solver_runtime_millis": solver_runtime_millis
             },
             "solver": {
                 "output": solver_result,
                 "request_directory_path": request_directory_path
-            }
+            },
+            "task_state": task_state
         }

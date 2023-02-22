@@ -165,10 +165,10 @@ aws --profile PROFILE_NAME s3 cp my-problem.cnf s3://ACCOUNT_ID-us-east-1-[PROJE
 When `s3 cp` is compelte, you will see your file(s) in the list of objects in the bucket:
 
 ```text
-aws --profile PROFILE_NAME s3 ls ACCOUNT_ID-us-east-1-[PROJECT-NAME]
+aws --profile PROFILE_NAME s3 ls s3://ACCOUNT_ID-us-east-1-[PROJECT-NAME]
 ```
 
-[RBJ: why is `s3://` required for cp, but not for ls?]
+[RBJ: why is `s3://` required for cp, but not for ls?  MWW: added to ls for consistency, though not required.  For cp, you need to know which paths are local file system vs. s3]
 
 More information on creating and managing S3 buckets is found here: [https://aws.amazon.com/s3/](https://aws.amazon.com/s3/). The S3 command line interface is described in more detail here: [https://docs.aws.amazon.com/cli/latest/userguide/cli-services-s3-commands.html](https://docs.aws.amazon.com/cli/latest/userguide/cli-services-s3-commands.html).
 
@@ -202,7 +202,7 @@ To set up and tear down the cluster, we have provided a script called `update_in
 To run the script: 
 
 ```text
-update_instances --profile PROFILE_NAME --option setup --workers [NUM_WORKERS]
+update_instances --profile PROFILE_NAME --option setup --workers NUM_WORKERS
 ```
 
 where: 
@@ -232,7 +232,7 @@ Solver jobs are submitted by sending SQS messages. We have provided a `send_mess
 To run the script: 
 
 ```text
-send_message --profile PROFILE_NAME --location [S3_LOCATION] --workers [NUM_WORKERS]
+send_message --profile PROFILE_NAME --location S3_LOCATION --workers NUM_WORKERS [--timeout TIMEOUT] [--name SOLVER_NAME] [--format FORMAT] [--args SOLVER_ARGUMENTS] 
 ```
 
 where: 
@@ -240,6 +240,10 @@ where:
 * `PROFILE_NAME` is the profile name for the account
 * `LOCATION` is the S3 location of the query file. For example, for the bucket we described earlier, the location would be `S3://[ACCOUNT_ID]-us-east-1-satcompbucket/test.cnf`.
 * `NUM_WORKERS` is the number of worker nodes to allocate for this problem. Again, we recommend that you start with `NUM_WORKERS` as `1` when beginning. For parallel solvers, you should set `NUM_WORKERS` to `0`.
+* `TIMEOUT` is an optional parameter that sets the timeout in seconds for the solver.  Defaults to 60s.
+* `NAME` is an optional parameter providing a name for the solver (in case you want to host multiple solvers within one container.  Defaults to the empty string)
+* `FORMAT` is an optional parameter providing the problem format.  Defaults to the empty string.
+* `ARGS` is an optional parameter allowing one or more arguments to be passed to the solver.  Defaults to the empty list. 
 
 The leader container will pull the message off of the queue, fetch the problem from S3, and begin execution. For more information on the steps performed, see [Extending the Solver Base Container](#understanding-the-solver-architecture-and-extending-the-competition-base-leader-container) below.  
 

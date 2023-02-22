@@ -1,7 +1,8 @@
 FROM satcomp-infrastructure:common
 RUN apt-get install psmisc
 RUN pip3 install flask waitress boto3 pytz polling2
-COPY --chown=ecs-user ./satcomp-solver-resources /opt/amazon/arg_satcomp_solver_base
+RUN ls 
+COPY --chown=ecs-user satcomp-solver-resources/ /opt/amazon/
 COPY --chown=ecs-user satcomp-worker/resources/worker /competition/worker
 COPY --chown=ecs-user satcomp-worker/resources/cleanup /competition/cleanup
 ENV PYTHONPATH=/opt/amazon:.:
