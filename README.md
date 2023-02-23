@@ -1,6 +1,6 @@
 # SAT-Comp and SMT-Comp Cloud Track Instructions
 
-This repository will help you get your parallel or distributed solver running efficiently on AWS.  You will build docker containers with your solver and the connect them to the AWS infrastructure.
+This repository will help you get your parallel or distributed solver running efficiently on AWS.  You will build docker containers with your solver and then connect them to the AWS infrastructure.
 
 Last year, we received feedback that it was challenging to debug solvers on AWS.  This year, we provide guidance and scripts to enable debugging your parallel and distributed solvers locally prior to running at larger scale on AWS resources. This will enable you to get solvers running in a stable way before uploading to AWS, which should reduce the overhead of preparing your solver for submission.
 
