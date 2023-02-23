@@ -114,10 +114,10 @@ Before running mallob we need to create a docker bridge network that our contain
 
 ### Running Parallel Mallob
 
-To run parallel Mallob, cd into the `runner` directory. We have created a simple shell script called `run_parallel.sh` to show you how to run the mallob_parallel docker image to create a running container. The script has several variables that you can configure:
+To run parallel Mallob, cd into the `runner` directory. We have created a simple shell script called `run_parallel.sh` to show you how to run the mallob_parallel docker image to create a running container. The script has several variables that you need to configure.
 
-- `DOCKER_NETWORK`. Name of the docker bridge network, `mallob-test` for this example.
-- `HOST_RUNDIR`. Name of the host directory that will be mounted in the docker run directory. This should be an absolute pathname. Note that this enables you to persist the run directory over multiple docker container sessions. It is also the location where the docker solver will write results. If you use the example from the repo, this should be the absolute pathname to the `experiment` directory.
+- `DOCKER_NETWORK`. Name of the docker bridge network. The default is  `mallob-test`, which will work with the `network create` command in the previous section.  
+- `HOST_RUNDIR`. Name of the host directory that will be mounted in the docker run directory. _Note: This should be an absolute pathname and it must be updated for your filesystem._ This directory will be mounted in the docker container and enables you persist information over multiple docker container sessions. We have placed an `experiment` directory inside `runner` that you can use to begin.
 
 [MWW: we need to add instructions chmod 777 this directory so that is world-writeable/executable so Docker can use it.]
 
@@ -152,7 +152,7 @@ If mallob ran successfully, you will find three new files in `/rundir`:
 - `stdout.log`
 - `stderr.log`
 
-Again, note that this directory is mounted of the host run directory as specified by the script variable `HOST_RUNDIR`. These files will persist on the host.
+Again, note that the container directory `/rundir` is the mount point for the  host run directory as specified by the script variable `HOST_RUNDIR`. The files in `/rundir` will persist on the host filesystem, even after the docker container is stopped or removed.
 
 At this point, you can perform additional experiments or exit the docker shell.
 

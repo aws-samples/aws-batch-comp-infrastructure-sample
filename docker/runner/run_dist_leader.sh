@@ -13,7 +13,7 @@ fi
 
 # user config
 DOCKER_NETWORK="mallob-test"
-HOST_RUNDIR="/home/rbtjones/dev/mallob/satcomp-infrastructure/docker/runner/experiment"
+HOST_RUNDIR="/<REPLACE_WITH_ABSOLUTE_PATH>/docker/runner/experiment"
 
 # script config
 NODE_TYPE="leader"
