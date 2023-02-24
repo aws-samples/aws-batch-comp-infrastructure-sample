@@ -80,7 +80,7 @@ def main() -> None:
     
 
     # run the shell script file to set it up.
-    cmd = ' '.join(['ecr-push-internal.sh', \
+    cmd = ' '.join(['./ecr-push-internal.sh', \
         '-p', profile, \
         '-j', project_name, \
         '-a', str(account_number), \

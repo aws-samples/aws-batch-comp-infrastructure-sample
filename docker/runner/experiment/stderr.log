@@ -1,0 +1,3 @@
+Warning: Permanently added 'worker,172.17.0.2' (ECDSA) to the list of known hosts.
+[0f2d89d68adc:00018] MCW rank 0 is not bound (or bound to all available processors)
+[0023f42cf65f:00023] MCW rank 1 is not bound (or bound to all available processors)

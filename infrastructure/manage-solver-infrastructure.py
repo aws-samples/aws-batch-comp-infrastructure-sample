@@ -263,15 +263,23 @@ def main() -> None:
         raise Exception('Solver type argument must be one of "cloud" or "parallel"')
 
     profile = args.profile
+    #profile = "default"
     project_name = args.project
 
     stack_name = f"solver-infrastructure-{project_name}"
     
+    #RBJ# 
     try:
         session = boto3.Session(profile_name=profile)
     except ProfileNotFound as e:
         logger.error(f"Unable to create AWS session.  Profile '{profile}' not found.  Please double check that this profile is set up in the ~/.aws/config file")
         sys.exit(1)
+    # try:
+    #     session = boto3.Session()
+    # except:
+    #     logger.error(f"Unable to create AWS session")
+    #     sys.exit(1)
+    
     
     if not session.region_name:
         logger.error(f"Profile does not have a region defined.  Please add a region (recommend: us-east-1) to profile '{profile}' in the ~/.aws/config file")
