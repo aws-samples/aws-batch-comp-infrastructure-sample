@@ -164,7 +164,7 @@ If your solver doesn't run correctly in the docker container, you can remove the
 
 # Preparing Your Own Solver Images
 
-Before proceeding through this section, you should work through the [infrastructure README](../infrastructure/README.md) up to Section [RBJ:fixme](../infrastructure/README.md#fixme).
+Before proceeding through this section, you should work through the [infrastructure README](../infrastructure/README.md) until you reach the [Section on Docker Images](../infrastructure/README.md#preparing-docker-images).
 
 In previous years, we asked participants to provide a Dockerfile which would build a container that would handle coordination between nodes and all interactions with AWS infrastructure. This meant that the Dockerfiles and images were quite complicated and included items common to all solvers running on the AWS infrastructure, e.g., retrieving problems from S3, setting up openssh-server.  This required complex, duplicate effort from every team. It also made managing the competition difficult, because we frequently found bugs that were not related to the solvers themselves, but rather to their interfaces with AWS.
 
