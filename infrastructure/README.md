@@ -1,19 +1,8 @@
 # Configuring AWS Infrastructure for SAT/SMT-Comp
 
-This README describes how to build and configure AWS infrastructure for the SAT and SMT parallel and cloud tracks. Preparing for the competition involves four phases: 
+This README describes how to build and configure AWS infrastructure for the SAT and SMT parallel and cloud tracks. If you are only competing in the parallel track, a handful of the steps are unnecessary. We will point out these cloud-only steps as we go.
 
-1. Create and configure a dedicated AWS Account for the competition
-2. Set up AWS infrastructure to run an example distributed solver
-3. Create your own solver and run experiments
-4. When ready, share the solver repository and Docker image with us
-
-[RBJ: remove paragraph] This `infrastructure` directory provides the infrastructure necessary to build and test solvers. To configure an AWS account for running distributed solvers, we provide _CloudFormation_ templates [https://aws.amazon.com/cloudformation/](https://aws.amazon.com/cloudformation/).
-
-[RBJ: remove paragraph] We also provide Docker images that will simplify your solver's connection to the AWS infrastructure. The [`docker`](../docker/README.md) directory contains Docker base images and an example solver that will work with the infrastructure. 
-
-Note: The READMEs provide instructions for both the cloud and parallel track. If you are only competing in the parallel track, a handful of the steps are unnecessary. We will point out these cloud-only steps as we go.
-
-We will proceed with the following steps.
+You will proceed through the following steps.
 
 * [Prerequisites](#prerequisites)
 * [Creating an AWS Account](#creating-an-aws-account)
@@ -22,7 +11,7 @@ We will proceed with the following steps.
 * [Working with S3](#working-with-s3)
 * [Running your Solver](#running-your-solver)
 
-Additional resources are available in an FAQ:
+Additional resources are available in a FAQ:
 
 * [FAQ/Troubleshooting](#faq--troubleshooting)
 
