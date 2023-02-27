@@ -135,7 +135,7 @@ Amazon stores your solver images in the [Elastic Container Registry (ECR)](https
 
 The `create-solver-infrastructure` command described earlier creates an ECR repository with the same name as the project (PROJECT_NAME).
 
-This repository will store the images for the leader and worker.  Once you have created and tested a docker image (or images, for the cloud leader and worker) as described in the [SAT-Comp Docker Images README.md file](../Docker/README.md), you can upload them to your AWS account with the `push-ecr` script:
+This repository will store the images for the leader and worker.  Once you have created and tested a docker image (or images, for the cloud leader and worker) as described in the [SAT-Comp Docker Images README.md file](../Docker/README.md), you can upload them to your AWS account with the `push-ecr` script [BK: script requires `--profile` argument. Should we set `--profile default` as default?]:
 
 ```text
 ./push-ecr --project PROJECT_NAME [--leader LEADER_IMAGE_TAG] [--worker WORKER_IMAGE_TAG]
