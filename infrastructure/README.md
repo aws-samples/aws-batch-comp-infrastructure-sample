@@ -225,7 +225,7 @@ Before submitting a job, check that a cluster is set up and running, and the des
 
 Solver jobs are submitted by sending SQS messages. We have provided a `send_message` script to do this for you. You provide the S3 location of the file to run and number of desired worker nodes. The script submits an SQS request to the `[ACCOUNT_NUMBER]-[REGION]-SatCompQueue` queue, which the solver leader container is monitoring. 
 
-To run the script: 
+To run the script [BK: Like with the other scripts, make `--profile default` a default.]: 
 
 ```text
 send_message --location [S3_LOCATION] --workers [NUM_WORKERS]
