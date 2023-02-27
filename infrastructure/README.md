@@ -55,12 +55,12 @@ AWS has many regions, which enables low-latency access for customers around the 
 You must configure AWS credentials to access the resources in your account. For the purposes of simplifying the competition configurations, you will use a so-called _root level access key_. This is _not_ the best practice for security (which would be to create a separate user in your account) but it will suffice for the competition. If you continue using your AWS account after the competition, we recommend that you follow AWS best practices as described here:
     [https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html#create-iam-users](https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html#create-iam-users)
 
-In this section, you will be working with the Identity and Access Management (IAM) console. To create a root level access key go to the [IAM Console](https://console.aws.amazon.com/iamv2/). You can get to the console by clicking previous link or by searching for "IAM" in the search field at the top of the [AWS Console](https://console.aws.amazon.com) as shown [here](readme-images/iam-search.png) and then clicking the resulting link).
+In this section, you will be working with the Identity and Access Management (IAM) console. To create a root level access key go to the [IAM Console](https://console.aws.amazon.com/iamv2/). You can get to the console by clicking the previous link or by searching for "IAM" in the search field at the top of the [AWS Console](https://console.aws.amazon.com) as shown [here](readme-images/iam-search.png) and then clicking the resulting link).
 
-On IAM page, click "My Security Credentials" on the right side of the IAM console page as shown [here](readme-images/iam-quicklinks.png). Next, click on "Access keys (access key ID and secret access key)," then "Create New Access Key," and then "Show Access Key."
+On the IAM page, click "My Security Credentials" on the right side of the IAM console page as shown [here](readme-images/iam-quicklinks.png). Next, click on "Access keys (access key ID and secret access key)," then "Create New Access Key," and then "Show Access Key."
 This will create an Access Key ID and a Secret Access Key. Copy these for use in the next step.
 
-Next, on your local workstation, create a `~/.aws/credentials` file with the following information:
+Next, on your local workstation, create a `~/.aws/credentials` file containing the following text:
 
     [default]
     aws_access_key_id=ACCESS_KEY_ID
@@ -161,7 +161,7 @@ You can copy files to the bucket with a command similar to this one (when execut
 aws s3 cp my-problem.cnf s3://ACCOUNT_ID-us-east-1-[PROJECT-NAME]
 ```
 
-When `s3 cp` is compelte, you will see your file(s) in the list of objects in the bucket:
+When `s3 cp` is complete, you will see your file(s) in the list of objects in the bucket:
 
 ```text
 aws s3 ls s3://ACCOUNT_ID-us-east-1-[PROJECT-NAME]
