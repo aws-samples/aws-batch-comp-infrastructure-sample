@@ -26,7 +26,7 @@ Basic familiarity with Docker will be helpful, but we will walk you through step
 
 To simplify the solver construction process, we provide base Docker images that manage the infrastructure necessary for solvers as well as access to AWS resources. We will build three images, a common image, a leader, and a worker. One leader coordinates multiple workers. The Dockerfiles and needed resources are contained in the [satcomp-images](satcomp-images) directory.
 
-To begin, cd into the `satcomp-images` directory. To build all three docker images in one step, execute the `build_docker_base_images.sh` script. To build the images individually, follow the next three steps.
+To begin, cd into the `satcomp-images` directory. To build all three docker images in one step, execute the `build_docker_base_images.sh` script [BK: `build_satcomp_images.sh`?]. To build the images individually, follow the next three steps.
 
 #### 1. Build `satcomp-infrastructure:common` image:
 
