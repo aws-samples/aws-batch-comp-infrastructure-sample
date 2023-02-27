@@ -246,6 +246,8 @@ The leader container will pull the message off of the queue, fetch the problem f
 
 ### Monitoring and Logging
 
+[BK: This section needs more details on how to examine the logs.]
+
 The best way to see solver status is by examining the logs. These are available from CloudWatch log groups. There should be logs related to `/ecs/[PROJECT_NAME]-leader` and `/ecs/[PROJECT_NAME]-worker`.  These logs will capture both stdout and stderr from your solver containers.
 
 The ECS console allows you to monitor the logs of all running tasks. You can learn more about the ECS console at: [https://aws.amazon.com/ecs/](https://aws.amazon.com/ecs/).
