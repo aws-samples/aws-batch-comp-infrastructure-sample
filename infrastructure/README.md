@@ -196,7 +196,7 @@ To set up and tear down the cluster, we have provided a script called `update_in
 1. Creates an EC2 fleet large enough to run the experiment (number of workers + a leader node)
 2. Creates the correct number of tasks in the ECS service for the leader and workers.
 
-To run the script: 
+To run the script [BK: Again, the script required `--profile` as an argument, so we should make `--profile default` a default]: 
 
 ```text
 update_instances --option setup --workers [NUM_WORKERS]
