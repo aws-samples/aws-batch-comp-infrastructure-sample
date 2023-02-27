@@ -206,7 +206,7 @@ where:
 
 * `NUM_WORKERS` is the number of worker nodes you want to allocate. To avoid  problems with possible resource limits for your AWS account, we recommend that you set `NUM_WORKERS` to `1` when working through this document for the first time. If you are building for the parallel track, set `NUM_WORKERS` to `0`, as all solving will be performed by the leader node.
 
-AWS typically requires 2-5 minutes to allocate nodes and host the ECS cluster. You can monitor the creation process by navigating to the [ECS console](https://us-east-2.console.aws.amazon.com/ecs), and selecting select the SatCompCluster [RBJ: will this name potentially vary?] link.
+AWS typically requires 2-5 minutes to allocate nodes and host the ECS cluster. You can monitor the creation process by navigating to the [ECS console](https://us-east-1.console.aws.amazon.com/ecs), and selecting select the SatCompCluster [RBJ: will this name potentially vary?] link.
 
 The next page will show a list of job queues, including:
 
