@@ -153,18 +153,18 @@ The leader and worker tags are optional; you can upload one or both docker image
 
 ## Working with S3
 
-Before you can run the solver, you have to add the problems to be solved to an S3 bucket that is accessible by your account. As part of the `create-solver-infrastructure` CloudFormation script, we have created a bucket for you where you can store files: `ACCOUNT\_ID-us-east-1-PROJECT-NAME`, and added a `test.cnf` file to this bucket for testing (if you chose a different region than `us-east-1`, the part `us-east-1` in the bucket name will vary accordingly).  You can start with the `test.cnf` example and skip the rest of this section until you wish to add additional files or buckets for testing your solver.
+Before you can run the solver, you have to add the problems to be solved to an S3 bucket that is accessible by your account. As part of the `create-solver-infrastructure` CloudFormation script, we have created a bucket for you where you can store files: `[ACCOUNT_ID]-us-east-1-[PROJECT-NAME]`, and added a `test.cnf` file to this bucket for testing (if you chose a different region than `us-east-1`, the part `us-east-1` in the bucket name will vary accordingly).  You can start with the `test.cnf` example and skip the rest of this section until you wish to add additional files or buckets for testing your solver.
 
 You can copy files to the bucket with a command similar to this one (when executed from the root directory of this repository, this re-copies the `my-problem.cnf` file to the default bucket):
 
 ```text
-aws s3 cp my-problem.cnf s3://ACCOUNT_ID-us-east-1-[PROJECT-NAME]
+aws s3 cp my-problem.cnf s3://[ACCOUNT_ID]-us-east-1-[PROJECT-NAME]
 ```
 
 When `s3 cp` is complete, you will see your file(s) in the list of objects in the bucket:
 
 ```text
-aws s3 ls s3://ACCOUNT_ID-us-east-1-[PROJECT-NAME]
+aws s3 ls s3://[ACCOUNT_ID]-us-east-1-[PROJECT-NAME]
 ```
 
 More information on creating and managing S3 buckets is found here: [https://aws.amazon.com/s3/](https://aws.amazon.com/s3/). The S3 command line interface is described in more detail here: [https://docs.aws.amazon.com/cli/latest/userguide/cli-services-s3-commands.html](https://docs.aws.amazon.com/cli/latest/userguide/cli-services-s3-commands.html).
