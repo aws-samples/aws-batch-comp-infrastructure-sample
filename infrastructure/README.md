@@ -127,7 +127,7 @@ This will delete the infrastructure and associated resources.  **Note that this 
 
 ### Creating the Base Docker Leader and Worker Images for Solvers
 
-See the [SAT-Comp Docker Images README.md file](../Docker/README.md) in the `docker` directory for instructions on how to build and test Docker images.
+See the [SAT-Comp Docker Images README.md file](../docker/README.md) in the `docker` directory for instructions on how to build and test Docker images.
 
 ### Storing Solver Images in the ECR repository
 
