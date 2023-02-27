@@ -211,8 +211,8 @@ AWS typically requires 2-5 minutes to allocate nodes and host the ECS cluster. Y
 The next page will show a list of job queues, including:
 
 ```text
-job-queue-PROJECT_NAME-SolverLeaderService-...
-job-queue-PROJECT_NAME-SolverWorkerService-...
+job-queue-[PROJECT_NAME]-SolverLeaderService-...
+job-queue-[PROJECT_NAME]-SolverWorkerService-...
 ```
 
 The service is running and available when the number of running tasks for the leader is `1` and the number of running tasks for the Worker service is `n`, as chosen with `NUM_WORKERS` in the `update_instances` script above.
@@ -233,7 +233,7 @@ send_message --location [S3_LOCATION] --workers [NUM_WORKERS]
 
 where: 
 
-* `S3_LOCATION` is the S3 location of the query file. For example, for the bucket we described earlier, the location would be `S3://[ACCOUNT_ID]-us-east-1-satcompbucket/test.cnf`.
+* `S3_LOCATION` is the S3 location of the query file. For example, for the bucket we described earlier, the location would be `s3://[ACCOUNT_ID]-us-east-1-[PROJECT_NAME]/test.cnf`.
 * `NUM_WORKERS` is the number of worker nodes to allocate for this problem. Again, we recommend that you start with `NUM_WORKERS` as `1` when beginning. For parallel solvers, you should set `NUM_WORKERS` to `0`.
 
 [BK: For the below (optional) arguments, nothing is documented above. Need to add more info on how to pass these arguments to the script.]
