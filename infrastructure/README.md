@@ -91,7 +91,7 @@ Next, you will create the AWS infrastructure necessary to build and test solvers
 
 We provide a script to set up all of these resources. You can click the links about for more specifics on each each of the services.  [RBJ: fix next sentence] We also explain how these services interact in more detail in the &quot;Extending the Competition Base Container&quot; section of this document. 
 
-To set up your resouces, simply run the  `create-solver-infrastructure` script that we have provided:
+To set up your resouces, simply run the  `create-solver-infrastructure` script that we have provided [BK: The script also requires a `--profile` argument. Should we make `--profile default` the default?]:
 ```text
 ./create-solver-infrastructure --project PROJECT_NAME --solver-type SOLVER_TYPE
 ```
