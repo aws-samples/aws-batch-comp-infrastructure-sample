@@ -24,7 +24,7 @@ Basic familiarity with Docker will be helpful, but we will walk you through step
 
 ## Building the SATComp Base Images
 
-To simplify the solver construction process, we provide base Docker images that manage the infrastructure necessary for solvers and menage access to AWS resources. We will build three images, a common image, a leader, and a worker. One leader coordinates multiple workers. The Dockerfiles and needed resources are contained in the [satcomp-images](satcomp-images) directory.
+To simplify the solver construction process, we provide base Docker images that manage the infrastructure necessary for solvers as well as access to AWS resources. We will build three images, a common image, a leader, and a worker. One leader coordinates multiple workers. The Dockerfiles and needed resources are contained in the [satcomp-images](satcomp-images) directory.
 
 To begin, cd into the `satcomp-images` directory. To build all three docker images in one step, execute the `build_docker_base_images.sh` script. To build the images individually, follow the next three steps.
 
@@ -49,7 +49,7 @@ After buliding the docker images, check to make sure the images have built succe
 1. Run `docker image ls` or `docker images`
 2. Make sure that you see `satcomp-infrastructure:common`, `satcomp-infrastructure:leader`, and `satcomp-infrastructure:worker` in the list of images.
 
-Your should get a response similar to
+You should get a response similar to
 
     % docker image ls
     REPOSITORY               TAG       IMAGE ID       CREATED         SIZE
@@ -104,7 +104,7 @@ This is what `docker image ls` shows for the tutorial to this point:
     
 ## Running Mallob
 
-In the this section, we will use `docker run` to create docker _containers_ (processes) as instances of the docker _images_ we created in the previous section. 
+We will use `docker run` to create docker _containers_ (processes) as instances of the docker _images_ we created in the previous section. 
 
 To find out which docker containers are running, use the command `docker ps`. The command `docker ps -a` will include containers that have already exited. To remove a container, run `docker rm <CONTAINER_ID>`. To remove all containers, run `docker rm $(docker ps -aq)`.
 
@@ -117,7 +117,7 @@ Before running mallob we need to create a docker bridge network that our contain
 To run parallel Mallob, cd into the `runner` directory. We have created a simple shell script called `run_parallel.sh` to show you how to run the mallob_parallel docker image to create a running container. The script has several variables that you need to configure.
 
 - `DOCKER_NETWORK`. Name of the docker bridge network. The default is  `mallob-test`, which will work with the `network create` command in the previous section.  
-- `HOST_RUNDIR`. Name of the host directory that will be mounted in the docker run directory. _Note: This should be an absolute pathname and it must be updated for your filesystem._ This directory will be mounted in the docker container and enables you persist information over multiple docker container sessions. We have placed an `experiment` directory inside `runner` that you can use to begin.
+- `HOST_RUNDIR`. Name of the host directory that will be mounted in the docker run directory. _Note: This should be an absolute pathname and it must be updated for your filesystem._ This directory will be mounted in the docker container and enables you to persist information over multiple docker container sessions. We have placed an `experiment` directory inside `runner` that you can use to begin.
 
 [MWW: we need to add instructions chmod 777 this directory so that is world-writeable/executable so Docker can use it.]
 
@@ -174,7 +174,7 @@ This year, we have modified the architecture to make it easier for you, the comp
 
 Your solver must be buildable from source code using a standard process. We use Docker to create a build process that can easily be standardized. Docker removes many of the platform-specific problems with building under one operating system and running in another.
 
-You will provide a GitHub repo with a Dockerfile in the top directory that we will use to build your solver. This first section of this README constructed just such a solver. Instead of running and interacting with the Docker containers on a local machine, you simply provide them to ECR as exmplained in the [infrastructure overview](../infrastructure/README.md#fixme).
+You will provide a GitHub repo with a Dockerfile in the top directory that we will use to build your solver. This first section of this README constructed just such a solver. Instead of running and interacting with the Docker containers on a local machine, you simply provide them to ECR as explained in the [infrastructure overview](../infrastructure/README.md#fixme).
 
 This year, you will need to supply two Dockerfiles for your solver, one that acts as a Leader Node and one that acts as a Worker Node. In the case of a parallel solver, you only need to provide a single image, which we will also call a Leader Node for convenience.
 
