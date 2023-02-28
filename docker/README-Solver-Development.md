@@ -26,21 +26,7 @@ Basic familiarity with Docker will be helpful, but we will walk you through step
 
 To simplify the solver construction process, we provide base Docker images that manage the infrastructure necessary for solvers as well as access to AWS resources. We will build three images, a common image, a leader, and a worker. One leader coordinates multiple workers. The Dockerfiles and needed resources are contained in the [satcomp-images](satcomp-images) directory.
 
-To begin, cd into the `satcomp-images` directory. To build all three docker images in one step, execute the `build_docker_base_images.sh` script [BK: `build_satcomp_images.sh`?]. To build the images individually, follow the next three steps.
-
-#### 1. Build `satcomp-infrastructure:common` image:
-
-From the `satcomp-images` directory, run `docker build -f satcomp-common/Dockerfile -t satcomp-base:common .`
-
-The common image will take several minutes to build. The next two images are derived from the common image and will build faster.
-
-#### 2. Build `satcomp-infrastructure:leader` image
-
-Run `docker build -f satcomp-leader/Dockerfile -t satcomp-base:leader .`
-
-#### 3. Build `satcomp-infrastructure:worker` image
-
-Run `docker build -f satcomp-worker-image/Dockerfile -t satcomp-base:worker .`
+To begin, cd into the `satcomp-images` directory and execute the `build_satcomp_images.sh` script.  This script will build three images: `satcomp-infrastructure:common`, `satcomp-infrastructure:leader`, and `satcomp-infrastructure:worker` that correspond to the common, leader, and worker images.
 
 ### Checking Docker Build Results
 
@@ -71,22 +57,22 @@ Note: Although this repository is released under the MIT-0 license, the Dockerfi
 
 To build the mallob distributed solver images, we will use the satcomp infrastructure worker and leader images built previously. To begin, cd into the `mallob-images` directory, which contains the needed Dockerfiles and other infrastructure. 
 
-To build all three docker images in one step, execute the `build_mallob_images.sh` script. To build the images individually, follow the next three steps.
+To build all three docker images in one step, execute the `build_mallob_images.sh` script. To build the images individually, follow the next three steps.  Here we describe the individual building steps as you may want to build your own solvers in a similar fashion.
 
 #### To build the Mallob common image:
 
 1. Navigate to the `common` subdirectory.
-2. Run `docker build -t satcomp-mallob:common .` This will read the Dockerfile in the mallob-common directory and build an image called `satcomp-mallob:common`. This will take several minutes as all of mallob and the solvers used by mallob will be fetched and built from source.
+2. Run `docker build -t satcomp-mallob:common .`  The `-t satcomp-mallob:common` argument tells Docker to give the newly constructed image a _tag_ that provides a name for the docker image.  This Dockerfile builds the Mallob solver and its components that will be used by both the leader and the worker image.  This will take several minutes as all of mallob and the solvers used by mallob will be fetched and built from source.
 
 #### To build the Mallob leader image:
 
 1. Navigate to the `leader` subdirectory.
-2. Run `docker build -t scatcomp-mallob:leader .` The resulting image will be named `mallob`, with an image tag `leader`.
+2. Run `docker build -t satcomp-mallob:leader .` The resulting image will be named `satcomp-mallob:leader`.  This Dockerfile adds scripts necessary to use Mallob as the leader node in a distributed solver to the generated image.
 
 #### To build the Mallob worker image:
 
 1. Navigate to the `worker` subdirectory.
-2. Run `docker build -t satcomp-mallob:worker .`
+2. Run `docker build -t satcomp-mallob:worker .`  This Dockerfile adds scripts necessary to use Mallob as the worker node in a distributed solver to the generated image.
 
 After building the mallob images, run `docker image ls` and make sure you see both `satcomp-mallob:leader` and `satcomp-mallob:worker` in the list of images.
 
@@ -117,11 +103,9 @@ Before running mallob we need to create a docker bridge network that our contain
 To run parallel Mallob, cd into the `runner` directory. We have created a simple shell script called `run_parallel.sh` to show you how to run the mallob_parallel docker image to create a running container. The script has several variables that you need to configure.
 
 - `DOCKER_NETWORK`. Name of the docker bridge network. The default is  `mallob-test`, which will work with the `network create` command in the previous section.  
-- `HOST_RUNDIR`. Name of the host directory that will be mounted in the docker run directory. _Note: This should be an absolute pathname and it must be updated for your filesystem._ This directory will be mounted in the docker container and enables you to persist information over multiple docker container sessions. We have placed an `experiment` directory inside `runner` that you can use to begin.
-
-[MWW: we need to add instructions chmod 777 this directory so that is world-writeable/executable so Docker can use it.]
-
-[MWW: if you make the 'rundir' the base dir where the script runs, then you can use path completion to describe the relative path to the query file.  However, the way the files are placed, you also have to make the directory containg the script is chmod 777. ]
+- `HOST_RUNDIR`. Name of the host directory that will be mounted in the docker run directory. _Note: This should be an absolute pathname and it must be updated for your filesystem._ This directory will be mounted in the docker container and enables you to persist information over multiple docker container sessions. We have placed an `experiment` directory inside `runner` that you can use to begin.  
+ 
+**N.B.:** Because the docker image runs as a different user and group than the local host, you need to set the directory permissions so that Docker image can read and write to the directory.  The best way to do this is to change the group for the directory to match the group used by the docker image (group id 1000).  This can be done by changing the group for the host run directory as follows: `chgrp -R 1000 HOST_RUNDIR`.   
 
 The script requires two command-line arguments.
 - <docker_image_name>, which is `satcomp-mallob` for this example. 
@@ -144,7 +128,7 @@ The `run_dist_leader` script will again create an `input.json` file, with more f
 
 ### Debugging
 
-After the solver query runs, you will be left in a bash shell that is executing in the docker container. At that point, you can explore. You will see the `/competition` directory with the solver scripts. You will also see the `/rundir` directory that includes your test file, the solver input file `input.json`, and three output files:
+After the solver query runs, you will be left in a bash shell prompt that is executing in the docker leader container. At that point, you can explore. You will see the `/competition` directory with the solver scripts. You will also see the `/rundir` directory that includes your test file, the solver input file `input.json`, and three output files:
 
 If mallob ran successfully, you will find three new files in `/rundir`:
 
@@ -158,7 +142,13 @@ At this point, you can perform additional experiments or exit the docker shell.
 
 The competition infrastructure starts solver containers and keeps them running for multiple queries. Each query will have a new `input.json` file, and `/container/solver` will be run again.
 
-Your debugging should ensure that you don't leave extra processes running. Check for orphaned jobs with `ps -ax`. In addition, if you create temporary in the container, ensure they are cleaned up.
+**N.B.:** When debugging your own solver, the key step (other than making sure your solver ran correctly) is to ensure that you clean up resources between runs of the solver.  You should ensure that no solver processes are running and any temporary files are removed between executions.  During the competition, the docker images will be left running throughout and each analysis problem will be injected into the running container.  You are responsible for cleaning up files and processes created by your solver.   
+
+In the case of Mallob, it performs the cleanup of temporary files when the solver starts, so that you can inspect them after the solver completes execution.  
+
+To check for orphaned jobs, use the `ps -ax` in both the leader and worker containers.  This should show you all running processes. Make sure there aren't any stray processes that continue execution.  
+
+In addition, check all the locations in the container where your solver places temporary files in order to make sure that they are removed after the run.
 
 If your solver doesn't run correctly in the docker container, you can remove the `/container/solver` commands from the `init_mallob.sh` files. Once you are dropped into the docker container's bash shell, you can explore and debug directly, including running `/container/solver /rundir` from the container shell command line.
 
