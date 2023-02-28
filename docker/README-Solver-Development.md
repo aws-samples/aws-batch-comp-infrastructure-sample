@@ -1,6 +1,18 @@
 # Solver Development for SAT/SMT-Comp
 
-This README covers the process of building your solver and embedding it in docker images.
+This README covers the process of building your solver and embedding it in docker images.  We first show the steps to build and run an example solver, Mallob, then describe how to build your own solver within Docker and test it on your local machine.
+
+## Prerequisites
+
+1. Amazon Linux 2 (AL2) or Ubuntu 20. Builds on other platforms may work, but have not been tested.
+
+To build and run solvers, you will need the following tools installed:
+
+- [python3](https://www.python.org/).  To install the latest version for your platform, go to the [downloads](https://www.python.org/downloads/) page.
+- [docker](https://www.docker.com/).  There is a button to download Docker Desktop on the main page.
+
+Basic familiarity with Docker will be helpful, but we will walk you through step-by-step. If you need more information, there are a number of excellent tutorials, such as [this](https://docs.docker.com/get-started/).
+
 
 # Example: Mallob
 
@@ -13,18 +25,6 @@ This section proceeds in four steps:
 - Building base SATcomp Docker images
 - Building Mallob Docker images
 - Running Mallob in Docker
-
-
-## Prerequisites
-
-1. Amazon Linux 2 (AL2) or Ubuntu 20. Builds on other platforms may work, but have not been tested.
-
-To build and run solvers, you will need the following tools installed:
-
-- [python3](https://www.python.org/).  To install the latest version for your platform, go to the [downloads](https://www.python.org/downloads/) page.
-- [docker](https://www.docker.com/).  There is a button to download Docker Desktop on the main page.
-
-Basic familiarity with Docker will be helpful, but we will walk you through step-by-step. If you need more information, there are a number of excellent tutorials, such as [this](https://docs.docker.com/get-started/).
 
 ## Building the SATComp Base Images
 
