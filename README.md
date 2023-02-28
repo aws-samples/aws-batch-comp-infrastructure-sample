@@ -38,4 +38,4 @@ It is important that you tell us your account number immediately after creating 
 
 _Note_: If you choose to use an existing AWS account (_not_ recommended), you should create a competition-specific profile, for example `sc-2023`. Instead of using `default` in the `.aws/credentials` file below, you would use `sc-2023` as a profile name.  You would then include `--profile sc-2023` with every AWS command in this README.
 
-Next, it is time to develop your solver!  Please look at the instructions in the [Solver Development README](../docker/README-Solver-Development.md) on how to start building and testing your solver.
+Next, it is time to develop your solver!  Please look at the instructions in the [Solver Development README](docker/README-Solver-Development.md) on how to start building and testing your solver.
