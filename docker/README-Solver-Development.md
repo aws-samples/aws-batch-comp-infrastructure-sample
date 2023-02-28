@@ -261,7 +261,7 @@ Here is an example of the format for `worker_node_status.json`:
 }
 ```
 
-The Mallob worker script is a 'bare-bones' example of status reporting that simply checks the status of the worker process and sshd. See the [worker](Mallob-images/worker/worker) for details.
+The Mallob worker script is a 'bare-bones' example of status reporting that simply checks the status of the worker process and sshd. See the [worker](mallob-images/worker/worker) for details.
 
 You are also responsible for writing a separate worker `cleanup` script that is executed when a task is complete. Note that the leader script will perform leader node cleanup as part of the leader `solver` script. Workers are handled differently. Because one worker could (and will) finish before another, the infrastructure needs to be able to remotely kill workers when the leader registers a solution or fails. This is accomplished with a `cleanup` script that can be invoked in each worker node. This script will perform any cleanup tasks and ensure the node is ready for more work. 
 
