@@ -4,7 +4,7 @@ This README covers the process of building your solver and embedding it in docke
 
 ## Prerequisites
 
-1. Amazon Linux 2 (AL2) or Ubuntu 20. Builds on other platforms may work, but have not been tested.
+Platforms Amazon Linux 2 (AL2), Ubuntu 20, and Mac OS Monterey (v12.6) have been tested successfully. Builds on other platforms may work, but have not been tested.
 
 To build and run solvers, you will need the following tools installed:
 
@@ -276,3 +276,9 @@ RUN chmod +x /competition/cleanup
 ```
 
 See the Mallob worker [Dockerfile](satcomp-images/satcomp-worker/Dockerfile) for more details.
+
+## FAQ / Troubleshooting
+
+Q: I'm only submitting to the parallel track and not the cloud track. Do I need a worker image?
+
+A: No. If you are submitting to the parallel track only, you do not need a worker image. For the parallel track, we will assume that the leader manages all threading and communications within the single (multi-core) compute node.
