@@ -164,9 +164,7 @@ If your solver doesn't run correctly in the docker container, you can remove the
 
 # Preparing Your Own Solver Images
 
-Before proceeding through this section, you should work through the [infrastructure README](../infrastructure/README.md) until you reach the [Section on Docker Images](../infrastructure/README.md#preparing-docker-images).
-
-Most of the interaction with AWS services is now managed by Docker base images. We provide two base images: one for leader nodes and one for worker nodes (N.B.: workers are only required for the cloud track).  The Leader Node is responsible for collecting IP addresses of available worker nodes before starting the solving process, pulling work from an SQS queue, downloading problem instances from S3, and sharing and coordinating with Worker Nodes. The Worker Node base container is responsible for reporting its status and IP address to the Leader Node.  
+Most of the interaction with AWS services for deployment on the cloud is managed by the Docker base images.  We provide two base images: one for leader nodes and one for worker nodes (N.B.: workers are only required for the cloud track).  The Leader Node is responsible for collecting IP addresses of available worker nodes before starting the solving process, pulling work from an SQS queue, downloading problem instances from S3, and sharing and coordinating with Worker Nodes. The Worker Node base container is responsible for reporting its status and IP address to the Leader Node.  As these base images manage the interaction with AWS, you can build and test your solvers locally, and they should work the same way when deployed on the cloud.
 
 ## Building from Competition Base Containers
 
