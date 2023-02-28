@@ -1,7 +1,0 @@
-{
- "formula_file": "/rundir/test.cnf",
- "worker_node_ips": ["leader", "worker"],
- "timeout_seconds": "1000",
- "formula_language": "smt2",
- "solver_argument_list": []
-}
