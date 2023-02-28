@@ -7,8 +7,8 @@ Last year, we received feedback that it was challenging to debug solvers on AWS.
 We recommend that you work in four steps:
 
 1. Create and configure an AWS Account for the competition
-2. Create your own solver and run experiments
-3. Set up AWS infrastructure to run on the cloud, and test your solver.
+2. Create your own solver and run experiments locally
+3. Set up AWS infrastructure and test your solver on the cloud.
 4. When ready, share the solver repository and Docker image with us
 
 We describe step 1 in this document.  Step 2 is described in the [Solver Development README](docker/README-Solver-Development.md), while steps 3 and 4 are described in the [Infrastructure README](infrastructure/README-Infrastructure.md). 
