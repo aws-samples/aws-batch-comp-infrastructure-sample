@@ -5,9 +5,9 @@ This repository will help you get your parallel or distributed solver running ef
 We recommend that you work in four steps:
 
 1. Create and configure an AWS Account for the competition.  Please do this right away and send us an email, so we can start the process to give you AWS credits.  You can then continue with the other steps while waiting for us to answer. 
-2. Build your solver as a Docker image and run experiments locally
-3. Set up AWS infrastructure and test your solver on the cloud
-4. When ready, share the solver repository and Docker image with us
+2. Build your solver as a Docker image and run experiments locally.
+3. Set up AWS infrastructure and test your solver on the cloud.
+4. When ready, share the solver repository and Docker image with us.
 
 We describe step 1 in this document.  Step 2 is described in the [Solver Development README](docker/README-Solver-Development.md), while steps 3 and 4 are described in the [Infrastructure README](infrastructure/README-Infrastructure.md). 
 
