@@ -142,13 +142,9 @@ At this point, you can perform additional experiments or exit the docker shell.
 
 The competition infrastructure starts solver containers and keeps them running for multiple queries. Each query will have a new `input.json` file, and `/container/solver` will be run again.
 
-**N.B.:** When debugging your own solver, the key step (other than making sure your solver ran correctly) is to ensure that you clean up resources between runs of the solver.  You should ensure that no solver processes are running and any temporary files are removed between executions.  During the competition, the docker images will be left running throughout and each analysis problem will be injected into the running container.  You are responsible for cleaning up files and processes created by your solver.   
+**N.B.:** When debugging your own solver, the key step (other than making sure your solver ran correctly) is to ensure that you clean up resources between runs of the solver.  You should ensure that no solver processes are running and any temporary files are removed between executions.  During the competition, the docker images will be left running throughout and each analysis problem will be injected into the running container.  You are responsible for cleaning up files and processes created by your solver.   In the case of Mallob, it performs the cleanup of temporary files for the leader when the solver starts (rather than when it finishes), so that you can inspect them after the solver completes execution.  
 
-In the case of Mallob, it performs the cleanup of temporary files when the solver starts, so that you can inspect them after the solver completes execution.  
-
-To check for orphaned jobs, use the `ps -ax` in both the leader and worker containers.  This should show you all running processes. Make sure there aren't any stray processes that continue execution.  
-
-In addition, check all the locations in the container where your solver places temporary files in order to make sure that they are removed after the run.
+To check for orphaned jobs, use the `ps -ax` in both the leader and worker containers.  This should show you all running processes. Make sure there aren't any stray processes that continue execution.   In addition, check all the locations in the container where your solver places temporary files in order to make sure that they are removed after the run.
 
 If your solver doesn't run correctly in the docker container, you can remove the `/container/solver` commands from the `init_mallob.sh` files. Once you are dropped into the docker container's bash shell, you can explore and debug directly, including running `/container/solver /rundir` from the container shell command line.
 
