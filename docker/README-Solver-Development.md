@@ -285,4 +285,4 @@ COPY cleanup /competition/cleanup
 RUN chmod +x /competition/cleanup
 ```
 
-See the Mallob worker Dockerfile[docker/worker/Dockerfile] for more details.
+See the Mallob worker [Dockerfile](worker/Dockerfile) for more details.
