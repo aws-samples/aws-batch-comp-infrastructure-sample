@@ -9,6 +9,7 @@ fi
 # user config
 DOCKER_NETWORK="mallob-test"
 HOST_RUNDIR="/<REPLACE_WITH_ABSOLUTE_PATH>/docker/runner/experiment"
+HOST_RUNDIR="/home/rbtjones/dev/sat23/docker/runner/experiment"
 
 # config to match other scripts
 NODE_TYPE="worker"

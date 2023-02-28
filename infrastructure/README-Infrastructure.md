@@ -107,19 +107,19 @@ Amazon stores your solver images in the [Elastic Container Registry (ECR)](https
 
 The `create-solver-infrastructure` command described earlier creates an ECR repository with the same name as the project (PROJECT_NAME).
 
-This repository will store the images for the leader and worker.  Once you have created and tested a docker image (or images, for the cloud leader and worker) as described in the [SAT-Comp Docker Images README.md file](../Docker/README.md), you can upload them to your AWS account with the `push-ecr` script [BK: script requires `--profile` argument. Should we set `--profile default` as default?]:
+This repository will store the images for the leader and worker.  Once you have created and tested a docker image (or images, for the cloud leader and worker) as described in the [SAT-Comp Docker Images README.md file](../Docker/README.md), you can upload them to your AWS account with the `ecr-push` script [BK: script requires `--profile` argument. Should we set `--profile default` as default?]:
 
 ```text
-./push-ecr --project PROJECT_NAME [--leader LEADER_IMAGE_TAG] [--worker WORKER_IMAGE_TAG]
+./ecr-push --project PROJECT_NAME [--leader LEADER_IMAGE_TAG] [--worker WORKER_IMAGE_TAG]
 ```
 
 where:
 
 * `PROJECT_NAME` is the name of the project that you used earlier when creating the account.
 
-* `LEADER\_IMAGE\_TAG` is the tagged name of the leader docker image. [RBJ: fixme -- leader name and tag, tag is no longer "latest". These are names, not tags.]
+* `LEADER_IMAGE_TAG` is the tagged name of the leader docker image. [RBJ: fixme -- leader name and tag, tag is no longer "latest". These are names, not tags.]
 
-* `WORKER\_IMAGE\_TAG` is the tagged name of the leader docker image. [RBJ: fixme -- same]
+* `WORKER_IMAGE_TAG` is the tagged name of the leader docker image. [RBJ: fixme -- same]
 
 The leader and worker tags are optional; you can upload one or both docker images with this command (though if neither is specified, the script exits with an error).
 
@@ -163,7 +163,7 @@ Note: It is very important that you [clean up](#cluster-teardown) once you are d
 
 ### Cluster Setup
 
-To set up and tear down the cluster, we have provided a script called `update_instances`.  You provide the number of desired worker nodes as an argument. The script:
+To set up and tear down the ECS cluster, we have provided a script called `ecs-config`.  You provide the number of desired worker nodes as an argument. The script:
  
 1. Creates an EC2 fleet large enough to run the experiment (number of workers + a leader node)
 2. Creates the correct number of tasks in the ECS service for the leader and workers.
@@ -171,14 +171,14 @@ To set up and tear down the cluster, we have provided a script called `update_in
 To run the script [BK: Again, the script required `--profile` as an argument, so we should make `--profile default` a default]: 
 
 ```text
-update_instances --option setup --workers [NUM_WORKERS]
+ecs-config --option setup --workers [NUM_WORKERS]
 ```
 
 where: 
 
 * `NUM_WORKERS` is the number of worker nodes you want to allocate. To avoid  problems with possible resource limits for your AWS account, we recommend that you set `NUM_WORKERS` to `1` when working through this document for the first time. If you are building for the parallel track, set `NUM_WORKERS` to `0`, as all solving will be performed by the leader node.
 
-AWS typically requires 2-5 minutes to allocate nodes and host the ECS cluster. You can monitor the creation process by navigating to the [ECS console](https://us-east-1.console.aws.amazon.com/ecs) and selecting the _SatCompCluster_ link.
+AWS typically requires 2-5 minutes to allocate nodes and host the ECS cluster. You can monitor the creation process by navigating to the [ECS console](https://us-east-1.console.aws.amazon.com/ecs) and selecting the _SatCompCluster_ link. [FIXME: link won't work outside us-east-1.]
 
 The next page will show a list of job queues, including:
 
@@ -187,7 +187,7 @@ job-queue-[PROJECT_NAME]-SolverLeaderService-...
 job-queue-[PROJECT_NAME]-SolverWorkerService-...
 ```
 
-The service is running and available when the number of running tasks for the leader is `1` and the number of running tasks for the Worker service is `n`, as chosen with `NUM_WORKERS` in the `update_instances` script above.
+The service is running and available when the number of running tasks for the leader is `1` and the number of running tasks for the Worker service is `n`, as chosen with `NUM_WORKERS` in the `ecs-config` script argument.
 
 Note: Your AWS account is charged for the number of EC2 instances that you run, so your bill will rise with the number of workers that you allocate.  
 
@@ -230,7 +230,7 @@ The ECS console allows you to monitor the logs of all running tasks. You can lea
 After testing, remember to tear down the cluster by running: 
 
 ```text
-update_instances --option shutdown
+ecs-config --option shutdown
 ```
 
 This will terminate all EC2 instances and reset the number of leaders and workers to zero in the ECS service. 
