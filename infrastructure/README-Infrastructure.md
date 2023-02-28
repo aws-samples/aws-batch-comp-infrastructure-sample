@@ -4,41 +4,17 @@ This README describes how to build and configure AWS infrastructure for the SAT 
 
 You will proceed through the following steps.
 
-* [Prerequisites](#prerequisites)
-* [Creating an AWS Account](#creating-an-aws-account)
 * [Creating Solver Infrastructure](#creating-solver-infrastructure)
 * [Preparing Docker Images](#preparing-docker-images)
-* [Working with S3](#working-with-s3)
+* [Storing Analysis Problems in the Cloud](#working-with-s3)
 * [Running your Solver](#running-your-solver)
 
 Additional resources are available in a FAQ:
 
 * [FAQ/Troubleshooting](#faq--troubleshooting)
 
-## Prerequisites
+Although there is a lot of information about how to build with AWS infrastructure here, most of the development of your solver can be performed using Docker locally on your laptop as described in the [Solver Development README](../docker/README-Solver-Development.md) (even for the cloud track).  You only need to involve AWS when you want to look at performance testing on the competition hardware. 
 
-To install the infrastructure described in this document, you will need the following tools installed:
-
-- [python3](https://www.python.org/)
-- [docker](https://www.docker.com/)
-- [awscli](https://aws.amazon.com/cli/)
-- [boto3](https://aws.amazon.com/sdk-for-python/)
-
-Basic knowledge of AWS accounts and services is helpful, but we will walk you through all of the necessary steps. 
-
-We recommend that your development environment be hosted on Amazon Linux 2 (AL2) or Ubuntu 20. Other platforms may work, but have not been tested. Note that Mallob will not build cleanly on Mac OS running M1 and M2 processors, even when building within a Docker container, due to missing FPU flags.
-
-## Creating an AWS Account
-
-First, create a specific AWS account for the competition. If you have not created an AWS account previously, it is straightforward to do, requiring a cell phone number, credit card, and address.  Navigate to [aws.amazon.com](https://aws.amazon.com) and follow the instructions to create an account.
-
-If you have previously created an AWS account, we strongly advise that you create a separate AWS account for managing the SAT/SMT-Comp tool construction and testing. This makes it much easier for us to manage account credits and billing. Once the new account is created, email us the account number at: sat-comp-2023@amazon.com (for SAT-Comp) or aws-smtcomp-2023@googlegroups.com (for SMT-Comp) and we will apply the appropriate credits to your account.
-
-To find your account ID, click on your account name in the top right corner, and then click "My Account". You should see Account ID in the Account Settings
-
-It is important that you tell us your account number immediately after creating the account, so that we can assign you a resource budget for your experiments. We also need to grant you access to the shared problem sets. Once we hear from you, we will email you an acknowledgment when resources have been added to your account.
-
-_Note_: If you choose to use an existing AWS account (_not_ recommended), you should create a competition-specific profile, for example `sc-2023`. Instead of using `default` in the `.aws/credentials` file below, you would use `sc-2023` as a profile name.  You would then include `--profile sc-2023` with every AWS command in this README.
 
 ### Installing the AWS CLI
 
@@ -46,14 +22,10 @@ In order to work with AWS, you must install the [AWS CLI](https://aws.amazon.com
   [https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
 If you have previously installed the AWS CLI, you should ensure it is up to date.
 
-### Choose a Region 
-
-AWS has many regions, which enables low-latency access for customers around the world. Each region is independent from all other regions, and in almost all cases, resources created in one region are not shared with other regions. In this document, we will work wtih `us-east-1`, which is the largest AWS region.  This is a good default choice, but you are welcome to use an alternate region. If you do, you should substitute the region that you have chosen whenever we use `us-east-1` as a parameter to commands in this README. If you are on the US West Coast, `us-west-2` is an ideal choice.
 
 ### Creating AWS Credentials
 
-You must configure AWS credentials to access the resources in your account. For the purposes of simplifying the competition configurations, you will use a so-called _root level access key_. This is _not_ the best practice for security (which would be to create a separate user in your account) but it will suffice for the competition. If you continue using your AWS account after the competition, we recommend that you follow AWS best practices as described here:
-    [https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html#create-iam-users](https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html#create-iam-users)
+You must configure AWS credentials to access the resources in your account. For the purposes of simplifying the competition configurations, you will use a so-called _root level access key_. This is _not_ the best practice for security (which would be to create a separate user in your account) but it will suffice for the competition (see FAQ for more information).
 
 In this section, you will be working with the Identity and Access Management (IAM) console. To create a root level access key go to the [IAM Console](https://console.aws.amazon.com/iamv2/). You can get to the console by clicking the previous link or by searching for "IAM" in the search field at the top of the [AWS Console](https://console.aws.amazon.com) as shown [here](readme-images/iam-search.png) and then clicking the resulting link).
 
@@ -80,18 +52,7 @@ We recommend that when you've completed account set-up, you follow the steps in 
 
 ## Creating Solver Infrastructure
 
-Next, you will create the AWS infrastructure necessary to build and test solvers. The SAT and SMT competitions both use the following infrastructure elements: 
-
-* Compute resources necessary to host solvers, provided by the [Elastic Compute Cloud](https://aws.amazon.com/ec2/) (EC2) service.
-* A registry for solver Docker image files, provided by the [Elastic Container Registry](https://aws.amazon.com/ecr/) (ECR) service.
-* A compute environment to support automated launching of containers on compute resources, provided by the [Elastic Container Service](https://aws.amazon.com/ecs/) (ECS) service.  
-* A storage location for solver queries that uses the [Simple Storage Service](https://aws.amazon.com/s3/) (S3) service.
-* A distributed file system that can be used for communication between leader and worker solvers, using the [Elastic File System](https://aws.amazon.com/efs/) (EFS) service.
-* A problem queue that the solver leader uses to extract the next problem to solve, provided by the [Simple Queue Service](https://aws.amazon.com/sqs/) (SQS).
-
-We provide a script to set up all of these resources. You can click the links about for more specifics on each each of the services.  [RBJ: fix next sentence] We also explain how these services interact in more detail in the &quot;Extending the Competition Base Container&quot; section of this document. 
-
-To set up your resouces, simply run the  `create-solver-infrastructure` script that we have provided [BK: The script also requires a `--profile` argument. Should we make `--profile default` the default?]:
+Next, you will create the AWS infrastructure necessary to build and test solvers. The SAT and SMT competitions both use the following infrastructure elements.  These should "just work", but there is more information about the different parts of the infrastructure in the FAQ.  To set up your resouces, simply run the  `create-solver-infrastructure` script that we have provided [BK: The script also requires a `--profile` argument. Should we make `--profile default` the default?]:
 ```text
 ./create-solver-infrastructure --project PROJECT_NAME --solver-type SOLVER_TYPE
 ```
@@ -151,9 +112,9 @@ where:
 
 The leader and worker tags are optional; you can upload one or both docker images with this command (though if neither is specified, the script exits with an error).
 
-## Working with S3
+## Storing Analysis Problems in the Cloud
 
-Before you can run the solver, you have to add the problems to be solved to an S3 bucket that is accessible by your account. As part of the `create-solver-infrastructure` CloudFormation script, we have created a bucket for you where you can store files: `[ACCOUNT_ID]-us-east-1-[PROJECT-NAME]`, and added a `test.cnf` file to this bucket for testing (if you chose a different region than `us-east-1`, the part `us-east-1` in the bucket name will vary accordingly).  You can start with the `test.cnf` example and skip the rest of this section until you wish to add additional files or buckets for testing your solver.
+We use the AWS Simple Storage Service (S3) to store the analysis problems we want to solve with our solver.  S3 has a concept of a "bucket" which acts like a filesystem.  As part of the `create-solver-infrastructure` CloudFormation script, we have created a bucket for you where you can store files: `[ACCOUNT_ID]-us-east-1-[PROJECT-NAME]`, and added a `test.cnf` file to this bucket for testing.  You can start with the `test.cnf` example and skip the rest of this section until you wish to add additional files or buckets for testing your solver.
 
 You can copy files to the bucket with a command similar to this one (when executed from the root directory of this repository, this re-copies the `my-problem.cnf` file to the default bucket):
 
@@ -173,7 +134,7 @@ More information on creating and managing S3 buckets is found here: [https://aws
 
 After storing docker images: `[PROJECT_NAME]:leader` (and for the cloud solver: `[PROJECT_NAME]:worker`) and placing at least one query file in your S3 bucket, you are ready to run your solver. [RBJ: these names are inconsistent?]
 
-Running the solver consists of three steps:
+Running the solver consists of the following steps:
 
 1. Setup.
 
@@ -223,7 +184,7 @@ Note: Your AWS account is charged for the number of EC2 instances that you run, 
 
 Before submitting a job, check that a cluster is set up and running, and the desired problem is available in an accessible S3 bucket.
 
-Solver jobs are submitted by sending SQS messages. We have provided a `send_message` script to do this for you. You provide the S3 location of the file to run and number of desired worker nodes. The script submits an SQS request to the `[ACCOUNT_NUMBER]-[REGION]-SatCompQueue` queue, which the solver leader container is monitoring. 
+Solver jobs are submitted by sending SQS messages. We have provided a `send_message` script to do this for you. You provide the S3 location of the file to run and number of desired worker nodes. The script submits an SQS request to the `[ACCOUNT_NUMBER]-us-east-1-SatCompQueue` queue, which the solver leader container is monitoring. 
 
 To run the script [BK: Like with the other scripts, make `--profile default` a default.]: 
 
@@ -281,7 +242,7 @@ Here is the command to run it:
 _Note_: Be sure to double check the email address is correct! 
 
 After running the aws cloudformation command, you can monitor the installation process by logging into your AWS account and navigating to the [CloudFormation console](https://console.aws.amazon.com/cloudformation).
-Make sure you are in the region you chose in your profile (region is selected in the top right corner).
+Make sure you are in the us-east-1 region (You can select the region in the top right corner of the console page).
 You should see a stack named `setup-account-stack`.
 
  ![](readme-images/cloudformation.png)
@@ -298,13 +259,32 @@ Although it is handy to get emails when certain account budget thresholds have b
 
 No. If you are submitting to the parallel track only, you do not need a worker image.  For the parallel track, we will assume that the leader manages all threading and communications within the single (multi-core) compute node.
 
+#### How do I manage my account after SAT-Comp if I want to follow security best practices?
+
+If you continue using your AWS account after the competition, we recommend that you follow AWS best practices as described here:
+    [https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html#create-iam-users](https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html#create-iam-users)
+
+#### What are the sequence of steps performed by the leader container to set up the `input.json' file?
+
+performs the following steps: 
+
+1. Pull and parse a message from the `[ACCOUNT_NUMBER]-us-east-1-SatCompQueue` SQS queue with the format described in the [Job Submission and Execution section](../infrastructure/README.md#fixme).  
+1. Pull the appropriate solver problem from S3 from the location provided in the SQS message.
+1. Save the solver problem on a shared EFS drive so that it can also be accessed by the worker nodes.
+1. Wait until the requested number of workers have reported their status as READY along with their IP addresses.
+1. Create a working directory for this problem.
+1. Create and write an `input.json` with the IP addresses of the worker nodes as well as the location of the problem to the working directory
+1. Invoke the executable script located at path `/competition/solver` with a single parameter: the path to the working directory. The solver script will look for the `input.json` file in the working directory. It is also the location where solver output and error logs will be written.  
+1. The return code for `/competition/solver` will determine the expected result for the solver: A return code of 10 indicates SAT, 20 indicates UNSAT, 0 indicates UNKNOWN, and all other return codes indicate an error.
+1. Upon task completion, notify all workers that the task has ended.
+
 #### Q: I ran the infrastructure scripts, and they seemed to work, but when I go out to the console, I don't see any of the infrastructure: S3 buckets, ECS Queues, etc. What happened?
 
 The most common mistake people make when starting with AWS is not choosing the correct *region* for executing their jobs.  In the console on the top right there is a selectable region:
 
 <img src="readme-images/regions.png" alt="image of region selector" width="200"/>
 
-The reason that you view has to be the same as the one referenced in your profile created at the beginning of this document (by default, it is us-east-1).  Make sure that the region selected in the top-right of the console page matches the region in your profile. 
+Make sure that the region selected in the top-right of the console page is `us-east-1`. 
 
 #### Q: I created a leader node and submitted a job, but the leader keeps saying it is waiting for worker nodes and not running my solver.  What happened?
 
@@ -363,11 +343,24 @@ In the next page, you will see an autoscaling group called something like job-qu
 1. Set the desired and maximum task capacity to 0.  This shuts down any EC2 instances.
  
 
+#### Q: What are the various AWS services that are used in the infrastructure?
+
+The infrastructure pieces are as follows: 
+
+* Compute resources necessary to host solvers, provided by the [Elastic Compute Cloud](https://aws.amazon.com/ec2/) (EC2) service.
+* A registry for solver Docker image files, provided by the [Elastic Container Registry](https://aws.amazon.com/ecr/) (ECR) service.
+* A compute environment to support automated launching of containers on compute resources, provided by the [Elastic Container Service](https://aws.amazon.com/ecs/) (ECS) service.  
+* A storage location for solver queries that uses the [Simple Storage Service](https://aws.amazon.com/s3/) (S3) service.
+* A distributed file system that can be used for communication between leader and worker solvers, using the [Elastic File System](https://aws.amazon.com/efs/) (EFS) service.
+* A problem queue that the solver leader uses to extract the next problem to solve, provided by the [Simple Queue Service](https://aws.amazon.com/sqs/) (SQS).
+
+You can click the links about for more specifics on each each of the services.  
+
 #### Q: Suppose I want to use the console to send SQS messages to start executing jobs. How do I do that?
 
 Submit a job using the [Simple Queue Service (SQS) console](https://console.aws.amazon.com/sqs/).
 
-1. Navigate to the SQS console, and select the queue named `ACCOUNT_NUMBER-REGION-SatCompQueue`.
+1. Navigate to the SQS console, and select the queue named `ACCOUNT_NUMBER-us-east-1-SatCompQueue`.
 2. Click the *SendAndReceiveMessages* button
 3. Set the message body to something matching the following structure:
 
@@ -403,20 +396,19 @@ Notes:
 
 Amazon stores your solver images in the [Elastic Container Registry (ECR)](https://console.aws.amazon.com/ecr).
 
-The `create-solver-infrastructure` command described earlier creates two ECR repositories:
+The `create-solver-infrastructure` command described earlier creates an ECR repository:
 
 ```text
-PROJECT_NAME-leader
-PROJECT_NAME-worker
+PROJECT_NAME
 ```
 
-These repositories store the images for the leader and worker.  
+This repository store the images for the leader and worker.  
 
-Each of these repositories has an associated URI (shown on the console page), which is what we use to push docker images to ECR.
+The repository has an associated URI (shown on the console page), which is what we use to push docker images to ECR.
 The format for URIs is
 
 ```text
-[AWS_ACCOUNT_ID].dkr.ecr.[REGION_NAME].amazonaws.com/[REPOSITORY_NAME]
+[AWS_ACCOUNT_ID].dkr.ecr.us-east-1.amazonaws.com/PROJECT_NAME
 ```
 
 You will use these URIs to describe where to store our Docker images in AWS.  
@@ -427,13 +419,13 @@ Note: a good way to make sure that you type these URI names correctly is to navi
 To store a Docker image in ECR from your local machine, first you need to login to ECR:
 
 ```text
-aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin [AWS_ACCOUNT_ID].dkr.ecr.us-east-1.amazonaws.com
+aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin AWS\_ACCOUNT\_ID.dkr.ecr.us-east-1.amazonaws.com
 ```
 
 Next, you need to tag the image to match the ECR repository.  For the worker, tag the image as:
 
 ```text
-docker tag [LOCAL_WORKER_IMAGE_ID] [AWS_ACCOUNT_ID].dkr.ecr.us-east-1.amazonaws.com/[PROJECT\_NAME]-worker
+docker tag [LOCAL_WORKER_IMAGE_ID] [AWS_ACCOUNT_ID].dkr.ecr.us-east-1.amazonaws.com/PROJECT\_NAME:worker
 ```
 
 where 
@@ -445,7 +437,7 @@ where
 For the leader, tag the image as:
 
 ```text
-docker tag [LOCAL_LEADER_IMAGE_ID] [AWS_ACCOUNT_ID].dkr.ecr.us-east-1.amazonaws.com/PROJECT_NAME-leader
+docker tag [LOCAL_LEADER_IMAGE_ID] [AWS_ACCOUNT_ID].dkr.ecr.us-east-1.amazonaws.com/PROJECT_NAME:leader
 ```
 
 where 
@@ -455,8 +447,8 @@ where
 After these steps, you can docker push the images:
 
 ```text
-docker push [AWS_ACCOUNT_ID].dkr.ecr.us-east-1.amazonaws.com/PROJECT_NAME-leader
-docker push [AWS_ACCOUNT_ID].dkr.ecr.us-east-1.amazonaws.com/PROJECT_NAME-worker
+docker push [AWS_ACCOUNT_ID].dkr.ecr.us-east-1.amazonaws.com/PROJECT_NAME:leader
+docker push [AWS_ACCOUNT_ID].dkr.ecr.us-east-1.amazonaws.com/PROJECT_NAME:worker
 ```
 
 You should see network progress bars for both images.

@@ -1,6 +1,6 @@
-# Docker Images for SAT/SMT-Comp
+# Solver Development for SAT/SMT-Comp
 
-This README covers the process of building your solver and embedding it in docker images. We suggest that you proceed in two stages: build the Mallob example and test it with the infrastructure [you have just created](../infrastructure/README.md). Once you have the Mallob example working, return to this README and follow the instructions in the [second section](#preparing-your-own-solver-images).
+This README covers the process of building your solver and embedding it in docker images. We suggest that you proceed in two stages: first build the Mallob example and test it out. Once you have the Mallob example working, follow the instructions in the [second section](#preparing-your-own-solver-images).
 
 # Example: Mallob
 
@@ -166,17 +166,15 @@ If your solver doesn't run correctly in the docker container, you can remove the
 
 Before proceeding through this section, you should work through the [infrastructure README](../infrastructure/README.md) until you reach the [Section on Docker Images](../infrastructure/README.md#preparing-docker-images).
 
-In previous years, we asked participants to provide a Dockerfile which would build a container that would handle coordination between nodes and all interactions with AWS infrastructure. This meant that the Dockerfiles and images were quite complicated and included items common to all solvers running on the AWS infrastructure, e.g., retrieving problems from S3, setting up openssh-server.  This required complex, duplicate effort from every team. It also made managing the competition difficult, because we frequently found bugs that were not related to the solvers themselves, but rather to their interfaces with AWS.
-
-This year, we have modified the architecture to make it easier for you, the competitors. Most of the interaction with AWS services is now managed by Docker base images. We provide two base images: one for leader nodes and one for worker nodes. The Leader Node is responsible for collecting IP addresses of available worker nodes before starting the solving process, pulling work from an SQS queue, downloading problem instances from S3, and sharing and coordinating with Worker Nodes. The Worker Node base container is responsible for reporting its status and IP address to the Leader Node.
+Most of the interaction with AWS services is now managed by Docker base images. We provide two base images: one for leader nodes and one for worker nodes (N.B.: workers are only required for the cloud track).  The Leader Node is responsible for collecting IP addresses of available worker nodes before starting the solving process, pulling work from an SQS queue, downloading problem instances from S3, and sharing and coordinating with Worker Nodes. The Worker Node base container is responsible for reporting its status and IP address to the Leader Node.  
 
 ## Building from Competition Base Containers
 
 Your solver must be buildable from source code using a standard process. We use Docker to create a build process that can easily be standardized. Docker removes many of the platform-specific problems with building under one operating system and running in another.
 
-You will provide a GitHub repo with a Dockerfile in the top directory that we will use to build your solver. This first section of this README constructed just such a solver. Instead of running and interacting with the Docker containers on a local machine, you simply provide them to ECR as explained in the [infrastructure overview](../infrastructure/README.md#fixme).
+You will provide a GitHub repo with a Dockerfile in the top directory that we will use to build your solver. This first section of this README constructed just such a solver.  In this guide, we start by building and running the solver locally, then once it is working properly, we will use the [Infrastructure README](../infrastructure/README-Infrastructure.md) to test it using AWS resources.  We will use the same process to host your solver during the competition.
 
-This year, you will need to supply two Dockerfiles for your solver, one that acts as a Leader Node and one that acts as a Worker Node. In the case of a parallel solver, you only need to provide a single image, which we will also call a Leader Node for convenience.
+For the cloud track, you will need to supply two Dockerfiles for your solver, one that acts as a Leader Node and one that acts as a Worker Node. In the case of a parallel solver, you only need to provide a single image, which we will also call a Leader Node for convenience.
 
 The Docker base images are contained in the `satcomp-images` directory. As you follow this example, you should also consult the `mallob-images` directory to see how we based the Mallob examples on the images in `satcomp-images`.
 
@@ -195,17 +193,7 @@ The base images (which are based on ubuntu:20.04) have predefined entrypoints th
 
 ### Leader Base Container
 
-The Leader Base Container performs the following steps: 
-
-1. Pull and parse a message from the `[ACCOUNT_NUMBER]-[REGION]-SatCompQueue` SQS queue with the format described in the infrastructure README [Job Submission and Execution section](../infrastructure/README.md#fixme).  
-1. Pull the appropriate solver problem from S3 from the location provided in the SQS message.
-1. Save the solver problem on a shared EFS drive so that it can also be accessed by the worker nodes.
-1. Wait until the requested number of workers have reported their status as READY along with their IP addresses.
-1. Create a working directory for this problem.
-1. Create and write an `input.json` with the IP addresses of the worker nodes as well as the location of the problem to the working directory
-1. Invoke the executable script located at path `/competition/solver` with a single parameter: the path to the working directory. The solver script will look for the `input.json` file in the working directory. It is also the location where solver output and error logs will be written.  
-1. The return code for `/competition/solver` will determine the expected result for the solver: A return code of 10 indicates SAT, 20 indicates UNSAT, 0 indicates UNKNOWN, and all other return codes indicate an error.
-1. Upon task completion, notify all workers that the task has ended.
+The Leader Base Container sets up the analysis problem for the solver.  It loads the analysis problem, then attempts to run an executable file in the docker image in the `/competition/solver` directory.  It provides a single argument to this file, which is a directory path containing a file called `input.json`.  
 
 Here is an example of the `input.json` file for cloud mallob:
 
@@ -219,7 +207,10 @@ Here is an example of the `input.json` file for cloud mallob:
 }
 ```
 
-For the interactive example in the first section, this file is generated by the `run_parallel.sh`[runner/run_parallel.sh] script. Here is an example of `solver_out.json` for distributed mallob:
+For the interactive example in the first section, this file is generated by the `run_parallel.sh`[runner/run_parallel.sh] script. 
+
+The solver is then expected to run and generate a return code and a file called `solver_out.json`.  
+Here is an example of `solver_out.json` from distributed mallob:
 
 ```text
 {
