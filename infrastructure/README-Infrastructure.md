@@ -15,6 +15,17 @@ Additional resources are available in a FAQ:
 
 Although there is a lot of information about how to build with AWS infrastructure here, most of the development of your solver can be performed using Docker locally on your laptop as described in the [Solver Development README](../docker/README-Solver-Development.md) (even for the cloud track).  You only need to involve AWS when you want to look at performance testing on the competition hardware. 
 
+## Prerequisites
+
+To use the AWS infrastructure, you will need the following tools installed:
+
+- [python3](https://www.python.org/).  To install the latest version for your platform, go to the [downloads](https://www.python.org/downloads/) page.
+- [docker](https://www.docker.com/).  There is a button to download Docker Desktop on the main page.
+- [boto3](https://aws.amazon.com/sdk-for-python/).  Once you have python3 installed (above), you can install this with `pip3 install boto3`. 
+
+Basic knowledge of AWS accounts and services is helpful, but we will walk you through all of the necessary steps. 
+
+We recommend that your development environment be hosted on Mac OS Monterey (v12.6), Amazon Linux 2 (AL2) or Ubuntu 20. Other platforms may work, but have not been tested. 
 
 ### Installing the AWS CLI
 
