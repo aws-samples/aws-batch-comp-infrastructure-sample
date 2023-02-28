@@ -246,7 +246,7 @@ The Worker Base Container does the following:
 2. Monitors the Task Notifier for a notification that a solving task has ended
 3. Provides cleanup functionality to be executed on the worker node when a solving task has ended.
 
-Although the base container handles all interaction with the Node Manifest and the Task Notifier, individual solvers are responsible for defining what it means to be "READY". When the container comes up, it immediately runs the executable script at `/competition/worker` in a separate process. You should adapt the Mallob [`worker`](Mallob-images/worker/worker) script for your solver.
+Although the base container handles all interaction with the Node Manifest and the Task Notifier, individual solvers are responsible for defining what it means to be "READY". When the container comes up, it immediately runs the executable script at `/competition/worker` in a separate process. You should adapt the Mallob [`worker`](Mallob-images/worker/Dockerfile) script for your solver.
 
 Workers must update the `worker_node_status.json` file on the file system once per second with a heartbeat, the current status (READY, BUSY, ERROR), and a timestamp. The timestamp is the unix epoch time as returned by the linux time() function.
 
