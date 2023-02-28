@@ -270,60 +270,63 @@ def main() -> None:
     
     #RBJ# 
     try:
-        session = boto3.Session(profile_name=profile)
+        if profile:
+            session = boto3.Session(profile_name=profile)
+        else:
+            session = boto3.Session() 
     except ProfileNotFound as e:
-        logger.error(f"Unable to create AWS session.  Profile '{profile}' not found.  Please double check that this profile is set up in the ~/.aws/config file")
+        logger.error(f"Unable to create AWS session.  Please check that default profile is set up in the ~/.aws/config file and has appropriate rights (or if --profile was provided, that this profile has appropriate rights)")
         sys.exit(1)
-    # try:
-    #     session = boto3.Session()
-    # except:
-    #     logger.error(f"Unable to create AWS session")
-    #     sys.exit(1)
     
     
     if not session.region_name:
         logger.error(f"Profile does not have a region defined.  Please add a region (recommend: us-east-1) to profile '{profile}' in the ~/.aws/config file")
         sys.exit(1)
 
-    # link to AWS services
-    ssm_client = session.client('ssm')
-    ssm = SSM(ssm_client)
+    try: 
+        # link to AWS services
+        ssm_client = session.client('ssm')
+        ssm = SSM(ssm_client)
 
-    sts_client = session.client('sts')
-    sts = STS(sts_client)
-    
-    s3 = session.resource('s3')
-    s3_file_system = S3Filesystem(s3)
+        sts_client = session.client('sts')
+        sts = STS(sts_client)
+        
+        s3 = session.resource('s3')
+        s3_file_system = S3Filesystem(s3)
 
-    cloudformation = session.resource('cloudformation')
-    cfn = CloudFormation(cloudformation, stack_name)
+        cloudformation = session.resource('cloudformation')
+        cfn = CloudFormation(cloudformation, stack_name)
 
-    # set up parameters
-    account_number = sts.get_account_number()
-    region = session.region_name
-    ami_id = ssm.get_ami_image()
-    satcomp_bucket = get_satcomp_bucket(account_number, region, project_name)
+        # set up parameters
+        account_number = sts.get_account_number()
+        region = session.region_name
+        ami_id = ssm.get_ami_image()
+        satcomp_bucket = get_satcomp_bucket(account_number, region, project_name)
 
-    # logger.info("Exiting early so as not to actually do anything")
-    # return 
+        # logger.info("Exiting early so as not to actually do anything")
+        # return 
 
-    if args.mode == "update":
-        cfn.update_cloudformation_stack(project_name, instance_type, ami_id, memory)
-        cfn.await_completion("update")
-    elif args.mode == "delete":
-        delete_resources(session, s3_file_system, project_name, satcomp_bucket)
-        cfn.delete_cloudformation_stack()
-        cfn.await_completion("delete")
-    elif args.mode == "create":
-        cfn.create_cloudformation_stack(project_name, instance_type, ami_id, memory)
-        ok = cfn.await_completion("create")
-        if ok:
-            logger.info(f"Uploading test.cnf file to the {satcomp_bucket} bucket")
-            s3_file_system.upload_file_to_s3(satcomp_bucket, "test.cnf")
+        if args.mode == "update":
+            cfn.update_cloudformation_stack(project_name, instance_type, ami_id, memory)
+            cfn.await_completion("update")
+        elif args.mode == "delete":
+            delete_resources(session, s3_file_system, project_name, satcomp_bucket)
+            cfn.delete_cloudformation_stack()
+            cfn.await_completion("delete")
+        elif args.mode == "create":
+            cfn.create_cloudformation_stack(project_name, instance_type, ami_id, memory)
+            ok = cfn.await_completion("create")
+            if ok:
+                logger.info(f"Uploading test.cnf file to the {satcomp_bucket} bucket")
+                s3_file_system.upload_file_to_s3(satcomp_bucket, "test.cnf")
 
-    else:
-        logger.error(f"Unexpected operation {args.mode}")
-        raise Exception("Internal error: unexpected operation {args.mode}")
+        else:
+            logger.error(f"Unexpected operation {args.mode}")
+            raise Exception("Internal error: unexpected operation {args.mode}")
+    except ClientError as ce: 
+        logger.error("An error occurred during an AWS operation.  Usually this is caused by the AWS session having insufficient rights to resources.  Please double check that the default profile is properly set up in your AWS Config.")
+        logger.error("Error description: {ce}")
+        raise ce
 
 
 if __name__ == "__main__":
