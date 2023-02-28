@@ -1,6 +1,6 @@
 # Solver Development for SAT/SMT-Comp
 
-This README covers the process of building your solver and embedding it in docker images. We suggest that you proceed in two stages: first build the Mallob example and test it out. Once you have the Mallob example working, follow the instructions in the [second section](#preparing-your-own-solver-images).
+This README covers the process of building your solver and embedding it in docker images.
 
 # Example: Mallob
 
