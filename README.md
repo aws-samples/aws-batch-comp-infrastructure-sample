@@ -6,25 +6,13 @@ Last year, we received feedback that it was challenging to debug solvers on AWS.
 
 We recommend that you work in four steps:
 
-1. Create and configure an AWS Account for the competition
+1. Create and configure an AWS Account for the competition.  Please do this right away and send us an email, so we can start the process to give you AWS credits.  You can then continue with the other steps. 
 2. Create your own solver and run experiments locally
 3. Set up AWS infrastructure and test your solver on the cloud
 4. When ready, share the solver repository and Docker image with us
 
 We describe step 1 in this document.  Step 2 is described in the [Solver Development README](docker/README-Solver-Development.md), while steps 3 and 4 are described in the [Infrastructure README](infrastructure/README-Infrastructure.md). 
 
-
-## Prerequisites
-
-To build and run solvers, you will need the following tools installed:
-
-- [python3](https://www.python.org/).  To install the latest version for your platform, go to the [downloads](https://www.python.org/downloads/) page.
-- [docker](https://www.docker.com/).  There is a button to download Docker Desktop on the main page.
-- [boto3](https://aws.amazon.com/sdk-for-python/).  Once you have python3 installed (above), you can install this with `pip3 install boto3`. 
-
-Basic knowledge of AWS accounts and services is helpful, but we will walk you through all of the necessary steps. 
-
-We recommend that your development environment be hosted on Amazon Linux 2 (AL2) or Ubuntu 20. Other platforms may work, but have not been tested. Note that Mallob (our example solver) will not build cleanly on Mac OS running M1 and M2 processors, even when building within a Docker container, due to missing FPU flags.
 
 ## Creating an AWS Account
 
