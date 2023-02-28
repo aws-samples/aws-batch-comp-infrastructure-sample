@@ -14,11 +14,15 @@ This section proceeds in four steps:
 - Building Mallob Docker images
 - Running Mallob in Docker
 
+
 ## Prerequisites
 
 1. Amazon Linux 2 (AL2) or Ubuntu 20. Builds on other platforms may work, but have not been tested.
 
-2. Install Docker.  
+To build and run solvers, you will need the following tools installed:
+
+- [python3](https://www.python.org/).  To install the latest version for your platform, go to the [downloads](https://www.python.org/downloads/) page.
+- [docker](https://www.docker.com/).  There is a button to download Docker Desktop on the main page.
 
 Basic familiarity with Docker will be helpful, but we will walk you through step-by-step. If you need more information, there are a number of excellent tutorials, such as [this](https://docs.docker.com/get-started/).
 
