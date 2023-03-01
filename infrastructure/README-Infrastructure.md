@@ -125,25 +125,25 @@ The leader and worker tags are optional; you can upload one or both docker image
 
 ## Storing Analysis Problems in the Cloud
 
-We use the AWS Simple Storage Service (S3) to store the analysis problems we want to solve with our solver.  S3 has a concept of a "bucket" which acts like a filesystem.  As part of the `create-solver-infrastructure` CloudFormation script, we have created a bucket for you where you can store files: `[ACCOUNT_ID]-us-east-1-[PROJECT-NAME]`, and added a `test.cnf` file to this bucket for testing.  You can start with the `test.cnf` example and skip the rest of this section until you wish to add additional files or buckets for testing your solver.
+We use the AWS Simple Storage Service (S3) to store the analysis problems we want to solve with our solver.  S3 has a concept of a "bucket" which acts like a filesystem.  As part of the `create-solver-infrastructure` CloudFormation script, we have created a bucket for you where you can store files: `ACCOUNT_NUMBER-us-east-1-PROJECT_NAME`, and added a `test.cnf` file to this bucket for testing.  You can start with the `test.cnf` example and skip the rest of this section until you wish to add additional files or buckets for testing your solver.
 
 You can copy files to the bucket with a command similar to this one (when executed from the root directory of this repository, this re-copies the `my-problem.cnf` file to the default bucket):
 
 ```text
-aws s3 cp my-problem.cnf s3://[ACCOUNT_ID]-us-east-1-[PROJECT-NAME]
+aws s3 cp my-problem.cnf s3://ACCOUNT_NUMBER-us-east-1-PROJECT_NAME
 ```
 
 When `s3 cp` is complete, you will see your file(s) in the list of objects in the bucket:
 
 ```text
-aws s3 ls s3://[ACCOUNT_ID]-us-east-1-[PROJECT-NAME]
+aws s3 ls s3://ACCOUNT_NUMBER-us-east-1-PROJECT_NAME
 ```
 
 More information on creating and managing S3 buckets is found here: [https://aws.amazon.com/s3/](https://aws.amazon.com/s3/). The S3 command line interface is described in more detail here: [https://docs.aws.amazon.com/cli/latest/userguide/cli-services-s3-commands.html](https://docs.aws.amazon.com/cli/latest/userguide/cli-services-s3-commands.html).
 
 ## Running Your Solver
 
-After storing docker images: `[PROJECT_NAME]:leader` (and for the cloud solver: `[PROJECT_NAME]:worker`) and placing at least one query file in your S3 bucket, you are ready to run your solver. [RBJ: these names are inconsistent?]
+After storing docker images: `PROJECT_NAME:leader` (and for the cloud solver: `PROJECT_NAME:worker`) and placing at least one query file in your S3 bucket, you are ready to run your solver. [RBJ: these names are inconsistent?]
 
 Running the solver consists of the following steps:
 
@@ -183,8 +183,8 @@ AWS typically requires 2-5 minutes to allocate nodes and host the ECS cluster. Y
 The next page will show a list of job queues, including:
 
 ```text
-job-queue-[PROJECT_NAME]-SolverLeaderService-...
-job-queue-[PROJECT_NAME]-SolverWorkerService-...
+job-queue-PROJECT_NAME-SolverLeaderService-...
+job-queue-PROJECT_NAME-SolverWorkerService-...
 ```
 
 The service is running and available when the number of running tasks for the leader is `1` and the number of running tasks for the Worker service is `n`, as chosen with `NUM_WORKERS` in the `ecs-config` script argument.
@@ -195,20 +195,19 @@ Note: Your AWS account is charged for the number of EC2 instances that you run, 
 
 Before submitting a job, check that a cluster is set up and running, and the desired problem is available in an accessible S3 bucket.
 
-Solver jobs are submitted by sending SQS messages. We have provided a `send_message` script to do this for you. You provide the S3 location of the file to run and number of desired worker nodes. The script submits an SQS request to the `[ACCOUNT_NUMBER]-us-east-1-SatCompQueue` queue, which the solver leader container is monitoring. 
+Solver jobs are submitted by sending SQS messages. We have provided a `send_message` script to do this for you. You provide the S3 location of the file to run and number of desired worker nodes. The script submits an SQS request to the `ACCOUNT_NUMBER-us-east-1-SatCompQueue` queue, which the solver leader container is monitoring. 
 
 To run the script [BK: Like with the other scripts, make `--profile default` a default.]: 
 
 ```text
-send_message --location [S3_LOCATION] --workers [NUM_WORKERS]
+send_message --location S3_LOCATION --workers NUM_WORKERS [--timeout TIMEOUT] [--name NAME] [--format FORMAT] [--args ARGS]
 ```
 
-where: 
-
-* `S3_LOCATION` is the S3 location of the query file. For example, for the bucket we described earlier, the location would be `s3://[ACCOUNT_ID]-us-east-1-[PROJECT_NAME]/test.cnf`.
+with required arguments:
+* `S3_LOCATION` is the S3 location of the query file. For example, for the bucket we described earlier, the location would be `s3://ACCOUNT_NUMBER-us-east-1-PROJECT_NAME/test.cnf`.
 * `NUM_WORKERS` is the number of worker nodes to allocate for this problem. Again, we recommend that you start with `NUM_WORKERS` as `1` when beginning. For parallel solvers, you should set `NUM_WORKERS` to `0`.
 
-[BK: For the below (optional) arguments, nothing is documented above. Need to add more info on how to pass these arguments to the script.]
+and optional arguments:
 * `TIMEOUT` is an optional parameter that sets the timeout in seconds for the solver.  Defaults to 60s.
 * `NAME` is an optional parameter providing a name for the solver (in case you want to host multiple solvers within one container.  Defaults to the empty string)
 * `FORMAT` is an optional parameter providing the problem format.  Defaults to the empty string.
@@ -216,14 +215,32 @@ where:
 
 The leader container will pull the message off of the queue, fetch the problem from S3, and begin execution. For more information on the steps performed, see [Extending the Solver Base Container](#understanding-the-solver-architecture-and-extending-the-competition-base-leader-container) below.  
 
-### Monitoring and Logging
+### Debugging on the Cloud: Monitoring and Logging
 
-[BK: This section needs more details on how to examine the logs.]
+Debugging takes more effort on the cloud than on your local machine, because it takes time to upload your solver and deploy it, and observability can be reduced.  Debug first at small scale on your local machine as described in the [Solver Development README](../docker/README-Solver-Development.md).  
 
-The best way to see solver status is by examining the logs. These are available from CloudWatch log groups. There should be logs related to `/ecs/[PROJECT_NAME]-leader` and `/ecs/[PROJECT_NAME]-worker`.  These logs will capture both stdout and stderr from your solver containers.
+To debug on the cloud, there are two main mechanisms that we use to examine our solvers:
+1. CloudWatch log groups, which allow a real-time view of stdout and stderr from your solver.  
+1. S3 storage of intermediate files, which allows you to dump files that you can inspect after the run.
 
-The ECS console allows you to monitor the logs of all running tasks. You can learn more about the ECS console at: [https://aws.amazon.com/ecs/](https://aws.amazon.com/ecs/).
+**CloudWatch Log Groups:** To watch the logs in real-time you can navigate to the CloudWatch console, then choose the "log groups" item on the left side menu as shown in Figure 2.
 
+ ![](readme-images/cloudwatch-log-groups.png)
+_Figure 2: Cloudwatch log groups view_
+
+There should be logs related to `/ecs/PROJECT_NAME-leader` and `/ecs/PROJECT_NAME-worker`.  These logs will capture both stdout and stderr from your solver containers.  For example, in the figure above, I have a solver named `foobar`.  The logs are captured in something called _streams_, usually tied to a specific instance (so, for a cluster you will have one stream for the leader and one for each worker).  Note that if you don't use a solver for a while, CloudWatch will close the stream and open a new one, as you see in Figure 3: 
+
+![](readme-images/cloudwatch-log-streams.png)
+_Figure 3: Cloudwatch log groups view_
+
+The logs themselves are visible as lists of events as shown in Figure 4:
+
+![](readme-images/cloudwatch-log-items.png)
+
+AWS provides a very full-featured log query language called [CloudWatch Logs Insights](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/AnalyzingLogData.html) (visible in the menu in Figure 2) that you can use to search for specific patterns within logs that can often help speed up your debugging.  A full discussion of insights is outside the scope of this document, but the link above leads to a full set of documentation about how use it.
+
+**S3 Storage of Intermediate Files:**
+When the solver is invoked we store the `input.json` file and the analysis problem in a temporary directory that is passed as the argument to the solver.  We recommend that you use the same directory (or create a subdirectory) for storing all of the intermediate files used during solving.  At the conclusion of solving, all contents in this directory _for the leader solver_ will be uploaded to your S3 bucket (`ACCOUNT_NUMBER-us-east-1-PROJECT-NAME`) under a `/tmp/UUID` directory with a unique UUID so that you can inspect them offline.  This way, you can instrument your solvers to write to the filesystem for later analysis.  **N.B.:** currently this is only available for the leader solver; however, we may add the capability to upload data from the workers depending on customer feedback.  If you store the stdout and stderr logs to this directory (as the Mallob example does), then the output message produced by the solver will identify the UUID used for the bucket for easy reference.
 
 ### Cluster Teardown
 
@@ -240,6 +257,7 @@ You should verify that no EC2 instances are running after running the teardown s
 Note: You are responsible for any charges made to your AWS account.  While we have tested the shutdown script and believe it to be robust, you are responsible for monitoring the EC2 cluster to make sure resources have shutdown properly. We have alternate directions to shutdown resources using the console in the Q&A section.
 
 
+
 ## FAQ / Troubleshooting
 
 #### How Do I Track My Spending?
@@ -248,7 +266,7 @@ Note: You are responsible for any charges made to your AWS account.  While we ha
 
 Here is the command to run it:
 
-    aws cloudformation create-stack --stack-name setup-account-stack --template-body file://setup-account.yaml --parameters ParameterKey=emailAddress,ParameterValue=[YOUR_EMAIL_ADDRESS]
+    aws cloudformation create-stack --stack-name setup-account-stack --template-body file://setup-account.yaml --parameters ParameterKey=emailAddress,ParameterValue=YOUR_EMAIL_ADDRESS
 
 _Note_: Be sure to double check the email address is correct! 
 
@@ -259,7 +277,7 @@ You should see a stack named `setup-account-stack`.
  ![](readme-images/cloudformation.png)
 _Figure 1: Cloudformation result_
 
-By clicking on this stack, and choosing `events`, you can see the resources associated with the stack.  After a short time, you should see the `CREATE_SUCCEEDED` event. If not (e.g., the email address was not valid email address syntax), you will see a `CREATE_FAILED` event. In this case, delete the stack and try again. If you have trouble, email us at: [sat-comp-2022@amazon.com](mailto:sat-comp-2022@amazon.com) and we will walk you through the process.
+By clicking on this stack, and choosing `events`, you can see the resources associated with the stack.  After a short time, you should see the `CREATE_SUCCEEDED` event. If not (e.g., the email address was not valid email address syntax), you will see a `CREATE_FAILED` event. In this case, delete the stack and try again. If you have trouble, email us at: [sat-comp@amazon.com](mailto:sat-comp@amazon.com) and we will walk you through the process.
 
 Although it is handy to get emails when certain account budget thresholds have been met, it is both useful and important to check by-the-minute account spending on the console: [https://console.aws.amazon.com/billing/home](https://console.aws.amazon.com/billing/home).
 
@@ -279,7 +297,7 @@ If you continue using your AWS account after the competition, we recommend that 
 
 performs the following steps: 
 
-1. Pull and parse a message from the `[ACCOUNT_NUMBER]-us-east-1-SatCompQueue` SQS queue with the format described in the [Job Submission and Execution section](../infrastructure/README.md#fixme).  
+1. Pull and parse a message from the `ACCOUNT_NUMBER-us-east-1-SatCompQueue` SQS queue with the format described in the [Job Submission and Execution section](../infrastructure/README.md#fixme).  
 1. Pull the appropriate solver problem from S3 from the location provided in the SQS message.
 1. Save the solver problem on a shared EFS drive so that it can also be accessed by the worker nodes.
 1. Wait until the requested number of workers have reported their status as READY along with their IP addresses.
@@ -376,14 +394,14 @@ Submit a job using the [Simple Queue Service (SQS) console](https://console.aws.
 3. Set the message body to something matching the following structure:
 
 ```text
-{"s3_uri":"s3://[PATH TO CNF PROBLEM]",
- "num_workers": [DESIRED NUMBER OF WORKERS]}
+{"s3_uri":"s3://PATH_TO_CNF_PROBLEM",
+ "num_workers": DESIRED_NUMBER_OF_WORKERS}
 ```
 
 For example, for the bucket we described earlier, given a cluster with two nodes (one worker), it would be:
 
 ```text
-{"s3_uri":"s3://ACCOUNT_ID-us-east-1-satcompbucket/test.cnf",
+{"s3_uri":"s3://ACCOUNT_NUMBER-us-east-1-satcompbucket/test.cnf",
 "num_workers": 1}
 ```
 
@@ -419,7 +437,7 @@ The repository has an associated URI (shown on the console page), which is what 
 The format for URIs is
 
 ```text
-[AWS_ACCOUNT_ID].dkr.ecr.us-east-1.amazonaws.com/PROJECT_NAME
+ACCOUNT_NUMBER.dkr.ecr.us-east-1.amazonaws.com/PROJECT_NAME
 ```
 
 You will use these URIs to describe where to store our Docker images in AWS.  
@@ -436,7 +454,7 @@ aws ecr get-login-password --region us-east-1 | docker login --username AWS --pa
 Next, you need to tag the image to match the ECR repository.  For the worker, tag the image as:
 
 ```text
-docker tag [LOCAL_WORKER_IMAGE_ID] [AWS_ACCOUNT_ID].dkr.ecr.us-east-1.amazonaws.com/PROJECT\_NAME:worker
+docker tag [LOCAL_WORKER_IMAGE_ID] [AWS_ACCOUNT_NUMBER].dkr.ecr.us-east-1.amazonaws.com/PROJECT\_NAME:worker
 ```
 
 where 
@@ -448,7 +466,7 @@ where
 For the leader, tag the image as:
 
 ```text
-docker tag [LOCAL_LEADER_IMAGE_ID] [AWS_ACCOUNT_ID].dkr.ecr.us-east-1.amazonaws.com/PROJECT_NAME:leader
+docker tag LOCAL_LEADER_IMAGE_ID ACCOUNT_NUMBER.dkr.ecr.us-east-1.amazonaws.com/PROJECT_NAME:leader
 ```
 
 where 
@@ -458,12 +476,12 @@ where
 After these steps, you can docker push the images:
 
 ```text
-docker push [AWS_ACCOUNT_ID].dkr.ecr.us-east-1.amazonaws.com/PROJECT_NAME:leader
-docker push [AWS_ACCOUNT_ID].dkr.ecr.us-east-1.amazonaws.com/PROJECT_NAME:worker
+docker push ACCOUNT_NUMBER.dkr.ecr.us-east-1.amazonaws.com/PROJECT_NAME:leader
+docker push ACCOUNT_NUMBER.dkr.ecr.us-east-1.amazonaws.com/PROJECT_NAME:worker
 ```
 
 You should see network progress bars for both images.
 
 More information related to the ECR procedures is described here: [https://docs.aws.amazon.com/AmazonECR/latest/userguide/docker-push-ecr-image.html](https://docs.aws.amazon.com/AmazonECR/latest/userguide/docker-push-ecr-image.html).
 
-If you have trouble, please email us at: [sat-comp-2023@amazon.com](mailto:sat-comp-2023@amazon.com) and we will walk you through the process.
+If you have trouble, please email us at: [sat-comp@amazon.com](mailto:sat-comp@amazon.com) and we will walk you through the process.
