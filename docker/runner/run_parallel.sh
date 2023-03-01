@@ -4,12 +4,20 @@
 #                  for parallel Mallob. Arguments:
 #   $1: docker image name (assumes a "leader" tag)
 #   $2: formula file (relative to HOST_RUNDIR)
+#   $*: solver arguments (passed directly to solver)
 
 # check number arguments
 if [[ $# -lt 2 ]]; then
-    echo "run_parallel.sh: needs two arguments: <docker_image_name> <formula file>"
+    echo "run_parallel.sh usage:  <docker_image_name> <formula_file> [solver arguments]"
     exit 1
 fi
+
+# read first two command-line arguments
+DOCKER_IMAGE_NAME=$1
+FORMULA_FILENAME=$2
+shift 2
+SOLVER_ARGS_SPACED=$*
+SOLVER_ARGS="\"${SOLVER_ARGS_SPACED// /\", \"}\""
 
 # user config
 DOCKER_NETWORK="mallob-test"
@@ -20,12 +28,16 @@ HOST_RUNDIR="/home/rbtjones/dev/sat23/docker/runner/experiment"
 NODE_TYPE="leader"
 DOCKER_RUNDIR="/rundir"
 
+DOCKER_IMAGE="$DOCKER_IMAGE_NAME:$NODE_TYPE"
+HOST_FORMULA_FILE="$HOST_RUNDIR/$FORMULA_FILENAME"
+DOCKER_FORMULA_FILE="$DOCKER_RUNDIR/$FORMULA_FILENAME"
+
 # summary
 echo "run_parallel.sh, running with"
 echo "       node type: $NODE_TYPE"
 echo "  docker network: $DOCKER_NETWORK"
-echo "    docker image: $1:$NODE_TYPE"
-echo "    formula file: $HOST_RUNDIR/$2"
+echo "    docker image: $DOCKER_IMAGE"
+echo "    formula file: $FORMULA_FILENAME"
 echo "     host rundir: $HOST_RUNDIR"
 echo "   docker rundir: $DOCKER_RUNDIR"
 
@@ -36,15 +48,15 @@ if [[ ! -d "$HOST_RUNDIR" ]]; then
 fi
 
 # does formula file exist?
-if [[ ! -f "$HOST_RUNDIR/$2" ]]; then
-    echo "ERROR - unable to read formula file '$HOST_RUNDIR/$2'"
+if [[ ! -f "$HOST_FORMULA_FILE" ]]; then
+    echo "ERROR - unable to read formula file '$HOST_FORMULA_FILE'"
     exit 1
 fi
 
 #
 # create input.json
 #
-echo -e "{\n \"formula_file\": \"$DOCKER_RUNDIR/$2\",\n \"worker_node_ips\": [\"leader\"],\n \"timeout_seconds\": \"1000\",\n \"formula_language\": \"\",\n \"solver_argument_list\": []\n}" > "$HOST_RUNDIR/input.json"
+echo -e "{\n \"formula_file\": \"$DOCKER_FORMULA_FILE\",\n \"worker_node_ips\": [\"leader\"],\n \"timeout_seconds\": \"1000\",\n \"formula_language\": \"\",\n \"solver_argument_list\": [$SOLVER_ARGS]\n}" > "$HOST_RUNDIR/input.json"
 
 #
 # Run docker image as container. Arguments:
@@ -58,4 +70,4 @@ echo -e "{\n \"formula_file\": \"$DOCKER_RUNDIR/$2\",\n \"worker_node_ips\": [\"
 #   -t                    // Docker image name for leader (script hard-codes 'leader' tag)
 #   -c <bash_command>     // gets passed to bash shell
 
-docker run -i --shm-size=32g --name $NODE_TYPE --network $DOCKER_NETWORK --entrypoint bash --rm -v $HOST_RUNDIR:/$DOCKER_RUNDIR -t $1:$NODE_TYPE -c "/competition/init_mallob.sh; exec bash"
+docker run -i --shm-size=32g --name $NODE_TYPE --network $DOCKER_NETWORK --entrypoint bash --rm -v $HOST_RUNDIR:$DOCKER_RUNDIR -t $DOCKER_IMAGE -c "/competition/init_mallob.sh; exec bash"

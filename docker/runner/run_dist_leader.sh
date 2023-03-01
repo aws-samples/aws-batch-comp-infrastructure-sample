@@ -8,7 +8,7 @@
 
 # check number arguments
 if [[ $# -lt 2 ]]; then
-    echo "run_parallel.sh usage: <docker_image_name> <formula file> <solver arguments>"
+    echo "run_dist_leader.sh usage: <docker_image_name> <formula_file> [solver arguments]"
     exit 1
 fi
 
