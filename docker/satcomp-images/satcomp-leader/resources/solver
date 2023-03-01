@@ -2,6 +2,7 @@
 echo "This is a test! Here is what the log would look like"
 echo " \
 {
+  \"return_code\": 0,
   \"artifacts\": {
     \"stdout_path\": \"$1/solver_stdout.log\",
     \"stderr_path\": \"$1/solver_stderr.log\"

@@ -8,6 +8,7 @@ import threading
 from enum import Enum
 from json import JSONDecodeError
 from time import sleep
+import os
 
 from arg_satcomp_solver_base.node_manifest.dynamodb_manifest import DynamodbManifest
 from arg_satcomp_solver_base.s3_file_system.s3_file_system import S3FileSystem, S3FileSystemException
@@ -16,7 +17,7 @@ from arg_satcomp_solver_base.sqs_queue.sqs_queue import SqsQueue, SqsQueueExcept
 from arg_satcomp_solver_base.task_end_notification.task_end_notifier import TaskEndNotifier
 from arg_satcomp_solver_base.utils import FileOperations
 
-EFS_LOCATION = 'mount/efs'
+MOUNT_POINT = '/tmp'
 
 
 class PollerStatus(Enum):
@@ -41,6 +42,7 @@ class Poller(threading.Thread):
     file_operations: FileOperations = FileOperations()
     health_status: PollerStatus
     s3_file_system: S3FileSystem = S3FileSystem.get_s3_file_system()
+    s3_bucket: str
     task_end_notifier: TaskEndNotifier
 
     def __init__(self, thread_id: int,
@@ -49,7 +51,8 @@ class Poller(threading.Thread):
                  output_queue: SqsQueue,
                  node_manifest: DynamodbManifest,
                  task_end_notifier: TaskEndNotifier,
-                 solver: Solver):
+                 solver: Solver, 
+                 s3_bucket: str):
         threading.Thread.__init__(self)
         self.queue = queue
         self.output_queue = output_queue
@@ -61,6 +64,7 @@ class Poller(threading.Thread):
         self.logger = logging.getLogger("Poller")
         self.logger.setLevel(logging.DEBUG)
         self.health_status = PollerStatus.HEALTHY
+        self.s3_bucket = s3_bucket
 
     def _is_valid_solver_request(self, solver_request):
         # TODO improve message validation
@@ -148,8 +152,8 @@ class Poller(threading.Thread):
                 workers.append({"nodeIp": self.ip_address})
 
                 task_uuid = self.file_operations.generate_uuid()
-                efs_uuid_directory = self.file_operations.create_custom_directory(EFS_LOCATION, task_uuid)
-                self.logger.info("Created uuid directory in efs %s", efs_uuid_directory)
+                efs_uuid_directory = self.file_operations.create_custom_directory(MOUNT_POINT, task_uuid)
+                self.logger.info("Created uuid directory in local container %s", efs_uuid_directory)
                 download_location = self.s3_file_system.download_file(s3_uri, efs_uuid_directory)
                 self.logger.info("Download problem to location: %s", download_location)
                 
@@ -161,13 +165,20 @@ class Poller(threading.Thread):
                 self.logger.info("Writing response to output queue")
                 self.output_queue.put_message(json.dumps(solver_response))
                 
+                self.logger.info(f"Writing all files in request directory path: {efs_uuid_directory} to S3 bucket: {self.s3_bucket}")
+                s3_uri = "s3://" + self.s3_bucket + efs_uuid_directory
+                self.logger.info(f"S3 URI is: {s3_uri} and S3 bucket is: {self.s3_bucket}")
+                self.s3_file_system.upload_directory_tree(efs_uuid_directory, s3_uri)
+
                 self.logger.info(
                     "Cleaning up solver output directory %s",
                     solver_response["solver"].get("request_directory_path")
                 )
                 self.file_operations.remove_directory(solver_response["solver"].get("request_directory_path"))
 
-                self.logger.info("Cleaning up uuid directory in efs: %s", efs_uuid_directory)
+
+
+                self.logger.info("Cleaning up uuid directory: %s", efs_uuid_directory)
                 self.file_operations.remove_directory(efs_uuid_directory)
 
                 self.logger.info("Sending notification that solving is complete")
