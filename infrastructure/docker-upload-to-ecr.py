@@ -26,7 +26,7 @@ class STS:
 
 def arg_parser() -> dict: 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--profile', required = True, help = "AWS profile")
+    parser.add_argument('--profile', required = False, help = "AWS profile")
     parser.add_argument('--project', required = True, help = "Name of the project")
     parser.add_argument('--leader', required = False, help = "Docker tag name of the leader container")
     parser.add_argument('--worker', required = False, help = "Docker tag name of the worker container (only for cloud track)")
@@ -73,19 +73,18 @@ def main() -> None:
 
     account_number = sts.get_account_number()
     region = session.region_name
-    profile = args.profile
     project_name = args.project
+    profile_args = ['-p', args.profile] if args.profile else []
     leader_args = ['-l', args.leader] if args.leader else []
     worker_args = ['-w', args.worker] if args.worker else []
     
 
     # run the shell script file to set it up.
     cmd = ' '.join(['./ecr-push-internal.sh', \
-        '-p', profile, \
         '-j', project_name, \
         '-a', str(account_number), \
         '-r', region] + \
-        leader_args + worker_args)
+        profile_args + leader_args + worker_args)
 
     logger.info(f"About to run: { cmd }")
     result = subprocess.run(cmd, shell=True)

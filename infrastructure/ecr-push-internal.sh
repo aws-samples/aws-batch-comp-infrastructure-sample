@@ -4,11 +4,11 @@ print_args() {
     echo "usage: ecr-push-internal.sh -p PROFILE -j PROJECT -a ACCOUNT -r REGION -l LEADER [-h] [-w WORKER]"
     echo " "
     echo "required arguments:"
-    echo "  -p, --profile PROFILE    AWS profile"
     echo "  -j, --project PROJECT    Name of the project"
     echo "  -a. --account ACCOUNT    Account number"
     echo "  -r, --region REGION      Region"
     echo "optional arguments:"
+    echo "  -p, --profile PROFILE    AWS profile"
     echo "  -h, --help               show this message and exit"
     echo "  -l, --leader LEADER      Name of the leader local docker image"
     echo "  -w, --worker WORKER      Name of the worker local docker image"
@@ -82,13 +82,21 @@ done
 # echo "Project is: " $PROJECT
 # echo "Profile is: " $PROFILE
 
-if [ -z ${PROJECT+x} ] || [ -z ${PROFILE+x} ] || [ -z ${ACCOUNT+x} ] || [ -z ${REGION+x} ] ;
+if [ -z ${PROJECT+x} ] || [ -z ${ACCOUNT+x} ] || [ -z ${REGION+x} ] ;
 then 
     echo "account, region, project and profile are all required arguments"
     exit 1; 
 fi
 
-aws --profile $PROFILE --region $REGION ecr get-login-password  | docker login --username AWS --password-stdin "$ACCOUNT".dkr.ecr."$REGION".amazonaws.com || failure 1 "Line ${LINENO}"
+if [ -z ${PROFILE+x} ] ;
+then
+    echo "Profile not set.";
+else
+    PROFILE_ARG="--profile ${PROFILE}"
+    echo "Profile arg is: $PROFILE_ARG";
+fi
+
+aws $PROFILE_ARG --region $REGION ecr get-login-password  | docker login --username AWS --password-stdin "$ACCOUNT".dkr.ecr."$REGION".amazonaws.com || failure 1 "Line ${LINENO}"
 
 if [ -z ${LEADER+x} ];
 then 

@@ -416,6 +416,8 @@ Resources:
               Value: !GetAtt SatCompOutputQueue.QueueName
             - Name: AWS_DEFAULT_REGION
               Value: !Ref AWS::Region
+            - Name: SATCOMP_BUCKET_NAME
+              Value: !Ref SatCompBucket
           LogConfiguration:
             LogDriver: awslogs
             Options:
@@ -464,6 +466,8 @@ Resources:
               Value: !GetAtt SatCompOutputQueue.QueueName
             - Name: AWS_DEFAULT_REGION
               Value: !Ref AWS::Region
+            - Name: SATCOMP_BUCKET_NAME
+              Value: !Ref SatCompBucket
           LogConfiguration:
             LogDriver: awslogs
             Options:
