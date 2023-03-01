@@ -14,6 +14,7 @@ fi
 # user config
 DOCKER_NETWORK="mallob-test"
 HOST_RUNDIR="/<REPLACE_WITH_ABSOLUTE_PATH>/docker/runner/experiment"
+HOST_RUNDIR="/home/rbtjones/dev/sat23/docker/runner/experiment"
 
 # config to match other scripts
 NODE_TYPE="leader"
@@ -43,7 +44,7 @@ fi
 #
 # create input.json
 #
-echo -e "{\n\"formula_file\": \"$DOCKER_RUNDIR/$2\",\n\"worker_node_ips\": [\"leader\"]\n}" > "$HOST_RUNDIR/input.json"
+echo -e "{\n \"formula_file\": \"$DOCKER_RUNDIR/$2\",\n \"worker_node_ips\": [\"leader\"],\n \"timeout_seconds\": \"1000\",\n \"formula_language\": \"\",\n \"solver_argument_list\": []\n}" > "$HOST_RUNDIR/input.json"
 
 #
 # Run docker image as container. Arguments:

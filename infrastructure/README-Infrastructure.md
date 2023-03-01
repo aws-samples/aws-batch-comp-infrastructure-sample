@@ -168,10 +168,10 @@ To set up and tear down the ECS cluster, we have provided a script called `ecs-c
 1. Creates an EC2 fleet large enough to run the experiment (number of workers + a leader node)
 2. Creates the correct number of tasks in the ECS service for the leader and workers.
 
-To run the script [BK: Again, the script required `--profile` as an argument, so we should make `--profile default` a default]: 
+To run the script: 
 
 ```text
-ecs-config --option setup --workers [NUM_WORKERS]
+ecs-config setup --workers [NUM_WORKERS]
 ```
 
 where: 
@@ -230,7 +230,7 @@ The ECS console allows you to monitor the logs of all running tasks. You can lea
 After testing, remember to tear down the cluster by running: 
 
 ```text
-ecs-config --option shutdown
+ecs-config shutdown
 ```
 
 This will terminate all EC2 instances and reset the number of leaders and workers to zero in the ECS service. 
