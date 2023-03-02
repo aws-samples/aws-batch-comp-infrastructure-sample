@@ -64,7 +64,7 @@ We recommend that when you've completed account set-up, you follow the steps in 
 
 ## Mallob Quickstart
 
-For the impatient, we have created two commands to provide a quick start to getting a Mallob container running in AWS.  The first command: `quickstart-build` creates the AWS infrastructure for a cloud solver, builds the Mallob docker images, and uploads them to AWS.  The second command: `quickstart-run` creates a cluster to run with four nodes (1 leader and 3 workers); if it is not already running, waits for the cluster to be ready, then submits a solving job and reads the response from the output queue.  After you test out the mallob solver using these commands, you should go through the rest of the readme to see what they do.  
+For the impatient, we have created two commands to provide a quick start to getting a Mallob container running in AWS.  The first command: `quickstart-build` creates the AWS infrastructure for a cloud solver, builds the Mallob docker images, and uploads them to AWS.  The second command: `quickstart-run` creates a cluster to run with four nodes (1 leader and 3 workers); if it is not already running, waits for the cluster to be ready, then submits a solving job and reads the response from the output queue.  After you test out the mallob solver using these commands, you should go through the rest of the readme to see the steps that they are performing and how to do this with your own solver.  
 
 ### Quickstart Build
 
@@ -76,10 +76,25 @@ This command creates an account, builds Mallob (if not already built), and uploa
 
 where:
 
-* `PROJECT_NAME`: is the name of the project [RBJ: as chosen by the user for the life of the competition]. Note that `PROJECT_NAME` must start with a letter and can only contain lowercase letters, numbers, hyphens (-), underscores (_), and forward slashes (/).
+* `PROJECT_NAME` is the name of the project. Note that `PROJECT_NAME` must start with a letter and can only contain lowercase letters, numbers, hyphens (-), underscores (_), and forward slashes (/).
 
+This command will require 10-20 minutes to run.  Once it is complete, Mallob should be ready to run, and the infrastructure should be set up to run a cloud solver.
 
+### Quickstart Run
 
+This command will spin up a cluster, submit a job to run called `test.cnf` that we uploaded to a storage location in S3 (our storage service), and wait for the result, then spins down the cluster.  The form of the command is: 
+
+```text
+./quickstart-run --project PROJECT_NAME 
+```
+where:
+* `PROJECT_NAME` is the name of the project that you used for the quickstart build step.
+
+Once the solver is completed, you should see a message back from the solver that the problem was completed and that the result was SATISFIABLE.  The results from the run will be stored in an S3 bucket called: `ACCOUNT_NUMBER-us-east-1-PROJECT_NAME` in a `/tmp` directory.  You can download and inspect them.  In addition we show you later on in this file how to inspect the solver in real time using _CloudWatch Logs_.  
+
+Voila!
+
+Now let's talk through how the process works!  
 
 ## Creating Solver Infrastructure
 
