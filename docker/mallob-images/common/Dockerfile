@@ -8,6 +8,6 @@ RUN apt-get update \
 # Build Mallob
 RUN git clone https://github.com/domschrei/mallob
 WORKDIR mallob
-RUN cd lib && bash fetch_and_build_sat_solvers.sh && cd ..
+RUN cd lib && bash fetch_and_build_sat_solvers.sh klcy && cd ..
 RUN mkdir build
 RUN cd build && cmake -DCMAKE_BUILD_TYPE=RELEASE -DMALLOB_USE_RESTRICTED=1 .. && VERBOSE=1 make && cd ..
