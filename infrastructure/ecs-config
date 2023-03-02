@@ -3,6 +3,7 @@ import argparse
 import logging
 import boto3   
 import time 
+import pprint
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger("Runner")
@@ -51,7 +52,6 @@ class EcsService:
 
     def describe_ecs_services(self):
         result = {}
-
         worker_service = self.get_ecs_service("SolverWorkerService")
         leader_service = self.get_ecs_service("SolverLeaderService")
         try:
@@ -121,14 +121,14 @@ if __name__ == "__main__":
     # wait for ECS setup/teardown to complete
     start = time.time()
     while True:
-        status = ecs_service.describe_ecs_services()
+        ecs_status = ecs_service.describe_ecs_services()
 
-        leader = status["services"][0]["deployments"][0]
+        leader = ecs_status["services"][0]["deployments"][0]
         leader_desired = leader["desiredCount"]
         leader_pending = leader["pendingCount"]
         leader_running = leader["runningCount"]
 
-        worker = status["services"][1]["deployments"][0]
+        worker = ecs_status["services"][1]["deployments"][0]
         worker_desired = worker["desiredCount"]
         worker_pending = worker["pendingCount"]
         worker_running = worker["runningCount"]
@@ -139,8 +139,22 @@ if __name__ == "__main__":
         print(f" workers: {worker_desired} desired, {worker_pending} pending, {worker_running} running")
         print("")
 
+
+
         if (leader_desired==leader_running and worker_desired==worker_running):
             print("ECS configuration complete")
             exit(0)
 
         time.sleep(30)
+
+        # put this after the first sleep, since it's usually delayed
+        asg_status = asg_client.describe_scaling_activities()
+        # only display the most recent message
+        asg_update = asg_status["Activities"][0]
+        print(f"Most recent AutoScaling Activity Log")
+        print(f"         StatusCode: {asg_update['StatusCode']}")
+        print(f"        StatusCause: {asg_update['Cause']}")
+        print(f"  StatusDescription: {asg_update['Description']}")
+        print("")
+        #pprint.pprint(asg_update)
+        #print("")
