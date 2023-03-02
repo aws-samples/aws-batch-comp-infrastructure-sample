@@ -61,9 +61,30 @@ If you receive an error message, see the [FAQ/Troubleshooting](#faq--troubleshoo
 
 We recommend that when you've completed account set-up, you follow the steps in the FAQ [How Do I Track My Spending?](#how-do-i-track-my-spending) to track your spending. For now, we'll continue with the setup.
 
+
+## Mallob Quickstart
+
+For the impatient, we have created two commands to provide a quick start to getting a Mallob container running in AWS.  The first command: `quickstart-build` creates the AWS infrastructure for a cloud solver, builds the Mallob docker images, and uploads them to AWS.  The second command: `quickstart-run` creates a cluster to run with four nodes (1 leader and 3 workers); if it is not already running, waits for the cluster to be ready, then submits a solving job and reads the response from the output queue.  After you test out the mallob solver using these commands, you should go through the rest of the readme to see what they do.  
+
+### Quickstart Build
+
+This command creates an account, builds Mallob (if not already built), and uploads the Docker images to AWS.  The form is: 
+
+```text
+./quickstart-build --project PROJECT_NAME
+```
+
+where:
+
+* `PROJECT_NAME`: is the name of the project [RBJ: as chosen by the user for the life of the competition]. Note that `PROJECT_NAME` must start with a letter and can only contain lowercase letters, numbers, hyphens (-), underscores (_), and forward slashes (/).
+
+
+
+
 ## Creating Solver Infrastructure
 
-Next, you will create the AWS infrastructure necessary to build and test solvers. The SAT and SMT competitions both use the following infrastructure elements.  These should "just work", but there is more information about the different parts of the infrastructure in the FAQ.  To set up your resouces, simply run the  `create-solver-infrastructure` script that we have provided [BK: The script also requires a `--profile` argument. Should we make `--profile default` the default?]:
+Next, you will create the AWS infrastructure necessary to build and test solvers. The SAT and SMT competitions both use the following infrastructure elements.  These should "just work", but there is more information about the different parts of the infrastructure in the FAQ.  To set up your resouces, simply run the  `create-solver-infrastructure` script that we have provided.
+
 ```text
 ./create-solver-infrastructure --project PROJECT_NAME --solver-type SOLVER_TYPE
 ```
