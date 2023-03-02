@@ -31,6 +31,24 @@ class SqsService:
             logger.error(f"Failed to get SQS queue: {e}")
             raise e
 
+    def get_satcomp_output_queue(self):
+        """Get SQS services and return sat comp queue.
+        
+        Returns: SQS SatCompQueue
+        
+        """
+        try:
+            response = self.sqs.list_queues()
+            for service in response['QueueUrls']:
+                if service.endswith('SatCompOutputQueue'):
+                    return service
+            
+            raise "No queue ending with 'SatCompOutputQueue' "
+        except Exception as e:
+            logger.error(f"Failed to get SQS queue: {e}")
+            raise e
+
+
     def send_message(self, location, workers, timeout, solverName, language, solverOptions):
         # Expected message structure:
         """{
@@ -71,6 +89,15 @@ class SqsService:
             logger.error(f"Failed to send message: Exception: {e}")
             raise e
 
+    def receive_message(self, timeout):
+        queue = self.get_satcomp_output_queue()
+        response = self.sqs.receive_message(
+            QueueUrl = queue, 
+            WaitTimeSeconds = timeout + 5
+        )
+        logger.info(f"Response from receive_message was: {response}")
+        return response
+
 
 if __name__ == "__main__":
 
@@ -81,7 +108,8 @@ if __name__ == "__main__":
     parser.add_argument('--timeout', type=int,  help = "Timeout value for the infrastructure to interrupt the solver", default = 60)
     parser.add_argument('--name', help = "Name of solver to be invoked (passed through to the solver).  Default: empty string", default = "")
     parser.add_argument('--format', help = "Problem format for the problem to be solved.", default = "")
-    parser.add_argument('--args', nargs='+', help="Arguments to pass through to the solver (--args accepts a space-delimited list of arguments).  Default: empty list", default = [])    
+    parser.add_argument('--args', nargs='+', help="Arguments to pass through to the solver (--args accepts a space-delimited list of arguments).  Default: empty list", default = []) 
+    parser.add_argument('--await-response', required = False, help = "If true, then solver will poll output queue for response message.")
     args = parser.parse_args()
 
 
@@ -93,6 +121,8 @@ if __name__ == "__main__":
     sqs = SqsService(sqs_client)
     try:
         sqs.send_message(args.location, args.workers, args.timeout, args.name, args.format, args.args)
+        if args.await_response:
+            sqs.receive_message(args.timeout)
     except Exception as e:
         logger.info(f"Failed to send message. {e}")
         

@@ -404,11 +404,9 @@ Resources:
               AccessPointId: !Ref AccessPoint
 
       ContainerDefinitions:
-        - Cpu: 4096
-          Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ProjectName}:leader"
+        - Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ProjectName}:leader"
           Name: !Sub "${ProjectName}-leader"
-          Memory: 
-            Ref: ContainerMemory
+          MemoryReservation: 61000
           Environment:
             - Name: SQS_QUEUE_NAME
               Value: !GetAtt SatCompQueue.QueueName
@@ -455,10 +453,9 @@ Resources:
               AccessPointId: !Ref AccessPoint
 
       ContainerDefinitions:
-        - Cpu: 4096
-          Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ProjectName}:worker"
+        - Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ProjectName}:worker"
           Name: !Sub "${ProjectName}-worker"
-          Memory: 61000
+          MemoryReservation: 61000
           Environment:
             - Name: SQS_QUEUE_NAME
               Value: !GetAtt SatCompQueue.QueueName
