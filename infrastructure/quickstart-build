@@ -1,0 +1,81 @@
+#!/usr/bin/env python3
+import argparse
+import logging
+import boto3
+import json    
+import subprocess   
+
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger("Quickstart Build")
+logger.setLevel(logging.INFO)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--profile', required = False, help = "AWS profile")
+    parser.add_argument('--project', required = True, help = "Name for project")
+    args = parser.parse_args()
+
+    profile_args = ['--profile', args.profile] if args.profile else []
+    project_args = ['--project', args.project]
+
+     # run the create script
+    cmd = ['python3', 'manage-solver-infrastructure.py', \
+        '--solver-type', 'cloud', \
+        '--mode', 'create'] \
+        + profile_args + project_args
+    logger.info(f"Creating the AWS infrastructure for project {args.project} using create-solver-project.")
+    logger.info("This operation will likely take 5-7 minutes.")
+    try: 
+        result = subprocess.run(cmd)
+        pass
+    except Exception as e: 
+        logger.error(f"Unexpected error {e}: Unable to run {cmd}.  Is python3 installed and in your path?")
+        exit(-1)    
+    if result.returncode:
+        logger.error(f"create-solver-infrastructure failed with error code {result}")
+        logger.error("Unable to create solver infrastructure...has it already been created?")
+        logger.error("If not, have you set up the default profile in your ~/.aws/config file?")
+        logger.error("If so, does your project name meet the expected format?")
+        exit(-1)
+
+    logger.info("Building the Docker images for the competition base containers")
+    cmd = ['cd ../docker/satcomp-images && build_satcomp_images.sh && cd ../../infrastructure']
+    try:
+        result = subprocess.run(cmd, shell=True)
+    except Exception as e:
+        logger.error(f"Unexpected error {e}: unable to run command to build base image: {cmd}.")
+        exit(-1)
+    if result.returncode:
+        logger.error("Unexpected error: Unable to build docker images for base containers.")
+        exit(-1)
+
+    logger.info("Building the Docker images for Mallob.  This will require ~10 minutes.")
+    cmd = ['cd ../docker/mallob-images && build_mallob_images.sh && cd ../../infrastructure']  
+    try:
+        result = subprocess.run(cmd, shell=True)
+    except Exception as e:
+        logger.error(f"Unexpected error {e}: unable to run command to build mallob image: {cmd}.")
+        exit(-1)
+    if result.returncode:
+        logger.error("Unexpected error: Unable to build docker images for base containers.")
+        exit(-1)
+
+    cmd = ['python3', 'docker-upload-to-ecr.py', \
+           '--leader', 'satcomp-mallob:leader', \
+           '--worker', 'satcomp-mallob:worker'] \
+           + profile_args + project_args
+    logger.info("Uploading the Mallob Docker files to ECR.")
+    logger.info("This operation will likely take 2-5 minutes, depending on network bandwidth.")
+    try:
+        result = subprocess.run(cmd)
+    except Exception as e:
+        logger.error(f"Unexpected error {e}: Unable to upload Mallob docker images to ECR.")
+        exit(-1)
+    if result.returncode:
+        logger.error(f"Unexpected error (return code {result}).  Unable to upload Mallob docker images to ECR")
+        exit(-1)
+
+    logger.info("Upload complete; quickstart-build successful!")
+    exit(0)
+    
