@@ -216,7 +216,7 @@ Here is an example of `solver_out.json` from distributed mallob:
 
 **N.B.**: The return code in `solver_out.json` will determine the satisfiability of the problem for the solver: A return code of 10 indicates SAT, 20 indicates UNSAT, 0 indicates UNKNOWN, and all other return codes indicate an error.
 
-You will adapt the Mallob `solver` script to invoke your solver and coordinates with Worker nodes. You should extend the competition base image by copying your `solver` script to a new container that is based on the Competition Base Container.
+You will adapt the Mallob `solver` script to invoke your solver and coordinate with Worker nodes. You should extend the competition base image by copying your `solver` script to a new container that is based on the Competition Base Container.
 
 For example:
 
