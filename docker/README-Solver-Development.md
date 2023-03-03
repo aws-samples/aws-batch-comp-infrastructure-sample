@@ -81,16 +81,13 @@ Before running mallob we need to create a docker bridge network that our contain
 
 ### Running Parallel Mallob
 
-To run parallel Mallob, cd into the `runner` directory. We have created a simple shell script called `run_parallel.sh` to show you how to run the mallob_parallel docker image to create a running container. The script has several variables that you need to configure [BK: It seems you don't _need_ to configure `DOCKER_NETWORK` because it has a default, and we could also use the `experiment` directory as a default for `HOST_RUNDIR`. If we did this, then we could turn both variables into optional command-line arguments (resolving the variable-command-line-argument duality caused by "you need to specify variables" and "the script requires the following command-line arguments"). In this scenario, all that remains for competitors is then to perform the `chgrp` for the `HOST_RUNDIR`, which _we_ could do inside the script, if we ask users to execute it with `sudo`, and then call the script with the two mandatory arguments and possibly two optional arguments. That would simplify this section. Also, I'd give an example for the invocation of the `run_parallel.sh` script (and for each other script invokation required by competitors).]
+To run parallel Mallob, cd into the `runner` directory. We have created a simple shell script called `run_parallel.sh` to show you how to run the mallob_parallel docker image to create a running container. The script has two variables that can be configured if you wish (described in Q&A) but are set to sensible defaults.  
 
-- `DOCKER_NETWORK`. Name of the docker bridge network. The default is  `mallob-test`, which will work with the `network create` command in the previous section.  
-- `HOST_RUNDIR`. Name of the host directory that will be mounted in the docker run directory. _Note: This should be an absolute pathname and it must be updated for your filesystem._ This directory will be mounted in the docker container and enables you to persist information over multiple docker container sessions. We have placed an `experiment` directory inside `runner` that you can use to begin.  
+ **N.B.:** Because the docker image runs as a different user and group than the local host, you need to set the directory permissions so that Docker image can read and write to the directory.  Please run: `sudo chgrp -R 1000 .` from the `docker/runner` directory so that the container can access this portion of the filesystem..
  
-**N.B.:** Because the docker image runs as a different user and group than the local host, you need to set the directory permissions so that Docker image can read and write to the directory.  The best way to do this is to change the group for the directory to match the group used by the docker image (group id 1000).  This can be done by changing the group for the host run directory as follows: `chgrp -R 1000 HOST_RUNDIR`.   
-
 The script requires two command-line arguments.
 - <docker_image_name>, which is `satcomp-mallob` for this example. 
-- <query_file>, which is the name of the test file for the solver, `test.cnf` in the repository. Note that this file must appear in the host run directory `HOST_RUNDIR`.
+- <query_file>, which is the name of the test file for the solver.  If you use the defaults, you should put SAT/SMT files in the docker/runner/experiments subdirectory, and if you run the script from the `runner` directory, then you can use standard shell completion for paths.
 
 The script will create an `input.json` file in the host run directory. This file will be copied to the docker run directory `/rundir`, where it will be read by the solver script.
 
@@ -123,17 +120,19 @@ At this point, you can perform additional experiments or exit the docker shell.
 
 The competition infrastructure starts solver containers and keeps them running for multiple queries. Each query will have a new `input.json` file, and `/container/solver` will be run again.
 
-**N.B.:** When debugging your own solver, the key step (other than making sure your solver ran correctly) is to ensure that you clean up resources between runs of the solver.  You should ensure that no solver processes are running and any temporary files are removed between executions.  During the competition, the docker images will be left running throughout and each SAT/SMT problem [BK: _analysis problem_ seems like a strange term to me. Could we use a different one? (Also later in this README.)] will be injected into the running container.  You are responsible for cleaning up files and processes created by your solver.   In the case of Mallob, it performs the cleanup of temporary files for the leader when the solver starts (rather than when it finishes), so that you can inspect them after the solver completes execution.  
+**N.B.:** When debugging your own solver, the key step (other than making sure your solver ran correctly) is to ensure that you clean up resources between runs of the solver.  You should ensure that no solver processes are running and any temporary files are removed between executions.  During the competition, the docker images will be left running throughout and each SAT/SMT problem will be injected into the running container.  You are responsible for cleaning up files and processes created by your solver.   In the case of Mallob, it performs the cleanup of temporary files for the leader when the solver starts (rather than when it finishes), so that you can inspect them after the solver completes execution.  
 
 To check for orphaned jobs, use the `ps -ax` in both the leader and worker containers.  This should show you all running processes. Make sure there aren't any stray processes that continue execution.   In addition, check all the locations in the container where your solver places temporary files in order to make sure that they are removed after the run.
 
 If your solver doesn't run correctly in the docker container, you can remove the `/container/solver` commands from the `init_mallob.sh` files. Once you are dropped into the docker container's bash shell, you can explore and debug directly, including running `/container/solver /rundir` from the container shell command line.
 
-[BK: Summarize briefly what happened so far and lead over to the next section.]
+We have now run, debugged, and inspected a sample solver.  It is a good idea to try out multiple files, inspect the results, and try running in both cloud and parallel configurations.  Once you are comfortable with these interactions, it is time to start working on your own solver.
 
 # Preparing Your Own Solver Images
 
-[BK: Assuming we end the previous section with a quick summary and a transition to this section (as mentionend in my previous comment), give a quick explanation how this section is related to the previous one. This could possibly introduce some overlap with the summary of the previous section, but might be important for competitors who want to start here without going through the Mallob example.] Most of the interaction with AWS services for deployment on the cloud is managed by the Docker base images.  We provide two base images: one for leader nodes and one for worker nodes (N.B.: workers are only required for the cloud track).  The Leader Node is responsible for collecting IP addresses of available worker nodes before starting the solving process, pulling work from an SQS queue, downloading problem instances from S3, and sharing and coordinating with Worker Nodes. The Worker Node base container is responsible for reporting its status and IP address to the Leader Node.  As these base images manage the interaction with AWS, you can build and test your solvers locally, and they should work the same way when deployed on the cloud.
+In the previous section, we walked through building and running a sample solver in both cloud and parallel configurations.  We assume at this point that you know how to build with Docker and how to run it locally using the scripts that we have provided.  We recommend that you run through the Mallob example before you start building your own images, but of course you can start here and then follow the same steps same steps as described in "Running Mallob" using your own images.
+
+In this section, we'll talk about how to build your own solvers into Docker containers that are derived from the base containers that we provide.  All of the interaction with AWS services for deployment on the cloud is managed by the Docker base images.  We provide two base images: one for leader nodes and one for worker nodes (N.B.: workers are only required for the cloud track).  The Leader Node is responsible for collecting IP addresses of available worker nodes before starting the solving process, pulling work from an SQS queue, downloading problem instances from S3, and sharing and coordinating with Worker Nodes. The Worker Node base container is responsible for reporting its status and IP address to the Leader Node.  As these base images manage the interaction with AWS, you can build and test your solvers locally, and they should work the same way when deployed on the cloud.
 
 ## Building from Competition Base Containers
 
@@ -210,19 +209,14 @@ Consult the Mallob [leader Dockerfile](mallob-images/leader/Dockerfile) for a mo
 
 ### Worker Base Container
 
-[BK: After reading this section the first time, my question was: "Okay, so what do *I* really need to do (as opposed to what's done automatically for me, either by scripts of the satcomp-base worker image or by the leader)?" Of course it's all there, but I had to entangle things a little bit to get there. It seems to me that _the competitors_ need to do two things: (1) provide a script, at `/competition/worker`, that updates the file `worker_node_status.json` once a second with the current status (one of {"READY", "BUSY", "ERROR"}) and the current UNIX timestamp, following the format in the given example; and (2) provide a script, at `/competition/cleanup`, that kills the running worker/solver process and performs cleanup to make sure the worker node is ready for more work. We could state this right away and then provide most of this section as optional background knowledge for competitors interested in the _why_. The only thing that is maybe not optional is the reference to the existing two scripts of the Mallob example.]
+Workers are expected to be controlled by the main node using `ssh`.  Thus, a worker has three responsibilities: 
+1. To provide an executable to report their status to the AWS infrastructure once per second, to determine whether work can be allocated to them.
+2. To provide an executable that can be invoked to remotely `kill` the worker, in case a worker process becomes unresponsive using ssh.
+3. To provide an executable that can be invoked by the main node to assist with the solving process.
 
-The Worker Base Container does the following [BK: It is unclear here what the `Node Manifest` and the `Task Notifier` are. While competitors could possibly guess what they do, we could reduce their cognitive load by giving a short explanation]:
+#### Reporting Status 
 
-1. Reports its IP address to a global Node Manifest and reports its status as READY, BUSY, or ERROR
-2. Monitors the Task Notifier for a notification that a solving task has ended
-3. Provides cleanup functionality to be executed on the worker node when a solving task has ended.
-
-Although the base container handles all interaction with the Node Manifest and the Task Notifier, individual solvers are responsible for defining what it means to be "READY". When the container comes up, it immediately runs the executable script at `/competition/worker` in a separate process. You should adapt the Mallob [`worker`](Mallob-images/worker/Dockerfile) script for your solver.
-
-Workers must update the `worker_node_status.json` file on the file system once per second with a heartbeat, the current status (READY, BUSY, ERROR), and a timestamp. The timestamp is the unix epoch time as returned by the linux time() function.
-
-If the worker fails to update this status file for more than 5 seconds, the worker node will be considered failed and the infrastructure will reset the node. Repeated failures of worker nodes (likely to be a maximum of three) will cause the system to score the problem as an 'error'.
+To accomplish the first task, the infrastructure assumes that there is an executable at the location `/competition/worker` that will report status once per second.  Status reporting is done by updating a file at location `/competition/worker_node_status.json`.  The file contains a current status (one of {READY, BUSY, ERROR}), and a timestamp. The timestamp is the unix epoch time as returned by the linux time() function.  If the worker fails to update this status file for more than 5 seconds, the worker node will be considered failed and the infrastructure will reset the node. Repeated failures of worker nodes (likely to be a maximum of three) will cause the system to score the problem as an 'error'.
 
 Here is an example of the format for `worker_node_status.json`:
 
@@ -235,9 +229,9 @@ Here is an example of the format for `worker_node_status.json`:
 
 The Mallob worker script is a 'bare-bones' example of status reporting that simply checks the status of the worker process and sshd. See the [worker](mallob-images/worker/worker) for details.
 
-You are also responsible for writing a separate worker `cleanup` script that is executed when a task is complete. Note that the leader script will perform leader node cleanup as part of the leader `solver` script. Workers are handled differently. Because one worker could (and will) finish before another, the infrastructure needs to be able to remotely kill workers when the leader registers a solution or fails. This is accomplished with a `cleanup` script that can be invoked in each worker node. This script will perform any cleanup tasks and ensure the node is ready for more work. 
+#### Cleaning up
 
-Just as the base Docker image, your Dockerfile should place this script at `/competition/cleanup`. Note that the default `cleanup` script](satcomp-images/satcomp-worker/resources/cleanup) provided as part of the base worker image only kills MPI processes. 
+You are also responsible for writing a worker `cleanup` script that is executed when a solving task is complete.  The infrastructure will ensure that this file is called after the leader completes on a SAT/SMT problem, or after the leader fails in some way.  We add this capability to make it straightforward to kill solver nodes that are still working on subproblems when the leader node completes.  Given that the leader can also communicate with the worker using SSH, this file is not strictly necessary depending on how the system is architected (i.e., if the leader can gracefully and quickly terminate all workers at the end of solving, and the leader itself does not fail).  
 
 In normal operation, this script is executed by the infrastructure when the leader process completes. It will also be executed when a failure occurs. The script must reset the worker state (the node will remain) so that it is ready to solve the next problem.
 
@@ -258,6 +252,11 @@ RUN chmod +x /competition/cleanup
 ```
 
 See the Mallob worker [Dockerfile](satcomp-images/satcomp-worker/Dockerfile) for more details.
+
+#### Assisting with the Solving Process
+
+There are many ways to accomplish this goal, and to some degree this is the critical part of building a distributed solver.  In past years, many competitors have used MPI to structure the communications between the leader and worker nodes (Mallob is one example that uses MPI), but competitors have the freedom to structure communication in whatever way makes the most sense for their solver.  Worker nodes are not passed a representation of the SAT/SMT problem by the infrastructure: instead the leader must communicate the problem (or a portion of it) to the worker.
+
 
 ## FAQ / Troubleshooting
 
@@ -293,6 +292,15 @@ Note that there is also a `nocache_build_mallob_images.sh` script.  Although Doc
 
 1. Navigate to the `worker` subdirectory.
 2. Run `docker build -t satcomp-mallob:worker .`  This Dockerfile adds scripts necessary to use Mallob as the worker node in a distributed solver to the generated image.
+
+
+Q: Suppose I want to change the directory or network name for the run_parallel and run_cloud scripts.  How do I do this?
+
+A: The two variables to change are: 
+- `DOCKER_NETWORK`. Name of the docker bridge network. The default is  `mallob-test`, which will work with the `network create` command in the previous section.  
+- `HOST_RUNDIR`. Name of the host directory that will be mounted in the docker run directory. _Note: This should be an absolute pathname and it must be updated for your filesystem._ This directory will be mounted in the docker container and enables you to persist information over multiple docker container sessions. We have placed an `experiment` directory inside `runner` that you can use to begin.  
+
+These are both documented in the script files.
 
 
 Q: After a while, I have lots of old versions of Docker images that are taking up disk space that I no longer need.  How do I get rid of them?
