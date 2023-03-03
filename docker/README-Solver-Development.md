@@ -255,7 +255,7 @@ See the Mallob worker [Dockerfile](satcomp-images/satcomp-worker/Dockerfile) for
 
 #### Assisting with the Solving Process
 
-There are many ways to accomplish this goal, and to some degree this is the critical part of building a distributed solver.  In past years, many competitors have used MPI to structure the communications between the leader and worker nodes (Mallob is one example that uses MPI), but competitors have the freedom to structure communication in whatever way makes the most sense for their solver.  Worker nodes are not passed a representation of the SAT/SMT problem by the infrastructure: instead the leader must communicate the problem (or a portion of it) to the worker.
+There are many ways to accomplish this goal, and to some degree this is the critical part of building a distributed solver.  In past years, many competitors have used [MPI](https://en.wikipedia.org/wiki/Message_Passing_Interface) to structure the communications between the leader and worker nodes (Mallob is one example that uses MPI), but competitors have the freedom to structure communication in whatever way makes the most sense for their solver.  Worker nodes are not passed a representation of the SAT/SMT problem by the infrastructure: instead the leader must communicate the problem (or a portion of it) to the worker.
 
 
 ## FAQ / Troubleshooting
