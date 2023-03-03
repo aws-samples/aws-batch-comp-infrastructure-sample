@@ -143,7 +143,7 @@ Amazon stores your solver images in the [Elastic Container Registry (ECR)](https
 
 The `create-solver-infrastructure` command described earlier creates an ECR repository with the same name as the project (PROJECT_NAME).
 
-This repository will store the images for the leader and worker.  Once you have created and tested a docker image (or images, for the cloud leader and worker) as described in the [SAT-Comp Docker Images README.md file](../Docker/README.md), you can upload them to your AWS account with the `ecr-push` script [BK: script requires `--profile` argument. Should we set `--profile default` as default?]:
+This repository will store the images for the leader and worker.  Once you have created and tested a docker image (or images, for the cloud leader and worker) as described in the [SAT-Comp Docker Images README.md file](../Docker/README.md), you can upload them to your AWS account with the `ecr-push` script:
 
 ```text
 ./ecr-push --project PROJECT_NAME [--leader LEADER_IMAGE_TAG] [--worker WORKER_IMAGE_TAG]
@@ -233,7 +233,7 @@ Before submitting a job, check that a cluster is set up and running, and the des
 
 Solver jobs are submitted by sending SQS messages. We have provided a `send_message` script to do this for you. You provide the S3 location of the file to run and number of desired worker nodes. The script submits an SQS request to the `ACCOUNT_NUMBER-us-east-1-SatCompQueue` queue, which the solver leader container is monitoring. 
 
-To run the script [BK: Like with the other scripts, make `--profile default` a default.]: 
+To run the script: 
 
 ```text
 send_message --location S3_LOCATION --workers NUM_WORKERS [--timeout TIMEOUT] [--name NAME] [--format FORMAT] [--args ARGS]
