@@ -59,11 +59,11 @@ Note that you can delete all docker images on your machine by running `docker rm
 
 ## Building Mallob Images
 
-Note: Although this repository is released under the MIT-0 license, the Dockerfiles use the Mallob project. Mallob licenses include the [LGPL 3.0](https://opensource.org/licenses/lgpl-3.0.html) license.
+[BK: Can we remove this note or move it to some less prominent place? (Or, alternatively, to the start of the whole README?] Note: Although this repository is released under the MIT-0 license, the Dockerfiles use the Mallob project. Mallob licenses include the [LGPL 3.0](https://opensource.org/licenses/lgpl-3.0.html) license.
 
 To build the mallob distributed solver images, we will use the satcomp infrastructure worker and leader images built previously. To begin, cd into the `mallob-images` directory, which contains the needed Dockerfiles and other infrastructure. 
 
-To build all three docker images in one step, execute the `build_mallob_images.sh` script. To build the images individually, follow the next three steps.  Here we describe the individual building steps as you may want to build your own solvers in a similar fashion.
+To build all three docker images in one step, execute the `build_mallob_images.sh` script. [BK: How about highlighting even more strongly that building the images individually is not necessary but only an alternative? Something like "Alternatively, you can build the images individually as described in the following. If you don't want to build them individually, you can skip these steps and continue with _Running Mallob_." An even more drastic change would be to move this to some appendix and just say "Alternatively, if you want to build the images individually, follow the steps in Appendix..."]  To build the images individually, follow the next three steps.  Here we describe the individual building steps as you may want to build your own solvers in a similar fashion.
 
 #### To build the Mallob common image:
 
