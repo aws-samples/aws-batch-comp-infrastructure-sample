@@ -51,6 +51,8 @@ You should get a response similar to
 
 ### Managing Docker Images
 
+[BK: Could this section be moved to the FAQ/Troubleshooting?]
+
 On repeated image builds, previously-built images with the same name will be left with the name/tag as `<none>/<none>`. Docker dangling images can be deleted with `docker image prune`. A specific image can be deleted by running `docker rmi <IMAGE ID>`. 
 
 Note that you can delete all docker images on your machine by running `docker rmi -f $(docker images -a -q)`. Be careful: only do this after running `docker images` to check that you won't delete images unrelated to the solver competition. 
