@@ -18,7 +18,7 @@ Basic familiarity with Docker will be helpful, but we will walk you through step
 
 This example covers two configurations: parallel (single node, multiple cores) and distributed (multiple nodes, multiple cores per node). Because building a distributed solver is a superset of of building a parallel solver; we will note steps that are only required for a distributed solver. 
 
-We use [Mallob](https://github.com/domschrei/mallob) as the running example for both parallel and distributed solvers. This example pulls a version of Mallob that we have tested with the AWS infrastructure. Note that although this repository is released under the MIT-0 license, the Dockerfiles use the Mallob project.  Mallob and the solvers it uses have other licenses, including the [LGPL 3.0](https://opensource.org/licenses/lgpl-3.0.html) license.
+We use [Mallob](https://github.com/domschrei/mallob) as the running example for both parallel and distributed solvers. This example pulls a version of Mallob that we have tested with the AWS infrastructure. Note that although this repository is released under the MIT-0 license, the Dockerfiles use the Mallob project.  Mallob and the solvers it uses have other licenses, including the [LGPL 3.0](https://opensource.org/license/lgpl-3-0/) license.
 
 This section proceeds in four steps:
 - Preparing your system
