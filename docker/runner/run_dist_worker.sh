@@ -6,7 +6,7 @@ if [[ $# -lt 1 ]]; then
     exit 1
 fi
 
-# user config
+# default config; user can replace DOCKER_NETWORK if desired.
 DOCKER_NETWORK="mallob-test"
 
 

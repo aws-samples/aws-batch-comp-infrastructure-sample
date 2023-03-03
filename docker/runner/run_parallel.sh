@@ -19,10 +19,11 @@ shift 2
 SOLVER_ARGS_SPACED=$*
 SOLVER_ARGS="\"${SOLVER_ARGS_SPACED// /\", \"}\""
 
-# user config
+# default config; user can replace DOCKER_NETWORK / HOST_RUNDIR if desired.
 DOCKER_NETWORK="mallob-test"
-HOST_RUNDIR="/<REPLACE_WITH_ABSOLUTE_PATH>/docker/runner/experiment"
-HOST_RUNDIR="/home/rbtjones/dev/sat23/docker/runner/experiment"
+SCRIPTPATH=$(readlink -f "$0")
+SCRIPTDIR=$(dirname "$SCRIPTPATH")
+HOST_RUNDIR="$SCRIPTDIR"
 
 # config to match other scripts
 NODE_TYPE="leader"
