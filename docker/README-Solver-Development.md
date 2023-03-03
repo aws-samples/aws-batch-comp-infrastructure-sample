@@ -235,7 +235,7 @@ Consult the Mallob [leader Dockerfile](mallob-images/leader/Dockerfile) for a mo
 
 ### Worker Base Container
 
-The Worker Base Container does the following:
+The Worker Base Container does the following [BK: It is unclear here what the `Node Manifest` and the `Task Notifier` are. While competitors could possibly guess what they do, we could reduce their cognitive load by giving a short explanation]:
 
 1. Reports its IP address to a global Node Manifest and reports its status as READY, BUSY, or ERROR
 2. Monitors the Task Notifier for a notification that a solving task has ended
