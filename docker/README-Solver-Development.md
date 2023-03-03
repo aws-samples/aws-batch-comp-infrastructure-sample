@@ -18,7 +18,7 @@ Basic familiarity with Docker will be helpful, but we will walk you through step
 
 This example covers two configurations: parallel (single node, multiple cores) and distributed (multiple nodes, multiple cores per node). Because building a distributed solver is a superset of of building a parallel solver; we will note steps that are only required for a distributed solver. 
 
-We use Mallob as the running example for both parallel and distributed solvers. This example pulls a version of Mallob that we have tested with the AWS infrastructure. 
+We use [Mallob](https://github.com/domschrei/mallob) as the running example for both parallel and distributed solvers. This example pulls a version of Mallob that we have tested with the AWS infrastructure. Note that although this repository is released under the MIT-0 license, the Dockerfiles use the Mallob project.  Mallob and the solvers it uses have other licenses, including the [LGPL 3.0](https://opensource.org/licenses/lgpl-3.0.html) license.
 
 This section proceeds in four steps:
 - Preparing your system
@@ -49,36 +49,11 @@ You should get a response similar to
     ubuntu                   20.04     e40cf56b4be3   7 days ago      72.8MB
     % 
 
-### Managing Docker Images
-
-[BK: Could this section be moved to the FAQ/Troubleshooting?]
-
-On repeated image builds, previously-built images with the same name will be left with the name/tag as `<none>/<none>`. Docker dangling images can be deleted with `docker image prune`. A specific image can be deleted by running `docker rmi <IMAGE ID>`. 
-
-Note that you can delete all docker images on your machine by running `docker rmi -f $(docker images -a -q)`. Be careful: only do this after running `docker images` to check that you won't delete images unrelated to the solver competition. 
-
 ## Building Mallob Images
-
-[BK: Can we remove this note or move it to some less prominent place? (Or, alternatively, to the start of the whole README?] Note: Although this repository is released under the MIT-0 license, the Dockerfiles use the Mallob project. Mallob licenses include the [LGPL 3.0](https://opensource.org/licenses/lgpl-3.0.html) license.
 
 To build the mallob distributed solver images, we will use the satcomp infrastructure worker and leader images built previously. To begin, cd into the `mallob-images` directory, which contains the needed Dockerfiles and other infrastructure. 
 
-To build all three docker images in one step, execute the `build_mallob_images.sh` script. [BK: How about highlighting even more strongly that building the images individually is not necessary but only an alternative? Something like "Alternatively, you can build the images individually as described in the following. If you don't want to build them individually, you can skip these steps and continue with _Running Mallob_." An even more drastic change would be to move this to some appendix and just say "Alternatively, if you want to build the images individually, follow the steps in Appendix..."]  To build the images individually, follow the next three steps.  Here we describe the individual building steps as you may want to build your own solvers in a similar fashion.
-
-#### To build the Mallob common image:
-
-1. Navigate to the `common` subdirectory.
-2. Run `docker build -t satcomp-mallob:common .`  The `-t satcomp-mallob:common` argument tells Docker to give the newly constructed image a _tag_ that provides a name for the docker image.  This Dockerfile builds the Mallob solver and its components that will be used by both the leader and the worker image.  This will take several minutes as all of mallob and the solvers used by mallob will be fetched and built from source.
-
-#### To build the Mallob leader image:
-
-1. Navigate to the `leader` subdirectory.
-2. Run `docker build -t satcomp-mallob:leader .` The resulting image will be named `satcomp-mallob:leader`.  This Dockerfile adds scripts necessary to use Mallob as the leader node in a distributed solver to the generated image.
-
-#### To build the Mallob worker image:
-
-1. Navigate to the `worker` subdirectory.
-2. Run `docker build -t satcomp-mallob:worker .`  This Dockerfile adds scripts necessary to use Mallob as the worker node in a distributed solver to the generated image.
+To build all three docker images in one step, execute the `build_mallob_images.sh` script. You will want to create a similar script for your solver.  More information on the script and how to build each docker image individually is available in the Q&A section of the document.
 
 After building the mallob images, run `docker image ls` and make sure you see both `satcomp-mallob:leader` and `satcomp-mallob:worker` in the list of images.
 
@@ -148,7 +123,7 @@ At this point, you can perform additional experiments or exit the docker shell.
 
 The competition infrastructure starts solver containers and keeps them running for multiple queries. Each query will have a new `input.json` file, and `/container/solver` will be run again.
 
-**N.B.:** When debugging your own solver, the key step (other than making sure your solver ran correctly) is to ensure that you clean up resources between runs of the solver.  You should ensure that no solver processes are running and any temporary files are removed between executions.  During the competition, the docker images will be left running throughout and each analysis problem [BK: _analysis problem_ seems like a strange term to me. Could we use a different one? (Also later in this README.)] will be injected into the running container.  You are responsible for cleaning up files and processes created by your solver.   In the case of Mallob, it performs the cleanup of temporary files for the leader when the solver starts (rather than when it finishes), so that you can inspect them after the solver completes execution.  
+**N.B.:** When debugging your own solver, the key step (other than making sure your solver ran correctly) is to ensure that you clean up resources between runs of the solver.  You should ensure that no solver processes are running and any temporary files are removed between executions.  During the competition, the docker images will be left running throughout and each SAT/SMT problem [BK: _analysis problem_ seems like a strange term to me. Could we use a different one? (Also later in this README.)] will be injected into the running container.  You are responsible for cleaning up files and processes created by your solver.   In the case of Mallob, it performs the cleanup of temporary files for the leader when the solver starts (rather than when it finishes), so that you can inspect them after the solver completes execution.  
 
 To check for orphaned jobs, use the `ps -ax` in both the leader and worker containers.  This should show you all running processes. Make sure there aren't any stray processes that continue execution.   In addition, check all the locations in the container where your solver places temporary files in order to make sure that they are removed after the run.
 
@@ -185,7 +160,7 @@ The base images (which are based on ubuntu:20.04) have predefined entrypoints th
 
 ### Leader Base Container
 
-The Leader Base Container sets up the analysis problem for the solver.  It loads the analysis problem, then attempts to run an executable file in the docker image in the `/competition/solver` directory.  It provides a single argument to this file, which is a directory path containing a file called `input.json`.  
+The Leader Base Container sets up the SAT/SMT problem for the solver.  It loads the SAT/SMT problem, then attempts to run an executable file in the docker image in the `/competition/solver` directory.  It provides a single argument to this file, which is a directory path containing a file called `input.json`.  
 
 Here is an example of the `input.json` file for cloud mallob:
 
@@ -285,6 +260,46 @@ RUN chmod +x /competition/cleanup
 See the Mallob worker [Dockerfile](satcomp-images/satcomp-worker/Dockerfile) for more details.
 
 ## FAQ / Troubleshooting
+
+Q: What is the build_mallob_images.sh script doing?  What do the flags for docker build mean?
+
+The script looks like this: 
+
+    # /bin/sh
+    cd common
+    docker build -t satcomp-mallob:common .
+    cd ..
+
+    cd leader
+    docker build -t satcomp-mallob:leader .
+    cd ..
+
+    cd worker
+    docker build -t satcomp-mallob:worker .
+    cd ..
+
+First we factor out the common parts of the leader and worker into a common image.  This Dockerfile builds the Mallob solver and its components that will be used by both the leader and the worker image.  Then we use this common image to build the leader and worker images.  
+
+Docker has two characteristics for build that are important for this script.  The `-t satcomp-mallob:common` argument tells Docker to give the newly constructed image a _tag_ that provides a name for the docker image.   The second thing is that all file paths in Docker are local to the directory where the `docker build` command occurs.  This is why we need to navigate to the directory containing the Dockerfile prior to running the build.
+
+Note that there is also a `nocache_build_mallob_images.sh` script.  Although Docker does a pretty good job of dependency tracking, certain changes are invisible to it.  For example, Docker can determine whether there has been an update to the Mallob repository, but if Mallob calls out to another repository, then Docker will not detect it, and you might get a stale build.  To guard against this, there is a `--no-cache` flag that will do a full rebuild.  If your solver has similar indirect dependencies, you might need to use the `--no-cache` flag.
+
+#### To build the Mallob leader image:
+
+1. Navigate to the `leader` subdirectory.
+2. Run `docker build -t satcomp-mallob:leader .` The resulting image will be named `satcomp-mallob:leader`.  This Dockerfile adds scripts necessary to use Mallob as the leader node in a distributed solver to the generated image.
+
+#### To build the Mallob worker image:
+
+1. Navigate to the `worker` subdirectory.
+2. Run `docker build -t satcomp-mallob:worker .`  This Dockerfile adds scripts necessary to use Mallob as the worker node in a distributed solver to the generated image.
+
+
+Q: After a while, I have lots of old versions of Docker images that are taking up disk space that I no longer need.  How do I get rid of them?
+
+A: On repeated image builds, previously-built images with the same name will be left with the name/tag as `<none>/<none>`. Docker dangling images can be deleted with `docker image prune`. A specific image can be deleted by running `docker rmi <IMAGE ID>`. 
+
+Note that you can delete all docker images on your machine by running `docker rmi -f $(docker images -a -q)`. Be careful: only do this after running `docker images` to check that you won't delete images unrelated to the solver competition. 
 
 Q: I'm only submitting to the parallel track and not the cloud track. Do I need a worker image?
 
