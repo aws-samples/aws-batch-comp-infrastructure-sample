@@ -61,7 +61,6 @@ If you receive an error message, see the [FAQ/Troubleshooting](#faq--troubleshoo
 
 We recommend that when you've completed account set-up, you follow the steps in the FAQ [How Do I Track My Spending?](#how-do-i-track-my-spending) to track your spending. For now, we'll continue with the setup.
 
-
 ## Mallob Quickstart
 
 For the impatient, we have created two commands to provide a quick start to getting a Mallob container running in AWS.  The first command: `quickstart-build` creates the AWS infrastructure for a cloud solver, builds the Mallob docker images, and uploads them to AWS.  The second command: `quickstart-run` creates a cluster to run with four nodes (1 leader and 3 workers); if it is not already running, waits for the cluster to be ready, then submits a solving job and reads the response from the output queue.  After you test out the mallob solver using these commands, you should go through the rest of the readme to see the steps that they are performing and how to do this with your own solver.  
@@ -96,6 +95,7 @@ Voila!
 
 Now let's talk through how the process works!  
 
+
 ## Creating Solver Infrastructure
 
 Next, you will create the AWS infrastructure necessary to build and test solvers. The SAT and SMT competitions both use the following infrastructure elements.  These should "just work", but there is more information about the different parts of the infrastructure in the FAQ.  To set up your resouces, simply run the  `create-solver-infrastructure` script that we have provided.
@@ -106,7 +106,7 @@ Next, you will create the AWS infrastructure necessary to build and test solvers
 
 where:
 
-* `PROJECT_NAME`: is the name of the project [RBJ: as chosen by the user for the life of the competition]. Note that `PROJECT_NAME` must start with a letter and can only contain lowercase letters, numbers, hyphens (-), underscores (_), and forward slashes (/).
+* `PROJECT_NAME`: is the name of the project. Note that `PROJECT_NAME` must start with a letter and can only contain lowercase letters, numbers, hyphens (-), underscores (_), and forward slashes (/).
 
 * `SOLVER_TYPE`: is either `cloud` or `parallel` depending on which kind of solver you are running. Note that we will run cloud solvers run on multiple 16-core machines (m6i.4xlarge [RBJ: include links?]) with 64GB memory, while parallel solvers run on a single 64-core machine (m6i.16xlarge) with 256GB memory.
 
@@ -153,9 +153,9 @@ where:
 
 * `PROJECT_NAME` is the name of the project that you used earlier when creating the account.
 
-* `LEADER_IMAGE_TAG` is the tagged name of the leader docker image. [RBJ: fixme -- leader name and tag, tag is no longer "latest". These are names, not tags.]
+* `LEADER_IMAGE_TAG` is the tagged name of the leader docker image (e.g. satcomp-mallob:leader).
 
-* `WORKER_IMAGE_TAG` is the tagged name of the leader docker image. [RBJ: fixme -- same]
+* `WORKER_IMAGE_TAG` is the tagged name of the leader docker image (e.g. satcomp-mallob:worker).
 
 The leader and worker tags are optional; you can upload one or both docker images with this command (though if neither is specified, the script exits with an error).
 
@@ -191,7 +191,7 @@ Running the solver consists of the following steps:
     
 2. Run. submitting a solve job to the SQS queue by specifying the S3 location of the problem and the desired number of workers.
 
-3. Cleanup. Setting EC2 [RBJ: and ECS?] capacity for cluster back to zero.
+3. Cleanup. Setting EC2/ECS capacity for cluster back to zero.
 
 After setup, you can run any number of solve jobs before cleaning up.
 
@@ -316,8 +316,6 @@ _Figure 1: Cloudformation result_
 By clicking on this stack, and choosing `events`, you can see the resources associated with the stack.  After a short time, you should see the `CREATE_SUCCEEDED` event. If not (e.g., the email address was not valid email address syntax), you will see a `CREATE_FAILED` event. In this case, delete the stack and try again. If you have trouble, email us at: [sat-comp@amazon.com](mailto:sat-comp@amazon.com) and we will walk you through the process.
 
 Although it is handy to get emails when certain account budget thresholds have been met, it is both useful and important to check by-the-minute account spending on the console: [https://console.aws.amazon.com/billing/home](https://console.aws.amazon.com/billing/home).
-
-[RBJ: stopped here, except for minor formatting.]
 
 
 #### Q: I'm only submitting to the parallel track and not the cloud track.  Do I need a worker image?
