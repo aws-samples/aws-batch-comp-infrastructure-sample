@@ -108,7 +108,7 @@ where:
 
 * `PROJECT_NAME`: is the name of the project. Note that `PROJECT_NAME` must start with a letter and can only contain lowercase letters, numbers, hyphens (-), underscores (_), and forward slashes (/).
 
-* `SOLVER_TYPE`: is either `cloud` or `parallel` depending on which kind of solver you are running. Note that we will run cloud solvers run on multiple 16-core machines (m6i.4xlarge [RBJ: include links?]) with 64GB memory, while parallel solvers run on a single 64-core machine (m6i.16xlarge) with 256GB memory.
+* `SOLVER_TYPE`: is either `cloud` or `parallel` depending on which kind of solver you are running. Note that we will run cloud solvers run on multiple 16-core machines ([m6i.4xlarge](https://aws.amazon.com/ec2/instance-types/)) with 64GB memory, while parallel solvers run on a single 64-core machine ([m6i.16xlarge](https://aws.amazon.com/ec2/instance-types/)) with 256GB memory.
 
 The script will take 5-10 minutes. When complete, all of the needed cloud resources should be created.  The script polls until the creation is complete.  
 
@@ -179,7 +179,7 @@ More information on creating and managing S3 buckets is found here: [https://aws
 
 ## Running Your Solver
 
-After storing docker images: `PROJECT_NAME:leader` (and for the cloud solver: `PROJECT_NAME:worker`) and placing at least one query file in your S3 bucket, you are ready to run your solver. [RBJ: these names are inconsistent?]
+After storing docker images: `PROJECT_NAME:leader` (and for the cloud solver: `PROJECT_NAME:worker`) and placing at least one query file in your S3 bucket, you are ready to run your solver. 
 
 Running the solver consists of the following steps:
 
@@ -394,7 +394,7 @@ An error occurred (InvalidParameterException) when calling the RunTask operation
 
 If they fail to boot up after 5 minutes, please verify that both Desired Capacity and Maximum Capacity are set correctly.
 
-You incur costs for the time the machines are running. [RBJ: allocated?]
+You incur costs for the time the cluster is running. 
 
 #### Q: Suppose I want to use the console to tear down my ECS clusters.  How do I do that?
 
