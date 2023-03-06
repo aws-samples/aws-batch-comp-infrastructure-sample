@@ -81,7 +81,7 @@ Before running mallob we need to create a docker bridge network that our contain
 
 ### Running Parallel Mallob
 
-To run parallel Mallob, navigate to the `runner` directory. We have created a simple shell script called `run_parallel.sh` to run the mallob_parallel docker image, starting a container and running a SAT/SMT problem in the container. The script has two variables that can be configured if you wish (described in Q&A) but are set to sensible defaults.  
+To run parallel Mallob, navigate to the `runner` directory. We have created a simple shell script called `run_parallel.sh` to run the mallob_parallel docker image, starting a container and running a SAT/SMT problem in the container. The script has two variables that can be configured if you wish (described in Q&A) but are set to sensible defaults [BK: Something seems to still fail with the defaults: I cannot run the script without passing arguments.].  
 
  **N.B.:** Because the docker image runs as a different user and group than the local host, you need to set the directory permissions so that Docker image can read and write to the directory.  Please run: `sudo chgrp -R 1000 .` from the `docker/runner` directory so that the container can access this portion of the filesystem..
  
