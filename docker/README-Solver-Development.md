@@ -259,10 +259,13 @@ See the Mallob worker [Dockerfile](satcomp-images/satcomp-worker/Dockerfile) for
 
 There are many ways to accomplish this goal, and to some degree this is the critical part of building a distributed solver.  In past years, many competitors have used [MPI](https://en.wikipedia.org/wiki/Message_Passing_Interface) to structure the communications between the leader and worker nodes (Mallob is one example that uses MPI), but competitors have the freedom to structure communication in whatever way makes the most sense for their solver.  Worker nodes are not passed a representation of the SAT/SMT problem by the infrastructure: instead the leader must communicate the problem (or a portion of it) to the worker.
 
+## Next step: Building / Running on AWS Infrastructure
+After building your solvers, please test them using Docker, as we did with Mallob in this README.  Once you have built your solver and you are confident that it works properly using Docker, then you are ready to try it out at larger scale on AWS infrastructure.  Next, please navigate to [Infrastructure Readme](../infrastructure/README-Infrastructure.md), where the process of uploading, running, and debugging your docker images on AWS is described.  
+
 
 ## FAQ / Troubleshooting
 
-Q: What is the build_mallob_images.sh script doing?  What do the flags for docker build mean?
+### Q: What is the build_mallob_images.sh script doing?  What do the flags for docker build mean?
 
 The script looks like this: 
 
@@ -296,7 +299,7 @@ Note that there is also a `nocache_build_mallob_images.sh` script.  Although Doc
 2. Run `docker build -t satcomp-mallob:worker .`  This Dockerfile adds scripts necessary to use Mallob as the worker node in a distributed solver to the generated image.
 
 
-Q: Suppose I want to change the directory or network name for the run_parallel and run_cloud scripts.  How do I do this?
+### Q: Suppose I want to change the directory or network name for the run_parallel and run_cloud scripts.  How do I do this?
 
 A: The two variables to change are: 
 - `DOCKER_NETWORK`. Name of the docker bridge network. The default is  `mallob-test`, which will work with the `network create` command in the previous section.  
@@ -305,12 +308,12 @@ A: The two variables to change are:
 These are both documented in the script files.
 
 
-Q: After a while, I have lots of old versions of Docker images that are taking up disk space that I no longer need.  How do I get rid of them?
+### Q: After a while, I have lots of old versions of Docker images that are taking up disk space that I no longer need.  How do I get rid of them?
 
 A: On repeated image builds, previously-built images with the same name will be left with the name/tag as `<none>/<none>`. Docker dangling images can be deleted with `docker image prune`. A specific image can be deleted by running `docker rmi <IMAGE ID>`. 
 
 Note that you can delete all docker images on your machine by running `docker rmi -f $(docker images -a -q)`. Be careful: only do this after running `docker images` to check that you won't delete images unrelated to the solver competition. 
 
-Q: I'm only submitting to the parallel track and not the cloud track. Do I need a worker image?
+### Q: I'm only submitting to the parallel track and not the cloud track. Do I need a worker image?
 
 A: No. If you are submitting to the parallel track only, you do not need a worker image. For the parallel track, we will assume that the leader manages all threading and communications within the single (multi-core) compute node.
