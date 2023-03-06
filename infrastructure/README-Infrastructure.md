@@ -7,7 +7,7 @@ You will proceed through the following steps.
 * [Mallob Quickstart](#mallob-quickstart).  This will run through all the steps using just two scripts so that you can see an example cloud solver up and running quickly.  After we see it working, then we will explain the steps in more detail.
 * [Managing AWS Solver Infrastructure](#managing-solver-infrastructure).  This section describes the infrastructure creation process in more detail, and how you can switch between parallel and cloud configurations for testing.
 * [Preparing Docker Images for Upload to AWS](#preparing-docker-images).  This section describes how to upload your solver to AWS.
-* [Storing Analysis Problems in the Cloud](#working-with-s3).  This section describes how we store problems for your solver in S3, the main storage service for AWS.
+* [Storing Analysis Problems in the Cloud](#storing-analysis-problems-in-the-cloud).  This section describes how we store problems for your solver in S3, the main storage service for AWS.
 * [Running your Solver in the Cloud](#running-your-solver).  This section describes how we run your solver in the cloud.
 
 Additional resources are available in a FAQ:
