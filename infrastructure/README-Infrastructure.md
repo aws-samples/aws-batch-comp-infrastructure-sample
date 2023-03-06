@@ -313,7 +313,7 @@ By clicking on this stack, and choosing `events`, you can see the resources asso
 Although it is handy to get emails when certain account budget thresholds have been met, it is both useful and important to check by-the-minute account spending on the console: [https://console.aws.amazon.com/billing/home](https://console.aws.amazon.com/billing/home).
 
 
-#### Q: I'm only submitting to the parallel track and not the cloud track.  Do I need a worker image?
+#### I'm only submitting to the parallel track and not the cloud track.  Do I need a worker image?
 
 No. If you are submitting to the parallel track only, you do not need a worker image.  For the parallel track, we will assume that the leader manages all threading and communications within the single (multi-core) compute node.
 
@@ -324,7 +324,7 @@ If you continue using your AWS account after the competition, we recommend that 
 
 #### What are the sequence of steps performed by the leader container to set up the `input.json' file?
 
-performs the following steps: 
+The leader infrastructure performs the following steps: 
 
 1. Pull and parse a message from the `ACCOUNT_NUMBER-us-east-1-SatCompQueue` SQS queue with the format described in the [Job Submission and Execution section](../infrastructure/README.md#fixme).  
 1. Pull the appropriate solver problem from S3 from the location provided in the SQS message.
@@ -336,7 +336,7 @@ performs the following steps:
 1. The return code for `/competition/solver` will determine the expected result for the solver: A return code of 10 indicates SAT, 20 indicates UNSAT, 0 indicates UNKNOWN, and all other return codes indicate an error.
 1. Upon task completion, notify all workers that the task has ended.
 
-#### Q: I ran the infrastructure scripts, and they seemed to work, but when I go out to the console, I don't see any of the infrastructure: S3 buckets, ECS Queues, etc. What happened?
+#### I ran the infrastructure scripts, and they seemed to work, but when I go out to the console, I don't see any of the infrastructure: S3 buckets, ECS Queues, etc. What happened?
 
 The most common mistake people make when starting with AWS is not choosing the correct *region* for executing their jobs.  In the console on the top right there is a selectable region:
 
@@ -344,18 +344,18 @@ The most common mistake people make when starting with AWS is not choosing the c
 
 Make sure that the region selected in the top-right of the console page is `us-east-1`. 
 
-#### Q: I created a leader node and submitted a job, but the leader keeps saying it is waiting for worker nodes and not running my solver.  What happened?
+#### I created a leader node and submitted a job, but the leader keeps saying it is waiting for worker nodes and not running my solver.  What happened?
 
 There are two likely causes.  First it could be that you submitted an SQS that asked for more workers than you configured when you set up your cluster.  Make sure that the number of worker nodes equals or exceeds the number of worker nodes that were requested in the SQS message.  Second, if you just set up the ECS cluster, then it is likely that either the requested EC2 servers have not yet initialized, or that the ECS cluster has not yet started running on them.  It takes 2-5 minutes for the resources to become available after they are requested.
 
 There is also a less-likely cause, involving capacity limits.  EC2 sets default capacity limits on the number of compute nodes that are available to an account.  If you are running large-scale tests, it may be that you have exceeded the default number of nodes.  To check, navigate to the EC2 console for the account, and click on "Limits" on the left side.  Type "All standard" in the search bar and determine the current limit.  The limit is specified in terms of vCPUs, so each m6i-4xlarge image uses 16 vCPUs, and every m6i-16xlarge uses 64 CPUs.  If you need additional vCPUs, click on the "All Standard" link and request a limit increase.  **N.B.** Running a large cluster can become expensive.  Make sure you limit your large-scale testing to preserve your AWS credits.
 
-#### Q: I'm watching the ECS cluster, but nothing is happening; no nodes are being created.  What happened?
+#### I'm watching the ECS cluster, but nothing is happening; no nodes are being created.  What happened?
 
 This can happen if you try to start up a cloud solver when the infrastructure is configured for parallel execution or vice versa.  In this case, the machine image where you want to deploy does not match the requirements of the ECS task.  Make sure that if you are running a cloud solver, you have not configured the infrastructure for parallel.  If you are unsure, you can always run `update-solver-infrastructure` with the expected type.  If the infrastructure is already set up for this type, it will be a no-op.
 
 
-#### Q: Suppose I want to use the console to setup my ECS clusters, or to monitor them.  How do I do that?
+#### Suppose I want to use the console to setup my ECS clusters, or to monitor them.  How do I do that?
 
 __Step 1:__  Update the size of the EC2 cluster using the EC2 console
 
@@ -391,7 +391,7 @@ If they fail to boot up after 5 minutes, please verify that both Desired Capacit
 
 You incur costs for the time the cluster is running. 
 
-#### Q: Suppose I want to use the console to tear down my ECS clusters.  How do I do that?
+#### Suppose I want to use the console to tear down my ECS clusters.  How do I do that?
 
 To control the instances in your cluster, go to the EC2 console and scroll down on the left side of the console and click on the link that says "Auto Scaling Groups".
  
@@ -401,7 +401,7 @@ In the next page, you will see an autoscaling group called something like job-qu
 1. Set the desired and maximum task capacity to 0.  This shuts down any EC2 instances.
  
 
-#### Q: What are the various AWS services that are used in the infrastructure?
+#### What are the various AWS services that are used in the infrastructure?
 
 The infrastructure pieces are as follows: 
 
@@ -414,7 +414,7 @@ The infrastructure pieces are as follows:
 
 You can click the links about for more specifics on each each of the services.  
 
-#### Q: Suppose I want to use the console to send SQS messages to start executing jobs. How do I do that?
+#### Suppose I want to use the console to send SQS messages to start executing jobs. How do I do that?
 
 Submit a job using the [Simple Queue Service (SQS) console](https://console.aws.amazon.com/sqs/).
 
@@ -434,7 +434,7 @@ For example, for the bucket we described earlier, given a cluster with two nodes
 "num_workers": 1}
 ```
 
-#### Q: What if I want to create different buckets other than the one provided for storing problems in?
+#### What if I want to create different buckets other than the one provided for storing problems in?
 
 In case you wish to create a different bucket, here is a command to create a bucket named `comp23-satcomp-examples`:
 
@@ -450,7 +450,7 @@ Notes:
 
 - S3 buckets are globally unique across all of AWS, which means that the command will fail if someone else is already using the same bucket name.  A simple fix is to add the AWS account number to the bucket name, which will likely yield a unique bucket name.
 
-#### Q: I'd like to know more about how the Elastic Container Registry works.  Can I do the steps to upload files by hand?
+#### I'd like to know more about how the Elastic Container Registry works.  Can I do the steps to upload files by hand?
 
 Amazon stores your solver images in the [Elastic Container Registry (ECR)](https://console.aws.amazon.com/ecr).
 
