@@ -25,3 +25,36 @@ It is important that you tell us your account number immediately after creating 
 ## Building Your Solver
 
 Next, it is time to develop your solver!  All of the development and most of the testing can be performed on a local laptop, so it is not necessary to wait for AWS credits to get started.  Please look at the instructions in the [Solver Development README](docker/README-Solver-Development.md) on how to start building and testing your solver.
+
+## Additional Resources: Analysis Problems.
+
+The SAT problems for the SAT-Comp 2022 competition are available [here](https://satcompetition.github.io/2022/downloads.html).  The SMT problems for SMT-Comp 2022 competition are available [here](https://smt-comp.github.io/2022/benchmarks.html).
+
+## Additional Resources: Solvers
+
+Here are github repositories for the solvers from the 2022 competitions: 
+SAT-Comp Parallel: 
+* [ParKissat-RS](https://github.com/mww-aws/ParKissat/tree/RS)
+* [ParKissat-PRE](https://github.com/mww-aws/ParKissat/tree/PRE)
+* [PaKis22](https://github.com/KTRDeveloper/PaKis22)
+* [PaKisMAB22](https://github.com/KTRDeveloper/PaKisMAB22)
+* [DPS-Kissat](https://github.com/nabesima/DPS-satcomp2022)
+* [NPS-Kissat](https://github.com/nabesima/DPS-satcomp2022/tree/non-det)
+* [P-Kissat](https://github.com/vvallade/painless-sat-competition-2022/tree/pkissat)
+* [P-MCOMSPS](https://github.com/vvallade/painless-sat-competition-2022)
+* [Mallob-ki](https://github.com/domschrei/isc22-mallob/tree/ki)
+* [gimsatul](https://github.com/arminbiere/gimsatul)
+SAT-Comp Cloud:
+* [Paracooba](https://github.com/maximaximal/paracooba-satcomp22)
+* [Mallob-kicaliglu](https://github.com/domschrei/isc22-mallob/tree/kicaliglu)
+
+SMT-Comp Parallel:
+* [SMTS Cube and Conquer](https://github.com/usi-verification-and-security/aws-smts/tree/parallel-cube-and-conquer-fixed)
+* [SMTS Portfolio](https://github.com/usi-verification-and-security/aws-smts/tree/parallel-portfolio)
+* [Vampire](https://github.com/vprover/vampire/tree/smtcomp22)
+
+SMT-Comp Cloud:
+* [cvc5-cloud](https://github.com/amaleewilson/aws-satcomp-solver-sample/tree/cvc5)
+* [SMTS Cube and Conquer](https://github.com/usi-verification-and-security/aws-smts/tree/cloud-cube-and-conquer-fixed)
+* [SMTS Portfolio](https://github.com/usi-verification-and-security/aws-smts/tree/cloud-portfolio)
+* [Vampire](https://github.com/vprover/vampire/tree/smtcomp22)
