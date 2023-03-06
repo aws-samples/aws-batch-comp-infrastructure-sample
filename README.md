@@ -33,6 +33,7 @@ The SAT problems for the SAT-Comp 2022 competition are available [here](https://
 ## Additional Resources: Solvers
 
 Here are github repositories for the solvers from the 2022 competitions: 
+
 SAT-Comp Parallel: 
 * [ParKissat-RS](https://github.com/mww-aws/ParKissat/tree/RS)
 * [ParKissat-PRE](https://github.com/mww-aws/ParKissat/tree/PRE)
@@ -44,6 +45,7 @@ SAT-Comp Parallel:
 * [P-MCOMSPS](https://github.com/vvallade/painless-sat-competition-2022)
 * [Mallob-ki](https://github.com/domschrei/isc22-mallob/tree/ki)
 * [gimsatul](https://github.com/arminbiere/gimsatul)
+
 SAT-Comp Cloud:
 * [Paracooba](https://github.com/maximaximal/paracooba-satcomp22)
 * [Mallob-kicaliglu](https://github.com/domschrei/isc22-mallob/tree/kicaliglu)
