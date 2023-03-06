@@ -4,10 +4,11 @@ This README describes how to build and configure AWS infrastructure for the SAT 
 
 You will proceed through the following steps.
 
-* [Creating Solver Infrastructure](#creating-solver-infrastructure)
-* [Preparing Docker Images](#preparing-docker-images)
-* [Storing Analysis Problems in the Cloud](#working-with-s3)
-* [Running your Solver](#running-your-solver)
+* [Mallob Quickstart](#mallob-quickstart).  This will run through all the steps using just two scripts so that you can see an example cloud solver up and running quickly.  After we see it working, then we will explain the steps in more detail.
+* [Managing AWS Solver Infrastructure](#managing-solver-infrastructure).  This section describes the infrastructure creation process in more detail, and how you can switch between parallel and cloud configurations for testing.
+* [Preparing Docker Images for Upload to AWS](#preparing-docker-images).  This section describes how to upload your solver to AWS.
+* [Storing Analysis Problems in the Cloud](#working-with-s3).  This section describes how we store problems for your solver in S3, the main storage service for AWS.
+* [Running your Solver in the Cloud](#running-your-solver).  This section describes how we run your solver in the cloud.
 
 Additional resources are available in a FAQ:
 
@@ -34,7 +35,7 @@ In order to work with AWS, you must install the [AWS CLI](https://aws.amazon.com
 If you have previously installed the AWS CLI, you should ensure it is up to date.
 
 
-### Creating AWS Credentials
+### Creating AWS Credentials for your AWS Account
 
 You must configure AWS credentials to access the resources in your account. For the purposes of simplifying the competition configurations, you will use a so-called _root level access key_. This is _not_ the best practice for security (which would be to create a separate user in your account) but it will suffice for the competition (see FAQ for more information).
 
@@ -63,73 +64,70 @@ We recommend that when you've completed account set-up, you follow the steps in 
 
 ## Mallob Quickstart
 
-For the impatient, we have created two commands to provide a quick start to getting a Mallob container running in AWS.  The first command: `quickstart-build` creates the AWS infrastructure for a cloud solver, builds the Mallob docker images, and uploads them to AWS.  The second command: `quickstart-run` creates a cluster to run with four nodes (1 leader and 3 workers); if it is not already running, waits for the cluster to be ready, then submits a solving job and reads the response from the output queue.  After you test out the mallob solver using these commands, you should go through the rest of the readme to see the steps that they are performing and how to do this with your own solver.  
+To allow you to see a solver up and running quickly, we have created two commands to provide a quick start to getting a Mallob container running in AWS.  The first command: `quickstart-build` creates the AWS infrastructure for a cloud solver, builds the Mallob docker images, and uploads them to AWS.  The second command: `quickstart-run` creates a cluster to run with four nodes (1 leader and 3 workers); if it is not already running, waits for the cluster to be ready, then submits a solving job and reads the response from the output queue.  After you test out the mallob solver using these commands, you should go through the rest of the readme to see the steps that they are performing and how to do this with your own solver.  
 
 ### Quickstart Build
 
-This command creates an account, builds Mallob (if not already built), and uploads the Docker images to AWS.  The form is: 
+This command creates an account, builds Mallob (if not already built), and uploads the Docker images to AWS.  The form is simply: 
 
 ```text
-./quickstart-build --project PROJECT_NAME
+./quickstart-build
 ```
-
-where:
-
-* `PROJECT_NAME` is the name of the project. Note that `PROJECT_NAME` must start with a letter and can only contain lowercase letters, numbers, hyphens (-), underscores (_), and forward slashes (/).
 
 This command will require 10-20 minutes to run.  Once it is complete, Mallob should be ready to run, and the infrastructure should be set up to run a cloud solver.
 
 ### Quickstart Run
 
-This command will spin up a cluster, submit a job to run called `test.cnf` that we uploaded to a storage location in S3 (our storage service), and wait for the result, then spins down the cluster.  The form of the command is: 
+This command will spin up a cluster, submit a job to run called `test.cnf` that we uploaded to a storage location in S3 (the AWS storage service), and wait for the result, then spins down the cluster.  The form of the command is: 
 
 ```text
-./quickstart-run --project PROJECT_NAME 
+./quickstart-run 
 ```
-where:
-* `PROJECT_NAME` is the name of the project that you used for the quickstart build step.
 
-Once the solver is completed, you should see a message back from the solver that the problem was completed and that the result was SATISFIABLE.  The results from the run will be stored in an S3 bucket called: `ACCOUNT_NUMBER-us-east-1-PROJECT_NAME` in a `/tmp` directory.  You can download and inspect them [BK: Explain how.].  In addition we show you later on in this file how to inspect the solver in real time using _CloudWatch Logs_.  
+Once the solver is completed, you should see a message back from the solver that the problem was completed and that the result was SATISFIABLE.  Later on we will show you how to monitor a run using an AWS service called _CloudWatch_ and extract the intermediate files produced by the run, including the stdout and stderr logs, using an AWS service called _S3_.  
 
 Voila!
 
-Now let's talk through how the process works!  
+Now we walk through the different steps in more detail. 
 
+## Managing Solver Infrastructure.
 
-## Creating Solver Infrastructure
+The `quickstart-build` command from the previous section creates the AWS infrastructure necessary to run your solver.  In that creation process, the infrastructure is set up to run cloud (distributed) solvers.  If you want to switch to hosting a parallel solver, run the update command described in the next section.  If something goes wrong, then delete the infrastructure and re-create it as described in [Deleting and Re-creating the Infrastructure](#deleting-and-re-creating-the-infrastructure).
+
+### Switching Between Cloud and Parallel Tracks
+
+If you ran the Mallob `quickstart-build`, then you have already created your solver infrastructure and don't have to do any further work.  In that creation process, the infrastructure is set up for cloud (distributed) solvers.  Once the infrastructure has been created, if you want to update it to switch between machine configurations for the cloud and parallel tracks, you can run the `update-solver-infrastructure` script: 
+
+```text
+./update-solver-infrastructure --solver-type SOLVER_TYPE
+```
+
+where:
+* `SOLVER_TYPE`: is either `cloud` or `parallel` depending on which kind of solver you are running. Note that we will run cloud solvers run on multiple 16-core machines (m6i.4xlarge [RBJ: include links?]) with 64GB memory, while parallel solvers run on a single 64-core machine (m6i.16xlarge) with 256GB memory.
+
+This will change the instance type and memory configurations for the ECS images used. You can switch back and forth as needed.
+
+### Deleting and Re-creating the Infrastructure
+
+If something goes wrong and you want to start over, simply run the `delete-solver-infrastructure` script:
+```text
+./delete-solver-infrastructure 
+```
+
+This will delete the infrastructure and associated resources.  **Note that this deletion includes any files that have been uploaded to your S3 bucket and also any ECR docker images that you have created.** It will not delete your AWS account or security credentials.
 
 Next, you will create the AWS infrastructure necessary to build and test solvers. The SAT and SMT competitions both use the following infrastructure elements.  These should "just work", but there is more information about the different parts of the infrastructure in the FAQ.  To set up your resouces, simply run the  `create-solver-infrastructure` script that we have provided.
 
 ```text
-./create-solver-infrastructure --project PROJECT_NAME --solver-type SOLVER_TYPE
+./create-solver-infrastructure --solver-type SOLVER_TYPE
 ```
 
 where:
-
-* `PROJECT_NAME`: is the name of the project. Note that `PROJECT_NAME` must start with a letter and can only contain lowercase letters, numbers, hyphens (-), underscores (_), and forward slashes (/).
-
 * `SOLVER_TYPE`: is either `cloud` or `parallel` depending on which kind of solver you are running. Note that we will run cloud solvers run on multiple 16-core machines ([m6i.4xlarge](https://aws.amazon.com/ec2/instance-types/)) with 64GB memory, while parallel solvers run on a single 64-core machine ([m6i.16xlarge](https://aws.amazon.com/ec2/instance-types/)) with 256GB memory.
 
 The script will take 5-10 minutes. When complete, all of the needed cloud resources should be created.  The script polls until the creation is complete.  
 
-### Switching Between Cloud and Parallel Tracks
 
-Once the infrastructure has been created, if you want to update it to switch between machine configurations for the cloud and parallel tracks, you can run the `update-solver-infrastructure` script: 
-
-```text
-./update-solver-infrastructure --project PROJECT_NAME --solver-type SOLVER_TYPE
-```
-
-This will change the instance type and memory configurations for the ECS images used. You can switch back and forth as needed.
-
-### Deleting the infrastructure
-
-If something goes wrong and you want to start over, simply run the `delete-solver-infrastructure` script:
-```text
-./delete-solver-infrastructure --project PROJECT_NAME 
-```
-
-This will delete the infrastructure and associated resources.  **Note that this deletion includes any files that have been uploaded to your S3 bucket and also any ECR docker images that you have created.** It will not delete your AWS account or security credentials.
 
 ## Preparing Docker Images
 
@@ -141,17 +139,15 @@ See the [SAT-Comp Docker Images README.md file](../docker/README.md) in the `doc
 
 Amazon stores your solver images in the [Elastic Container Registry (ECR)](https://console.aws.amazon.com/ecr).
 
-The `create-solver-infrastructure` command described earlier creates an ECR repository with the same name as the project (PROJECT_NAME).
+The `create-solver-infrastructure` command described earlier creates an ECR repository with the same name as the project (comp23).
 
 This repository will store the images for the leader and worker.  Once you have created and tested a docker image (or images, for the cloud leader and worker) as described in the [SAT-Comp Docker Images README.md file](../Docker/README.md), you can upload them to your AWS account with the `ecr-push` script:
 
 ```text
-./ecr-push --project PROJECT_NAME [--leader LEADER_IMAGE_TAG] [--worker WORKER_IMAGE_TAG]
+./ecr-push [--leader LEADER_IMAGE_TAG] [--worker WORKER_IMAGE_TAG]
 ```
 
 where:
-
-* `PROJECT_NAME` is the name of the project that you used earlier when creating the account.
 
 * `LEADER_IMAGE_TAG` is the tagged name of the leader docker image (e.g. satcomp-mallob:leader).
 
@@ -161,25 +157,24 @@ The leader and worker tags are optional; you can upload one or both docker image
 
 ## Storing Analysis Problems in the Cloud
 
-We use the AWS Simple Storage Service (S3) to store the analysis problems we want to solve with our solver.  S3 has a concept of a "bucket" which acts like a filesystem.  As part of the `create-solver-infrastructure` CloudFormation script, we have created a bucket for you where you can store files: `ACCOUNT_NUMBER-us-east-1-PROJECT_NAME`, and added a `test.cnf` file to this bucket for testing.  You can start with the `test.cnf` example and skip the rest of this section until you wish to add additional files or buckets for testing your solver.
+We use the AWS Simple Storage Service (S3) to store the analysis problems we want to solve with our solver.  S3 has a concept of a "bucket" which acts like a filesystem.  As part of the `create-solver-infrastructure` CloudFormation script, we have created a bucket for you where you can store files: `ACCOUNT_NUMBER-us-east-1-comp23`, and added a `test.cnf` file to this bucket for testing.  You can start with the `test.cnf` example and skip the rest of this section until you wish to add additional files or buckets for testing your solver.
 
 You can copy files to the bucket with a command similar to this one (when executed from the root directory of this repository, this re-copies the `my-problem.cnf` file to the default bucket):
 
 ```text
-aws s3 cp my-problem.cnf s3://ACCOUNT_NUMBER-us-east-1-PROJECT_NAME
+aws s3 cp my-problem.cnf s3://ACCOUNT_NUMBER-us-east-1-comp23
 ```
 
 When `s3 cp` is complete, you will see your file(s) in the list of objects in the bucket:
 
 ```text
-aws s3 ls s3://ACCOUNT_NUMBER-us-east-1-PROJECT_NAME
+aws s3 ls s3://ACCOUNT_NUMBER-us-east-1-comp23
 ```
 
 More information on creating and managing S3 buckets is found here: [https://aws.amazon.com/s3/](https://aws.amazon.com/s3/). The S3 command line interface is described in more detail here: [https://docs.aws.amazon.com/cli/latest/userguide/cli-services-s3-commands.html](https://docs.aws.amazon.com/cli/latest/userguide/cli-services-s3-commands.html).
 
 ## Running Your Solver
-
-After storing docker images: `PROJECT_NAME:leader` (and for the cloud solver: `PROJECT_NAME:worker`) and placing at least one query file in your S3 bucket, you are ready to run your solver. 
+After storing docker images: `comp23:leader` (and for the cloud solver: `comp23:worker`) and placing at least one query file in your S3 bucket, you are ready to run your solver. 
 
 Running the solver consists of the following steps:
 
@@ -219,8 +214,8 @@ AWS typically requires 2-5 minutes to allocate nodes and host the ECS cluster. Y
 The next page will show a list of job queues, including:
 
 ```text
-job-queue-PROJECT_NAME-SolverLeaderService-...
-job-queue-PROJECT_NAME-SolverWorkerService-...
+job-queue-comp23-SolverLeaderService-...
+job-queue-comp23-SolverWorkerService-...
 ```
 
 The service is running and available when the number of running tasks for the leader is `1` and the number of running tasks for the Worker service is `n`, as chosen with `NUM_WORKERS` in the `ecs-config` script argument.
@@ -240,7 +235,7 @@ send_message --location S3_LOCATION --workers NUM_WORKERS [--timeout TIMEOUT] [-
 ```
 
 with required arguments:
-* `S3_LOCATION` is the S3 location of the query file. For example, for the bucket we described earlier, the location would be `s3://ACCOUNT_NUMBER-us-east-1-PROJECT_NAME/test.cnf`.
+* `S3_LOCATION` is the S3 location of the query file. For example, for the bucket we described earlier, the location would be `s3://ACCOUNT_NUMBER-us-east-1-comp23/test.cnf`.
 * `NUM_WORKERS` is the number of worker nodes to allocate for this problem. Again, we recommend that you start with `NUM_WORKERS` as `1` when beginning. For parallel solvers, you should set `NUM_WORKERS` to `0`.
 
 and optional arguments:
@@ -264,7 +259,7 @@ To debug on the cloud, there are two main mechanisms that we use to examine our 
  ![](readme-images/cloudwatch-log-groups.png)
 _Figure 2: Cloudwatch log groups view_
 
-There should be logs related to `/ecs/PROJECT_NAME-leader` and `/ecs/PROJECT_NAME-worker`.  These logs will capture both stdout and stderr from your solver containers.  For example, in the figure above, I have a solver named `foobar`.  The logs are captured in something called _streams_, usually tied to a specific instance (so, for a cluster you will have one stream for the leader and one for each worker).  Note that if you don't use a solver for a while, CloudWatch will close the stream and open a new one, as you see in Figure 3: 
+There should be logs related to `/ecs/comp23-leader` and `/ecs/comp23-worker`.  These logs will capture both stdout and stderr from your solver containers.  For example, in the figure above, I have a solver named `foobar`.  The logs are captured in something called _streams_, usually tied to a specific instance (so, for a cluster you will have one stream for the leader and one for each worker).  Note that if you don't use a solver for a while, CloudWatch will close the stream and open a new one, as you see in Figure 3: 
 
 ![](readme-images/cloudwatch-log-streams.png)
 _Figure 3: Cloudwatch log groups view_
@@ -276,7 +271,7 @@ The logs themselves are visible as lists of events as shown in Figure 4:
 AWS provides a very full-featured log query language called [CloudWatch Logs Insights](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/AnalyzingLogData.html) (visible in the menu in Figure 2) that you can use to search for specific patterns within logs that can often help speed up your debugging.  A full discussion of insights is outside the scope of this document, but the link above leads to a full set of documentation about how use it.
 
 **S3 Storage of Intermediate Files:**
-When the solver is invoked we store the `input.json` file and the analysis problem in a temporary directory that is passed as the argument to the solver.  We recommend that you use the same directory (or create a subdirectory) for storing all of the intermediate files used during solving.  At the conclusion of solving, all contents in this directory _for the leader solver_ will be uploaded to your S3 bucket (`ACCOUNT_NUMBER-us-east-1-PROJECT-NAME`) under a `/tmp/UUID` directory with a unique UUID so that you can inspect them offline.  This way, you can instrument your solvers to write to the filesystem for later analysis.  **N.B.:** currently this is only available for the leader solver; however, we may add the capability to upload data from the workers depending on customer feedback.  If you store the stdout and stderr logs to this directory (as the Mallob example does), then the output message produced by the solver will identify the UUID used for the bucket for easy reference.
+When the solver is invoked we store the `input.json` file and the analysis problem in a temporary directory that is passed as the argument to the solver.  We recommend that you use the same directory (or create a subdirectory) for storing all of the intermediate files used during solving.  At the conclusion of solving, all contents in this directory _for the leader solver_ will be uploaded to your S3 bucket (`ACCOUNT_NUMBER-us-east-1-comp23`) under a `/tmp/UUID` directory with a unique UUID so that you can inspect them offline.  This way, you can instrument your solvers to write to the filesystem for later analysis.  **N.B.:** currently this is only available for the leader solver; however, we may add the capability to upload data from the workers depending on customer feedback.  If you store the stdout and stderr logs to this directory (as the Mallob example does), then the output message produced by the solver will identify the UUID used for the bucket for easy reference.
 
 ### Cluster Teardown
 
@@ -366,7 +361,7 @@ __Step 1:__  Update the size of the EC2 cluster using the EC2 console
 
 To control the instances in your cluster, go to the EC2 console and scroll down on the left side of the console and click on the link that says "Auto Scaling Groups".
 
-In the next page, you will see an autoscaling group called something like `job-queue-PROJECT_NAME-EcsInstance`.
+In the next page, you will see an autoscaling group called something like `job-queue-comp23-EcsInstance`.
 
 1. Select the queue by clicking on it, then click the "Edit" button in the "Group details" section.
 1. Set the desired, and maximum task capacity to n (where n includes 1 leader and n-1 workers, so there is a minimum useful size of 2), and click "Update".
@@ -378,8 +373,8 @@ Navigate to the ECS console, then select the SatCompCluster link.
 The next page should show a list of job queues, including:
 
 ```text
-job-queue-PROJECT_NAME-SolverLeaderService-...
-job-queue-PROJECT_NAME-SolverworkerService-...
+job-queue-comp23-SolverLeaderService-...
+job-queue-comp23-SolverworkerService-...
 ```
 
 Click on the SolverLeaderService job queue and choose "Update".  Set the number of tasks to 1, then choose "Skip to review", then click "Update Service".  You should then navigate back to the SatCompCluster link and click on the SolverWorkerService link.  Choose "Update" and set the number of tasks to n-1, where 'n' is the number of EC2 nodes you created in Setup Step 1.
@@ -400,7 +395,7 @@ You incur costs for the time the cluster is running.
 
 To control the instances in your cluster, go to the EC2 console and scroll down on the left side of the console and click on the link that says "Auto Scaling Groups".
  
-In the next page, you will see an autoscaling group called something like job-queue-PROJECT_NAME-EcsInstance.
+In the next page, you will see an autoscaling group called something like job-queue-comp23-EcsInstance.
  
 1. Select the queue by clicking on it, then click the "Edit" button in the "Group details" section.
 1. Set the desired and maximum task capacity to 0.  This shuts down any EC2 instances.
@@ -441,10 +436,10 @@ For example, for the bucket we described earlier, given a cluster with two nodes
 
 #### Q: What if I want to create different buckets other than the one provided for storing problems in?
 
-In case you wish to create a different bucket, here is a command to create a bucket named `PROJECT_NAME-satcomp-examples`:
+In case you wish to create a different bucket, here is a command to create a bucket named `comp23-satcomp-examples`:
 
 ```text
-aws s3api create-bucket --bucket PROJECT_NAME-satcomp-examples
+aws s3api create-bucket --bucket comp23-satcomp-examples
 ```
 
 Notes: 
@@ -459,11 +454,8 @@ Notes:
 
 Amazon stores your solver images in the [Elastic Container Registry (ECR)](https://console.aws.amazon.com/ecr).
 
-The `create-solver-infrastructure` command described earlier creates an ECR repository:
+The `create-solver-infrastructure` command described earlier creates an ECR repository named `comp23`.
 
-```text
-PROJECT_NAME
-```
 
 This repository store the images for the leader and worker.  
 
@@ -471,7 +463,7 @@ The repository has an associated URI (shown on the console page), which is what 
 The format for URIs is
 
 ```text
-ACCOUNT_NUMBER.dkr.ecr.us-east-1.amazonaws.com/PROJECT_NAME
+ACCOUNT_NUMBER.dkr.ecr.us-east-1.amazonaws.com/comp23
 ```
 
 You will use these URIs to describe where to store our Docker images in AWS.  
@@ -488,19 +480,18 @@ aws ecr get-login-password --region us-east-1 | docker login --username AWS --pa
 Next, you need to tag the image to match the ECR repository.  For the worker, tag the image as:
 
 ```text
-docker tag [LOCAL_WORKER_IMAGE_ID] [AWS_ACCOUNT_NUMBER].dkr.ecr.us-east-1.amazonaws.com/PROJECT\_NAME:worker
+docker tag [LOCAL_WORKER_IMAGE_ID] [AWS_ACCOUNT_NUMBER].dkr.ecr.us-east-1.amazonaws.com/comp23:worker
 ```
 
 where 
 
-* **LOCAL\_WORKER\_IMAGE\_ID** is the local worker image tag (e.g., `my-solver:leader`).  For the sample solver, this image tag is described in the `README.md` instructions.  
+* **LOCAL\_WORKER\_IMAGE\_ID** is the local worker image tag (e.g., `comp23:worker`).  
 * **AWS\_ACCOUNT\_ID** is the account ID where you want to store the image.
-* **PROJECT\_NAME** is the name of the project that you chose in the &quot;Creating the AWS Infrastructure&quot; section above.
 
 For the leader, tag the image as:
 
 ```text
-docker tag LOCAL_LEADER_IMAGE_ID ACCOUNT_NUMBER.dkr.ecr.us-east-1.amazonaws.com/PROJECT_NAME:leader
+docker tag LOCAL_LEADER_IMAGE_ID ACCOUNT_NUMBER.dkr.ecr.us-east-1.amazonaws.com/comp23:leader
 ```
 
 where 
@@ -510,8 +501,8 @@ where
 After these steps, you can docker push the images:
 
 ```text
-docker push ACCOUNT_NUMBER.dkr.ecr.us-east-1.amazonaws.com/PROJECT_NAME:leader
-docker push ACCOUNT_NUMBER.dkr.ecr.us-east-1.amazonaws.com/PROJECT_NAME:worker
+docker push ACCOUNT_NUMBER.dkr.ecr.us-east-1.amazonaws.com/comp23:leader
+docker push ACCOUNT_NUMBER.dkr.ecr.us-east-1.amazonaws.com/comp23:worker
 ```
 
 You should see network progress bars for both images.

@@ -27,8 +27,9 @@ class STS:
 def argument_parser(): 
     parser = argparse.ArgumentParser()
     parser.add_argument('--profile', required = False, help = "AWS profile")
-    parser.add_argument('--project', required = True, help = "Name for project")
+    parser.add_argument('--project', required = False, default = 'comp23', help = "ADVANCED USERS ONLY: Name of the project (default: 'comp23').")
     parser.add_argument('--keep-alive', required = False, help = "If True, then cluster is not destroyed after solving.")
+    parser.add_argument('--s3-location', required = False, help = "S3 URL for problem location of the form: s3://BUCKET_NAME/OBJECT_LOCATION.  Default is to run test.cnf from the default bucket.")
     return parser
 
 if __name__ == "__main__":
@@ -47,8 +48,12 @@ if __name__ == "__main__":
 
     sts = STS(session.client('sts'))    
     account_number = sts.get_account_number()
-    s3_bucket = f"s3://{account_number}-us-east-1-{args.project}"
-    problem_location = f"{s3_bucket}/test.cnf"
+
+    if not args.s3_location:
+        s3_bucket = f"s3://{account_number}-us-east-1-{args.project}"
+        problem_location = f"{s3_bucket}/test.cnf"
+    else:
+        problem_location = args.s3_location
 
     profile_args = ['--profile', args.profile] if args.profile else []
 
@@ -60,6 +65,7 @@ if __name__ == "__main__":
     logger.info(f"Setting up ECS cluster with {WORKER_NODES} worker nodes using ecs-config.")
     logger.info(f"command that is being executed is: {' '.join(cmd)}")
     logger.info("This operation will likely take 5-7 minutes.")
+    logger.info("***Note that while configuration is in process, the system will report Autoscaling failures.  This is normal, but should not persist for more than 10 minutes.***")
     try: 
         result = subprocess.run(cmd)
         pass

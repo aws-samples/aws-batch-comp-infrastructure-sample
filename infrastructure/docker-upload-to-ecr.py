@@ -27,7 +27,7 @@ class STS:
 def arg_parser() -> dict: 
     parser = argparse.ArgumentParser()
     parser.add_argument('--profile', required = False, help = "AWS profile")
-    parser.add_argument('--project', required = True, help = "Name of the project")
+    parser.add_argument('--project', required = False, default = 'comp23', help = "ADVANCED USERS ONLY: Name of the project (default: 'comp23').")
     parser.add_argument('--leader', required = False, help = "Docker tag name of the leader container")
     parser.add_argument('--worker', required = False, help = "Docker tag name of the worker container (only for cloud track)")
     
