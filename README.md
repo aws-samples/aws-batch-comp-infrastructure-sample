@@ -26,7 +26,7 @@ It is important that you tell us your account number immediately after creating 
 
 Next, it is time to develop your solver!  All of the development and most of the testing can be performed on a local laptop, so it is not necessary to wait for AWS credits to get started.  Please look at the instructions in the [Solver Development README](docker/README-Solver-Development.md) on how to start building and testing your solver.
 
-## Additional Resources: Analysis Problems.
+## Additional Resources: Analysis Problems
 
 The SAT problems for the SAT-Comp 2022 competition are available [here](https://satcompetition.github.io/2022/downloads.html).  The SMT problems for SMT-Comp 2022 competition are available [here](https://smt-comp.github.io/2022/benchmarks.html).
 
