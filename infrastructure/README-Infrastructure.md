@@ -89,7 +89,7 @@ This command will spin up a cluster, submit a job to run called `test.cnf` that 
 where:
 * `PROJECT_NAME` is the name of the project that you used for the quickstart build step.
 
-Once the solver is completed, you should see a message back from the solver that the problem was completed and that the result was SATISFIABLE.  The results from the run will be stored in an S3 bucket called: `ACCOUNT_NUMBER-us-east-1-PROJECT_NAME` in a `/tmp` directory.  You can download and inspect them.  In addition we show you later on in this file how to inspect the solver in real time using _CloudWatch Logs_.  
+Once the solver is completed, you should see a message back from the solver that the problem was completed and that the result was SATISFIABLE.  The results from the run will be stored in an S3 bucket called: `ACCOUNT_NUMBER-us-east-1-PROJECT_NAME` in a `/tmp` directory.  You can download and inspect them [BK: Explain how.].  In addition we show you later on in this file how to inspect the solver in real time using _CloudWatch Logs_.  
 
 Voila!
 
