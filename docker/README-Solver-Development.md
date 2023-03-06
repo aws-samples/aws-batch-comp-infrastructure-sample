@@ -81,13 +81,14 @@ Before running mallob we need to create a docker bridge network that our contain
 
 ### Running Parallel Mallob
 
-To run parallel Mallob, navigate to the `runner` directory. We have created a simple shell script called `run_parallel.sh` to run the mallob_parallel docker image, starting a container and running a SAT/SMT problem in the container. The script has two variables that can be configured if you wish (described in Q&A) but are set to sensible defaults [BK: Something seems to still fail with the defaults: I cannot run the script without passing arguments.].  
+To run parallel Mallob, navigate to the `runner` directory. We have created a simple shell script called `run_parallel.sh`, which you will use to run the mallob_parallel docker image, starting a container and running a SAT/SMT problem in the container. The script has two variables that can be configured if you wish (described in Q&A) but are set to sensible defaults.  
 
  **N.B.:** Because the docker image runs as a different user and group than the local host, you need to set the directory permissions so that Docker image can read and write to the directory.  Please run: `sudo chgrp -R 1000 .` from the `docker/runner` directory so that the container can access this portion of the filesystem..
  
-The script requires two command-line arguments.
+The `run_parallel.sh` script requires two command-line arguments.
 - <docker_image_name>, which is `satcomp-mallob` for this example. 
-- <query_file>, which is the name of the test file for the solver.  If you use the defaults, you should put SAT/SMT files in the docker/runner/experiments subdirectory, and if you run the script from the `runner` directory, then you can use standard shell completion for paths.
+- <query_file>, which is the name of the test file for the solver.  If you use the defaults, you should put SAT/SMT files in the docker/runner/experiment subdirectory, and if you run the script from the `runner` directory, then you can use standard shell completion for paths.
+To run the script with the `test.cnf` file we provided, call `run_parallel.sh satcomp-mallob experiment/test.cnf` from within the `runner` directory.
 
 The script will create an `input.json` file in the host run directory. This file will be copied to the docker run directory `/rundir`, where it will be read by the solver script.
 
