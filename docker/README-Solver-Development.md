@@ -20,7 +20,7 @@ This example covers two configurations: parallel (single node, multiple cores) a
 
 We use [Mallob](https://github.com/domschrei/mallob) as the running example for both parallel and distributed solvers. This example pulls a version of Mallob that we have tested with the AWS infrastructure. Note that although this repository is released under the MIT-0 license, the Dockerfiles use the Mallob project.  Mallob and the solvers it uses have other licenses, including the [LGPL 3.0](https://opensource.org/license/lgpl-3-0/) license.
 
-This section proceeds in four steps:
+This section proceeds in four steps [BK: It's actually three steps because the first one was already handled with the Prerequisites?!]:
 - Preparing your system
 - Building base SATcomp Docker images
 - Building Mallob Docker images
@@ -209,7 +209,7 @@ Consult the Mallob [leader Dockerfile](mallob-images/leader/Dockerfile) for a mo
 
 ### Worker Base Container
 
-Workers are expected to be controllable by the leader node using `ssh`.  For workers, competitors have three responsibilities: 
+Workers are expected to be controllable by the leader node using `ssh`.  For workers, competitors have three responsibilities [BK: Can we make sure that (in terms of language) the second item corresponds more closely with the heading of the corresponding section? Here, "Cleaning up" isn't mentioned whereas it is the name of the corresponding section.]: 
 1. To provide an executable to report their status to the AWS infrastructure once per second, to determine whether work can be allocated to them.
 2. To provide an executable that can be invoked to remotely `kill` the worker when the leader completes or terminates with an error.
 3. To provide an executable that can be invoked by the leader node using ssh to assist with the solving process.
