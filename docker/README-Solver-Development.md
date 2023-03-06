@@ -89,7 +89,7 @@ The `run_parallel.sh` script requires two command-line arguments.
 - <docker_image_name>, which is `satcomp-mallob` for this example. 
 - <query_file>, which is the name of the test file for the solver.  If you use the defaults, you should put SAT/SMT files in the docker/runner/experiment subdirectory, and if you run the script from the `runner` directory, then you can use standard shell completion for paths.
 
-To run the script with the `test.cnf` file we provided, call `run_parallel.sh satcomp-mallob experiment/test.cnf` from within the `runner` directory.
+To run the script with the `test.cnf` file we provided, call `run_parallel.sh satcomp-mallob experiment/test.cnf` from within the `runner` directory. After creating a container, the script will drop you into a bash shell for this container.
 
 The script will create an `input.json` file in the host run directory. This file will be copied to the docker run directory `/rundir`, where it will be read by the solver script.
 
@@ -99,10 +99,10 @@ The script comments explain the various arguments to the `docker run` command. T
 
 Running distributed mallob requires two docker invocations running in two different terminal windows: one to start a leader container and one to start a worker container. 
 
-To run distributed Mallob, again cd into the `runner` directory. You will use two shell scripts, `run_dist_leader` and `run_dist_worker.sh`. 
+To run distributed Mallob, again cd into the `runner` directory. You will use two shell scripts, `run_dist_worker.sh` and `run_dist_leader.sh`. 
 
 - Step 1. Invoke `run_dist_worker.sh`, which requires a single command-line argument <docker_image_name>, which is `satcomp-mallob` for this example. Notice that the script will launch a `satcomp-mallob:worker` container. You will be dropped into a bash shell for the worker container. No further commands are needed.
-- Step 2. From a different terminal on the host machine in the same `runner` directory, invoke `run_dist_leader.sh` This script requires the same two command-line arguments as `run_parallel.sh` in the previous section.
+- Step 2. From a different terminal on the host machine (in the same `runner` directory), invoke `run_dist_leader.sh` This script requires the same two command-line arguments as `run_parallel.sh` in the previous section. For example, you can call `run_dist_leader.sh satcomp-mallob experiment/test.cnf`
 
 The `run_dist_leader` script will again create an `input.json` file, with more fields than used for parallel mallob. Again, you should see mallob output on the terminal.
 
