@@ -69,3 +69,7 @@ where:
 * `stderr_path` is the path to the stderr log.
 
 The Mallob example solver has been updated to support the new format, so you can examine these changes by examining the leader solver python file [here](docker/mallob-images/leader/solver).  This file is compatible with the new format, but does not use the `formula_language`, `timeout_seconds` or `solver_argument_list` fields.
+
+Other than these changes, solvers should be able to be run unchanged on the 2023 architecture.  Much more information on solver development is available in the [Solver Development README](docker/README-Solver-Development.md).
+
+If you have problems please contact us at either sat-comp@amazon.com (for SAT-Comp) or aws-smtcomp-2023@googlegroups.com (for SMT-Comp).
