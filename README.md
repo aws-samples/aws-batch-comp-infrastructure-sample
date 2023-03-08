@@ -26,13 +26,27 @@ It is important that you tell us your account number immediately after creating 
 
 Next, it is time to develop your solver!  All of the development and most of the testing can be performed on a local laptop, so it is not necessary to wait for AWS credits to get started.  Please look at the instructions in the [Solver Development README](docker/README-Solver-Development.md) on how to start building and testing your solver.
 
+## For Returning Competitors:
+We have worked hard to improve the developer experience.  As compared with the 2022 infrastructure, we have added or modified: 
+
+1. Scripts and instructions for local debugging of both parallel and distributed solvers on your workstation/laptop.
+1. Automated upload of stdout/stderr and intermediate files for each run to S3 storage so that you can  debug runs after completion.
+1. A "quickstart" that allows you to build the infrastructure and solver, then run it using only two commands.
+1. Default values for most of the required arguments from 2022 to make it much simpler to run commands.
+1. A richer `input.json` format that is used for solver communication that allows passing arguments to solvers, a solver name, and information about the input format.
+1. A change in the expected solver output format in `solver_out.json`. This year, the satisfiability/unsatisfiability of the problem is indicated by the return code of the solver (10 for SAT, 20 for UNSAT)
+1. Various improvements and bug fixes in the scripts for building/running jobs to provide better observability of the process.
+
+Note that the changes to `input.json` and `solver_out.json` are breaking changes for solvers, described in more detail in [README-changes.md](README-changes.md).  The changes should require only a short effort to update for 2023.
+
 ## Additional Resources: Analysis Problems
 
 The SAT problems for the SAT-Comp 2022 competition are available [here](https://satcompetition.github.io/2022/downloads.html).  The SMT problems for SMT-Comp 2022 competition are available [here](https://smt-comp.github.io/2022/benchmarks.html).
 
 ## Additional Resources: Solvers
 
-Here are github repositories for the solvers from the 2022 competitions: 
+Here are github repositories for the solvers from the 2022 competitions.  **Please Note:** the 
+infrastructure for 2023 is slightly changed to facilitate better debugging and easier build.  In order to run these solvers on the current infrastructure, you must update `input.json` and `solver_out.json` as described in [README-changes.md](README-changes.md).
 
 SAT-Comp Parallel: 
 * [ParKissat-RS](https://github.com/mww-aws/ParKissat/tree/RS)

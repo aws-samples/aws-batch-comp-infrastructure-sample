@@ -103,7 +103,7 @@ If you ran the Mallob `quickstart-build`, then you have already created your sol
 ```
 
 where:
-* `SOLVER_TYPE`: is either `cloud` or `parallel` depending on which kind of solver you are running. Note that we will run cloud solvers run on multiple 16-core machines (m6i.4xlarge [RBJ: include links?]) with 64GB memory, while parallel solvers run on a single 64-core machine (m6i.16xlarge) with 256GB memory.
+* `SOLVER_TYPE`: is either `cloud` or `parallel` depending on which kind of solver you are running. Note that we will run cloud solvers run on multiple 16-core machines ([m6i.4xlarge](https://aws.amazon.com/ec2/instance-types/)) with 64GB memory, while parallel solvers run on a single 64-core machine ([m6i.16xlarge](https://aws.amazon.com/ec2/instance-types/)) with 256GB memory.
 
 This will change the instance type and memory configurations for the ECS images used. You can switch back and forth as needed.
 
@@ -256,17 +256,23 @@ To debug on the cloud, there are two main mechanisms that we use to examine our 
 
 **CloudWatch Log Groups:** To watch the logs in real-time you can navigate to the CloudWatch console, then choose the "log groups" item on the left side menu as shown in Figure 2.
 
- ![](readme-images/cloudwatch-log-groups.png)
-_Figure 2: Cloudwatch log groups view_
+ ![](readme-images/cloudwatch-menu.png)
+_Figure 2: CloudWatch log groups menu_
 
-There should be logs related to `/ecs/comp23-leader` and `/ecs/comp23-worker`.  These logs will capture both stdout and stderr from your solver containers.  For example, in the figure above, I have a solver named `foobar`.  The logs are captured in something called _streams_, usually tied to a specific instance (so, for a cluster you will have one stream for the leader and one for each worker).  Note that if you don't use a solver for a while, CloudWatch will close the stream and open a new one, as you see in Figure 3: 
+After choosing the log groups menu item, you should see logs related to `/ecs/comp23-leader` and `/ecs/comp23-worker` as shown in Figure 3.  
+
+ ![](readme-images/cloudwatch-log-groups.png)
+_Figure 3: CloudWatch log groups view_
+
+These logs will capture both stdout and stderr from your solver containers.  The logs are captured in something called _streams_, usually tied to a specific instance (so, for a cluster you will have one stream for the leader and one for each worker).  Note that if you don't use a solver for a while, CloudWatch will close the stream and open a new one, as you see in Figure 4: 
 
 ![](readme-images/cloudwatch-log-streams.png)
-_Figure 3: Cloudwatch log groups view_
+_Figure 4: CloudWatch log groups view_
 
-The logs themselves are visible as lists of events as shown in Figure 4:
+The logs themselves are visible as lists of events as shown in Figure 5:
 
 ![](readme-images/cloudwatch-log-items.png)
+_Figure 5: CloudWatch log items view_
 
 AWS provides a very full-featured log query language called [CloudWatch Logs Insights](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/AnalyzingLogData.html) (visible in the menu in Figure 2) that you can use to search for specific patterns within logs that can often help speed up your debugging.  A full discussion of insights is outside the scope of this document, but the link above leads to a full set of documentation about how use it.
 

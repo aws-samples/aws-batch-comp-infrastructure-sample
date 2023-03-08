@@ -84,13 +84,13 @@ class MallobParser:
         with open(output_file) as f:
             raw_logs = f.read()
             if "found result UNSAT" in raw_logs:
-                return "UNSATISFIABLE"
+                return 20
             elif "found result SAT" in raw_logs:
-                return "SATISFIABLE"
+                return 10
             elif "UNKNOWN" in raw_logs:
-                return "UNKNOWN"
+                return 0
             else:
-                return "ERROR"
+                return -1
 
 if __name__ == "__main__":
     request_directory = sys.argv[1]
@@ -104,8 +104,7 @@ if __name__ == "__main__":
     result = MallobParser.get_result(output["stdout"])
     logging.info(f"RESULT: {result}")
     solver_output = {
-        "return_code": output["return_code"],
-        "result": result,
+        "return_code": result,
         "artifacts": {
             "stdout_path": output["stdout"],
             "stderr_path": output["stderr"]

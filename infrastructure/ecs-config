@@ -113,15 +113,18 @@ def await_completion(ecs_service, asg_client):
 
         time.sleep(30)
 
+        # MWW: I am disabling this output since the output 'lies' in the sense that it reports 
+        # a failure in the usual case, before eventually succeeding.
+
         # put this after the first sleep, since it's usually delayed
-        asg_status = asg_client.describe_scaling_activities()
+        # asg_status = asg_client.describe_scaling_activities()
         # only display the most recent message
-        asg_update = asg_status["Activities"][0]
-        print(f"Most recent AutoScaling Activity Log")
-        print(f"         StatusCode: {asg_update['StatusCode']}")
-        print(f"        StatusCause: {asg_update['Cause']}")
-        print(f"  StatusDescription: {asg_update['Description']}")
-        print("")
+        # asg_update = asg_status["Activities"][0]
+        # print(f"Most recent AutoScaling Activity Log")
+        # print(f"         StatusCode: {asg_update['StatusCode']}")
+        # print(f"        StatusCause: {asg_update['Cause']}")
+        # print(f"  StatusDescription: {asg_update['Description']}")
+        # print("")
         #pprint.pprint(asg_update)
         #print("")
 
