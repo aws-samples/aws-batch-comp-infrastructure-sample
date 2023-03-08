@@ -33,7 +33,7 @@ We have worked hard to improve the developer experience.  As compared with the 2
 1. Automated upload of stdout/stderr and intermediate files for each run to S3 storage so that you can  debug runs after completion.
 1. A "quickstart" that allows you to build the infrastructure and solver, then run it using only two commands.
 1. Default values for most of the required arguments from 2022 to make it much simpler to run commands.
-1. A richer `input.json` format that is used for solver communication that allows passing arguments to solvers, a solver name, and information about the input format.
+1. A richer `input.json` format that is used for solver communication that allows passing arguments to solvers, a timeout, and information about the input format.
 1. A change in the expected solver output format in `solver_out.json`. This year, the satisfiability/unsatisfiability of the problem is indicated by the return code of the solver (10 for SAT, 20 for UNSAT)
 1. Various improvements and bug fixes in the scripts for building/running jobs to provide better observability of the process.
 
