@@ -12,5 +12,5 @@ COPY --from=builder /mallob/build/mallob_sat_process mallob_sat_process
 COPY --chown=ecs-user /init_mallob.sh /competition
 COPY --chown=ecs-user /worker /competition
 USER ecs-user
-RUN chmod +x /competition/init_mallob.sh
+RUN chmod +x /competition/init_solver.sh
 RUN chmod +x /competition/worker

@@ -15,6 +15,6 @@ COPY --chown=ecs-user /init_mallob.sh /competition
 COPY --chown=ecs-user /run_mallob.sh /competition
 COPY --chown=ecs-user /solver /competition
 USER ecs-user
-RUN chmod +x /competition/init_mallob.sh
-RUN chmod +x /competition/run_mallob.sh
+RUN chmod +x /competition/init_solver.sh
+RUN chmod +x /competition/run_solver.sh
 RUN chmod +x /competition/solver
