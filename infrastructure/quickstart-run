@@ -29,7 +29,7 @@ def argument_parser():
     parser.add_argument('--profile', required = False, help = "AWS profile")
     parser.add_argument('--project', required = False, default = 'comp23', help = "ADVANCED USERS ONLY: Name of the project (default: 'comp23').")
     parser.add_argument('--keep-alive', required = False, help = "If True, then cluster is not destroyed after solving.")
-    parser.add_argument('--s3-location', required = False, help = "S3 URL for problem location of the form: s3://BUCKET_NAME/OBJECT_LOCATION.  Default is to run test.cnf from the default bucket.")
+    parser.add_argument('--s3-locations', nargs='+', required = False, help = "S3 URLs for problem location of the form: s3://BUCKET_NAME/OBJECT_LOCATION.  Default is to run test.cnf from the default bucket.  You can specify multiple URLs (space separated)")
     return parser
 
 if __name__ == "__main__":
@@ -49,11 +49,11 @@ if __name__ == "__main__":
     sts = STS(session.client('sts'))    
     account_number = sts.get_account_number()
 
-    if not args.s3_location:
+    if not args.s3_locations:
         s3_bucket = f"s3://{account_number}-us-east-1-{args.project}"
-        problem_location = f"{s3_bucket}/test.cnf"
+        problem_locations = [f"{s3_bucket}/test.cnf"]
     else:
-        problem_location = args.s3_location
+        problem_locations = args.s3_locations
 
     profile_args = ['--profile', args.profile] if args.profile else []
 
@@ -77,19 +77,20 @@ if __name__ == "__main__":
         logger.error("Have you set up the default profile in your ~/.aws/config file?")
         exit(-1)
 
-    cmd = ['python3', 'send_message', '--location', problem_location, '--workers', str(WORKER_NODES), '--await-response', 'True'] + profile_args
+    for problem_location in problem_locations:
+        cmd = ['python3', 'send_message', '--location', problem_location, '--workers', str(WORKER_NODES), '--await-response', 'True'] + profile_args
 
-    logger.info("Sending a message to the cluster to run the `temp.cnf' problem.")
-    logger.info("It is stored in the S3 location: {problem_location}")
-    logger.info("Please go inspect the CloudWatch logs for project {args.project} to see it running, as described in the Infrastructure README.")
-    logger.info(f"command that is being executed is: {' '.join(cmd)}")
-    try:
-        result = subprocess.run(cmd)
-        logger.info(f"Send message completed.  Intermediate files and stdout/stderr are available in {s3_bucket}/tmp")
-    except Exception as e:
-        logger.error(f"Unexpected error {e}: unable to run command to send message.")
-    if result.returncode:
-        logger.error("Unexpected error: Command to send message to queue failed.")
+        logger.info("Sending a message to the cluster to run the `temp.cnf' problem.")
+        logger.info("It is stored in the S3 location: {problem_location}")
+        logger.info("Please go inspect the CloudWatch logs for project {args.project} to see it running, as described in the Infrastructure README.")
+        logger.info(f"command that is being executed is: {' '.join(cmd)}")
+        try:
+            result = subprocess.run(cmd)
+            logger.info(f"Send message completed.  Intermediate files and stdout/stderr are available in {s3_bucket}/tmp")
+        except Exception as e:
+            logger.error(f"Unexpected error {e}: unable to run command to send message.")
+        if result.returncode:
+            logger.error("Unexpected error: Command to send message to queue failed.")
 
     if args.keep_alive:
         logger.info("Keep-alive option selected; not deleting cluster")
