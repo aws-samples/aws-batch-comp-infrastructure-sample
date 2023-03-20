@@ -40,7 +40,7 @@ if __name__ == "__main__":
         exit(-1)
 
     logger.info("Building the Docker images for the competition base containers")
-    cmd = ['cd ../docker/satcomp-images && build_satcomp_images.sh && cd ../../infrastructure']
+    cmd = ['cd ../docker/satcomp-images && ./build_satcomp_images.sh && cd ../../infrastructure']
     try:
         result = subprocess.run(cmd, shell=True)
     except Exception as e:
@@ -51,7 +51,7 @@ if __name__ == "__main__":
         exit(-1)
 
     logger.info("Building the Docker images for Mallob.  This will require ~10 minutes.")
-    cmd = ['cd ../docker/mallob-images && build_mallob_images.sh && cd ../../infrastructure']  
+    cmd = ['cd ../docker/mallob-images && ./build_mallob_images.sh && cd ../../infrastructure']  
     try:
         result = subprocess.run(cmd, shell=True)
     except Exception as e:
