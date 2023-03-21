@@ -176,7 +176,19 @@ More information on creating and managing S3 buckets is found here: [https://aws
 ## Running Your Solver
 After storing docker images: `comp23:leader` (and for the cloud solver: `comp23:worker`) and placing at least one query file in your S3 bucket, you are ready to run your solver. 
 
-Running the solver consists of the following steps:
+### Running Your Solver Using `quickstart-run`
+You can use `quickstart-run` to spin up the cluster, run several files, and then spin down the cluster with one command.  To run files other than the `test.cnf` file, you can provide a list of s3 file paths to run, one after the other.  The command looks like: 
+
+```text
+quickstart-run [--s3-locations S3_LOCATIONS [S3_LOCATIONS ...]] 
+```
+
+In this case, after creating the cluster, it will try to run all files before spinning the cluster back down.  This allows you a relatively safe way to run several jobs.  **N.B.**: Keep an eye on it, though!  If your solver fails while solving and does not generate an output, then the script will poll forever waiting for the result message from your solver, and will not spin down the cluster.  In this case, follow the cleanup procedure below. 
+
+
+### Running Your Solver Using Basic Scripts
+
+If you would like to have finer-grained control, choosing when to spin up and down the cluster, or building your own scripts, you can use the following steps:
 
 1. Setup.
 

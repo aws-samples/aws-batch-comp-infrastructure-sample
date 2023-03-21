@@ -21,4 +21,4 @@ echo "    docker image: $1:$NODE_TYPE"
 
 # Run docker image. See comments in run_parallel.sh
 #
-docker run -i --shm-size=32g --name $NODE_TYPE --network $DOCKER_NETWORK --entrypoint bash --rm -t $1:$NODE_TYPE -c "/competition/init_mallob.sh; exec bash"
+docker run -i --shm-size=32g --name $NODE_TYPE --network $DOCKER_NETWORK --entrypoint bash --rm -t $1:$NODE_TYPE -c "/competition/init_solver.sh; exec bash"

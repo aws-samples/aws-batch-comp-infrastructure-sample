@@ -57,4 +57,4 @@ echo -e "{\n\"formula_file\": \"$DOCKER_RUNDIR/$2\",\n\"worker_node_ips\": [\"le
 #   -t                    // Docker image name for leader (script hard-codes 'leader' tag)
 #   -c <bash_command>     // gets passed to bash shell
 
-docker run -i --shm-size=32g --name $NODE_TYPE --network $DOCKER_NETWORK --entrypoint bash --rm -v $HOST_RUNDIR:/$DOCKER_RUNDIR -t $1:$NODE_TYPE -c "/competition/init_mallob.sh; exec bash"
+docker run -i --shm-size=32g --name $NODE_TYPE --network $DOCKER_NETWORK --entrypoint bash --rm -v $HOST_RUNDIR:/$DOCKER_RUNDIR -t $1:$NODE_TYPE -c "/competition/init_solver.sh; exec bash"
