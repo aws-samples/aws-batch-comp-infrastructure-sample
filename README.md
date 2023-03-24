@@ -14,7 +14,7 @@ We describe step 1 in this document.  Step 2 is described in the [Solver Develop
 
 ## Creating an AWS Account
 
-First, create a specific AWS account for the competition. If you have not created an AWS account previously, it is straightforward to do, requiring a cell phone number, credit card, and address. Make sure to register your account with an email address of your academic instution, otherwise AWS cannot sponsor your account. To create an account, navigate to [aws.amazon.com](https://aws.amazon.com) and follow the instructions.
+First, create a specific AWS account for the competition. If you have not created an AWS account previously, it is straightforward to do, requiring a cell phone number, credit card, and address. Make sure to register your account with an institutional email address (and not a private one), otherwise AWS cannot sponsor your account. To create an account, navigate to [aws.amazon.com](https://aws.amazon.com) and follow the instructions.
 
 If you have previously created an AWS account, we strongly advise that you create a separate AWS account for managing the SAT/SMT-Comp tool construction and testing. This makes it much easier for us to manage account credits and billing. Once the new account is created, email us the account number at: sat-comp@amazon.com (for SAT-Comp) or aws-smtcomp-2023@googlegroups.com (for SMT-Comp) and we will apply the appropriate credits to your account.
 
@@ -74,3 +74,9 @@ SMT-Comp Cloud:
 * [SMTS Cube and Conquer](https://github.com/usi-verification-and-security/aws-smts/tree/cloud-cube-and-conquer-fixed)
 * [SMTS Portfolio](https://github.com/usi-verification-and-security/aws-smts/tree/cloud-portfolio)
 * [Vampire](https://github.com/vprover/vampire/tree/smtcomp22)
+
+## FAQ
+
+#### I already created my AWS account with a non-institutional email address. Can I still change the email address tied to my account?
+
+Yes. To change your email address, follow the instructions at https://repost.aws/knowledge-center/change-email-address.
