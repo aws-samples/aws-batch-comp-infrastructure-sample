@@ -133,7 +133,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument('mode', choices = ["setup", "shutdown"], help = "AddInstances / DeleteInstances.")
-    parser.add_argument('--profile', default = "default", required = False, help = "AWS profile")
+    parser.add_argument('--profile', default = None, required = False, help = "AWS profile")
     parser.add_argument('--workers', required = False, help = "Required Worker nodes count")
     
     args = parser.parse_args()
@@ -147,7 +147,11 @@ if __name__ == "__main__":
         # Shutdown instances
         leader_node_count = worker_node_count = desired_count = "0"
 
-    session = boto3.Session(profile_name=args.profile)
+    if args.profile: 
+        session = boto3.Session(profile_name=args.profile)
+    else: 
+        session = boto3.Session()
+
     ecs = session.client('ecs')
     ecs_service = EcsService(ecs)
 

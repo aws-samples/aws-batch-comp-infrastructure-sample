@@ -32,8 +32,18 @@ Parameters:
     Type: String
     Description: "Ami for your instances"
 
-Resources:
+  RegionHasThreeAzs:
+    Type: String
+    Default: "true"
+    Description: |
+      "true" if region has at least three AZs, "false" if not. Determines whether we will have 2 or 3 subnets
 
+Conditions:
+  HasThreeAZs: !Equals [ !Ref RegionHasThreeAzs, "true" ]
+  HasSixAZs: !Equals [ !Ref 'AWS::Region', "us-east-1" ]
+
+
+Resources:
   VPC:
     Type: AWS::EC2::VPC
     Properties:
@@ -41,29 +51,438 @@ Resources:
       EnableDnsHostnames: true
       EnableDnsSupport: true
 
-  SecondCidr:
-    Type: AWS::EC2::VPCCidrBlock
+  # /19 Subnet
+  PrivateSubnet1:
+    Type: AWS::EC2::Subnet
     Properties:
-      CidrBlock: 10.1.0.0/16
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      CidrBlock: !Select [0, !Cidr [!GetAtt VPC.CidrBlock, 6, 13]]
       VpcId: !Ref VPC
 
-  InternetGateway:
-    Type: AWS::EC2::InternetGateway
-
-  EIP:
-    Type: 'AWS::EC2::EIP'
+  # /19 Subnet
+  PrivateSubnet2:
+    Type: AWS::EC2::Subnet
     Properties:
-      Domain: vpc
+      AvailabilityZone: !Select [ 1, !GetAZs '' ]
+      CidrBlock:  !Select [1, !Cidr [!GetAtt VPC.CidrBlock, 6, 13]]
+      VpcId: !Ref VPC
 
+  # /19 Subnet
+  PrivateSubnet3:
+    Condition: HasThreeAZs
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select [ 2, !GetAZs '' ]
+      CidrBlock:  !Select [2, !Cidr [!GetAtt VPC.CidrBlock, 6, 13]]
+      VpcId: !Ref VPC
 
-  VPCGatewayAttachment:
-    Type: AWS::EC2::VPCGatewayAttachment
+  # /19 Subnet
+  PrivateSubnet4:
+    Condition: HasSixAZs
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select [ 3, !GetAZs '' ]
+      CidrBlock:  !Select [3, !Cidr [!GetAtt VPC.CidrBlock, 6, 13]]
+      VpcId: !Ref VPC
+
+  # /19 Subnet
+  PrivateSubnet5:
+    Condition: HasSixAZs
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select [ 4, !GetAZs '' ]
+      CidrBlock:  !Select [4, !Cidr [!GetAtt VPC.CidrBlock, 6, 13]]
+      VpcId: !Ref VPC
+
+  # /19 Subnet
+  PrivateSubnet6:
+    Condition: HasSixAZs
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select [ 5, !GetAZs '' ]
+      CidrBlock:  !Select [5, !Cidr [!GetAtt VPC.CidrBlock, 6, 13]]
+      VpcId: !Ref VPC
+
+  RouteTablePrivate1:
+    Type: AWS::EC2::RouteTable
     Properties:
       VpcId:
         Ref: VPC
-      InternetGatewayId:
-        Ref: InternetGateway
 
+  RouteTableAssociation1:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref RouteTablePrivate1
+      SubnetId: !Ref PrivateSubnet1
+
+  RouteTablePrivate2:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:
+        Ref: VPC
+
+  RouteTableAssociation2:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref RouteTablePrivate2
+      SubnetId: !Ref PrivateSubnet2
+
+  RouteTablePrivate3:
+    Condition: HasThreeAZs
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:
+        Ref: VPC
+
+  RouteTableAssociation3:
+    Condition: HasThreeAZs
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref RouteTablePrivate3
+      SubnetId: !Ref PrivateSubnet3
+
+  RouteTablePrivate4:
+    Condition: HasSixAZs
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:
+        Ref: VPC
+
+  RouteTableAssociation4:
+    Condition: HasSixAZs
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref RouteTablePrivate4
+      SubnetId: !Ref PrivateSubnet4
+
+  RouteTablePrivate5:
+    Condition: HasSixAZs
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:
+        Ref: VPC
+
+  RouteTableAssociation5:
+    Condition: HasSixAZs
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref RouteTablePrivate5
+      SubnetId: !Ref PrivateSubnet5
+
+  RouteTablePrivate6:
+    Condition: HasSixAZs
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:
+        Ref: VPC
+
+  RouteTableAssociation6:
+    Condition: HasSixAZs
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref RouteTablePrivate6
+      SubnetId: !Ref PrivateSubnet6
+
+  DdbEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      ServiceName: !Join
+        - ''
+        - - com.amazonaws.
+          - !Ref 'AWS::Region'
+          - .dynamodb
+      RouteTableIds:
+        - !Ref RouteTablePrivate1
+        - !Ref RouteTablePrivate2
+        - !If [ HasThreeAZs, !Ref RouteTablePrivate3, !Ref "AWS::NoValue" ]
+        - !If [ HasSixAZs, !Ref RouteTablePrivate4, !Ref "AWS::NoValue" ]
+        - !If [ HasSixAZs, !Ref RouteTablePrivate5, !Ref "AWS::NoValue" ]
+        - !If [ HasSixAZs, !Ref RouteTablePrivate6, !Ref "AWS::NoValue" ]
+
+      VpcId: !Ref VPC
+      VpcEndpointType: Gateway
+
+  LambdaEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      ServiceName: !Join
+        - ''
+        - - com.amazonaws.
+          - !Ref 'AWS::Region'
+          - .lambda
+      SubnetIds:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+        - !If [ HasThreeAZs, !Ref PrivateSubnet3, !Ref "AWS::NoValue" ]
+        - !If [ HasSixAZs, !Ref PrivateSubnet4, !Ref "AWS::NoValue" ]
+        - !If [ HasSixAZs, !Ref PrivateSubnet5, !Ref "AWS::NoValue" ]
+        - !If [ HasSixAZs, !Ref PrivateSubnet6, !Ref "AWS::NoValue" ]
+
+      VpcId: !Ref VPC
+      VpcEndpointType: Interface
+      SecurityGroupIds:
+        - !Ref SecurityGroup
+      PrivateDnsEnabled: true
+
+  SQSEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      ServiceName: !Join
+        - ''
+        - - com.amazonaws.
+          - !Ref 'AWS::Region'
+          - .sqs
+      SubnetIds:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+        - !If [ HasThreeAZs, !Ref PrivateSubnet3, !Ref "AWS::NoValue" ]
+        - !If [ HasSixAZs, !Ref PrivateSubnet4, !Ref "AWS::NoValue" ]
+        - !If [ HasSixAZs, !Ref PrivateSubnet5, !Ref "AWS::NoValue" ]
+        - !If [ HasSixAZs, !Ref PrivateSubnet6, !Ref "AWS::NoValue" ]
+
+      VpcId: !Ref VPC
+      VpcEndpointType: Interface
+      SecurityGroupIds:
+        - !Ref SecurityGroup
+      PrivateDnsEnabled: true
+
+  CloudwatchEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      ServiceName: !Join
+        - ''
+        - - com.amazonaws.
+          - !Ref 'AWS::Region'
+          - .logs
+      SubnetIds:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+        - !If [ HasThreeAZs, !Ref PrivateSubnet3, !Ref "AWS::NoValue" ]
+        - !If [ HasSixAZs, !Ref PrivateSubnet4, !Ref "AWS::NoValue" ]
+        - !If [ HasSixAZs, !Ref PrivateSubnet5, !Ref "AWS::NoValue" ]
+        - !If [ HasSixAZs, !Ref PrivateSubnet6, !Ref "AWS::NoValue" ]
+
+      VpcId: !Ref VPC
+      VpcEndpointType: Interface
+      SecurityGroupIds:
+        - !Ref SecurityGroup
+      PrivateDnsEnabled: true
+
+  MetricsEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      ServiceName: !Join
+        - ''
+        - - com.amazonaws.
+          - !Ref 'AWS::Region'
+          - .monitoring
+      SubnetIds:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+        - !If [ HasThreeAZs, !Ref PrivateSubnet3, !Ref "AWS::NoValue" ]
+        - !If [ HasSixAZs, !Ref PrivateSubnet4, !Ref "AWS::NoValue" ]
+        - !If [ HasSixAZs, !Ref PrivateSubnet5, !Ref "AWS::NoValue" ]
+        - !If [ HasSixAZs, !Ref PrivateSubnet6, !Ref "AWS::NoValue" ]
+
+      VpcId: !Ref VPC
+      VpcEndpointType: Interface
+      SecurityGroupIds:
+        - !Ref SecurityGroup
+      PrivateDnsEnabled: true
+
+  S3Endpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      ServiceName: !Join
+        - ''
+        - - com.amazonaws.
+          - !Ref 'AWS::Region'
+          - .s3
+      RouteTableIds:
+        - !Ref RouteTablePrivate1
+        - !Ref RouteTablePrivate2
+        - !If [ HasThreeAZs, !Ref RouteTablePrivate3, !Ref "AWS::NoValue" ]
+        - !If [ HasSixAZs, !Ref RouteTablePrivate4, !Ref "AWS::NoValue" ]
+        - !If [ HasSixAZs, !Ref RouteTablePrivate5, !Ref "AWS::NoValue" ]
+        - !If [ HasSixAZs, !Ref RouteTablePrivate6, !Ref "AWS::NoValue" ]
+
+      VpcId: !Ref VPC
+      VpcEndpointType: Gateway
+
+
+  EcrDkrEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      ServiceName: !Join
+        - ''
+        - - com.amazonaws.
+          - !Ref 'AWS::Region'
+          - .ecr.dkr
+      SubnetIds:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+        - !If [ HasThreeAZs, !Ref PrivateSubnet3, !Ref "AWS::NoValue" ]
+        - !If [ HasSixAZs, !Ref PrivateSubnet4, !Ref "AWS::NoValue" ]
+        - !If [ HasSixAZs, !Ref PrivateSubnet5, !Ref "AWS::NoValue" ]
+        - !If [ HasSixAZs, !Ref PrivateSubnet6, !Ref "AWS::NoValue" ]
+
+      VpcId: !Ref VPC
+      VpcEndpointType: Interface
+      SecurityGroupIds:
+        - !Ref SecurityGroup
+      PrivateDnsEnabled: true
+
+  EcrApiEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      ServiceName: !Join
+        - ''
+        - - com.amazonaws.
+          - !Ref 'AWS::Region'
+          - .ecr.api
+      SubnetIds:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+        - !If [ HasThreeAZs, !Ref PrivateSubnet3, !Ref "AWS::NoValue" ]
+        - !If [ HasSixAZs, !Ref PrivateSubnet4, !Ref "AWS::NoValue" ]
+        - !If [ HasSixAZs, !Ref PrivateSubnet5, !Ref "AWS::NoValue" ]
+        - !If [ HasSixAZs, !Ref PrivateSubnet6, !Ref "AWS::NoValue" ]
+      VpcId: !Ref VPC
+      VpcEndpointType: Interface
+      SecurityGroupIds:
+        - !Ref SecurityGroup
+      PrivateDnsEnabled: true
+
+  # Endpoints required for Sessions Manager
+  Ec2MessagesEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      ServiceName: !Join
+        - ''
+        - - com.amazonaws.
+          - !Ref 'AWS::Region'
+          - .ec2messages
+      SubnetIds:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+        - !If [ HasThreeAZs, !Ref PrivateSubnet3, !Ref "AWS::NoValue" ]
+        - !If [ HasSixAZs, !Ref PrivateSubnet4, !Ref "AWS::NoValue" ]
+        - !If [ HasSixAZs, !Ref PrivateSubnet5, !Ref "AWS::NoValue" ]
+        - !If [ HasSixAZs, !Ref PrivateSubnet6, !Ref "AWS::NoValue" ]
+      VpcId: !Ref VPC
+      VpcEndpointType: Interface
+      SecurityGroupIds:
+        - !Ref SecurityGroup
+      PrivateDnsEnabled: true
+
+  SsmEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      ServiceName: !Join
+        - ''
+        - - com.amazonaws.
+          - !Ref 'AWS::Region'
+          - .ssm
+      SubnetIds:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+        - !If [ HasThreeAZs, !Ref PrivateSubnet3, !Ref "AWS::NoValue" ]
+        - !If [ HasSixAZs, !Ref PrivateSubnet4, !Ref "AWS::NoValue" ]
+        - !If [ HasSixAZs, !Ref PrivateSubnet5, !Ref "AWS::NoValue" ]
+        - !If [ HasSixAZs, !Ref PrivateSubnet6, !Ref "AWS::NoValue" ]
+      VpcId: !Ref VPC
+      VpcEndpointType: Interface
+      SecurityGroupIds:
+        - !Ref SecurityGroup
+      PrivateDnsEnabled: true
+
+  SsmMessagesEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      ServiceName: !Join
+        - ''
+        - - com.amazonaws.
+          - !Ref 'AWS::Region'
+          - .ssmmessages
+      SubnetIds:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+        - !If [ HasThreeAZs, !Ref PrivateSubnet3, !Ref "AWS::NoValue" ]
+        - !If [ HasSixAZs, !Ref PrivateSubnet4, !Ref "AWS::NoValue" ]
+        - !If [ HasSixAZs, !Ref PrivateSubnet5, !Ref "AWS::NoValue" ]
+        - !If [ HasSixAZs, !Ref PrivateSubnet6, !Ref "AWS::NoValue" ]
+      VpcId: !Ref VPC
+      VpcEndpointType: Interface
+      SecurityGroupIds:
+        - !Ref SecurityGroup
+      PrivateDnsEnabled: true
+
+  # VPC Endpoint needed for EC2 instance to join ECS cluster
+  EcsAgentEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      ServiceName: !Join
+        - ''
+        - - com.amazonaws.
+          - !Ref 'AWS::Region'
+          - .ecs-agent
+      SubnetIds:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+        - !If [ HasThreeAZs, !Ref PrivateSubnet3, !Ref "AWS::NoValue" ]
+        - !If [ HasSixAZs, !Ref PrivateSubnet4, !Ref "AWS::NoValue" ]
+        - !If [ HasSixAZs, !Ref PrivateSubnet5, !Ref "AWS::NoValue" ]
+        - !If [ HasSixAZs, !Ref PrivateSubnet6, !Ref "AWS::NoValue" ]
+
+      VpcId: !Ref VPC
+      VpcEndpointType: Interface
+      SecurityGroupIds:
+        - !Ref SecurityGroup
+      PrivateDnsEnabled: true
+
+  EcsTelemetryEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      ServiceName: !Join
+        - ''
+        - - com.amazonaws.
+          - !Ref 'AWS::Region'
+          - .ecs-telemetry
+      SubnetIds:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+        - !If [ HasThreeAZs, !Ref PrivateSubnet3, !Ref "AWS::NoValue" ]
+        - !If [ HasSixAZs, !Ref PrivateSubnet4, !Ref "AWS::NoValue" ]
+        - !If [ HasSixAZs, !Ref PrivateSubnet5, !Ref "AWS::NoValue" ]
+        - !If [ HasSixAZs, !Ref PrivateSubnet6, !Ref "AWS::NoValue" ]
+
+      VpcId: !Ref VPC
+      VpcEndpointType: Interface
+      SecurityGroupIds:
+        - !Ref SecurityGroup
+      PrivateDnsEnabled: true
+
+  EcsEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      ServiceName: !Join
+        - ''
+        - - com.amazonaws.
+          - !Ref 'AWS::Region'
+          - .ecs
+      SubnetIds:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+        - !If [ HasThreeAZs, !Ref PrivateSubnet3, !Ref "AWS::NoValue" ]
+        - !If [ HasSixAZs, !Ref PrivateSubnet4, !Ref "AWS::NoValue" ]
+        - !If [ HasSixAZs, !Ref PrivateSubnet5, !Ref "AWS::NoValue" ]
+        - !If [ HasSixAZs, !Ref PrivateSubnet6, !Ref "AWS::NoValue" ]
+
+      VpcId: !Ref VPC
+      VpcEndpointType: Interface
+      SecurityGroupIds:
+        - !Ref SecurityGroup
+      PrivateDnsEnabled: true
 
   SecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -71,77 +490,16 @@ Resources:
       GroupDescription: EC2 Security Group for instances launched in the VPC by Batch
       VpcId:
         Ref: VPC
+      SecurityGroupEgress:
+        - CidrIp: 0.0.0.0/0
+          Description: Allow all outbound traffic by default
+          IpProtocol: -1
       SecurityGroupIngress:
         - CidrIp: 10.0.0.0/0
           Description: SSH port
           FromPort: 0
           IpProtocol: TCP
           ToPort: 65535
-
-  NatGateway:
-    Type: 'AWS::EC2::NatGateway'
-    Properties:
-      AllocationId: !GetAtt 'EIP.AllocationId'
-      SubnetId: !Ref SubnetPublic
-
-  NatAttachment:
-    Type: AWS::EC2::VPCGatewayAttachment
-    Properties:
-      InternetGatewayId: !Ref InternetGateway
-      VpcId: !Ref VPC
-
-  SubnetPrivate:
-    Type: AWS::EC2::Subnet
-    DependsOn: SecondCidr
-    Properties:
-      AvailabilityZone: !Sub "${AWS::Region}${AvailZoneId}"
-      CidrBlock: 10.1.0.0/16
-      VpcId: !Ref VPC
-  RouteTablePrivate:
-    Type: AWS::EC2::RouteTable
-    Properties:
-      VpcId:
-        Ref: VPC
-  RoutePrivate:
-    Type: AWS::EC2::Route
-    Properties:
-      RouteTableId:
-        Ref: RouteTablePrivate
-      DestinationCidrBlock: 0.0.0.0/0
-      NatGatewayId: !Ref NatGateway
-
-  SubnetRouteTableAssociationPrivate:
-    Type: AWS::EC2::SubnetRouteTableAssociation
-    Properties:
-      RouteTableId: !Ref RouteTablePrivate
-      SubnetId: !Ref SubnetPrivate
-
-
-  SubnetPublic:
-    Type: AWS::EC2::Subnet
-    Properties:
-      AvailabilityZone: !Sub "${AWS::Region}${AvailZoneId}"
-      CidrBlock: 10.0.1.0/24
-      VpcId: !Ref VPC
-      MapPublicIpOnLaunch: 'True'
-  RouteTablePublic:
-    Type: AWS::EC2::RouteTable
-    Properties:
-      VpcId:
-        Ref: VPC
-  RoutePublic:
-    Type: AWS::EC2::Route
-    Properties:
-      RouteTableId:
-        Ref: RouteTablePublic
-      DestinationCidrBlock: 0.0.0.0/0
-      GatewayId: !Ref InternetGateway
-
-  SubnetRouteTableAssociationPublic:
-    Type: AWS::EC2::SubnetRouteTableAssociation
-    Properties:
-      RouteTableId: !Ref RouteTablePublic
-      SubnetId: !Ref SubnetPublic
 
   EcsCluster:
     Type: AWS::ECS::Cluster
@@ -234,7 +592,14 @@ Resources:
                             ScheduledActions ]
         WaitOnResourceSignals: 'true'
     Properties:
-      VPCZoneIdentifier: [ !Ref SubnetPrivate ]
+      VPCZoneIdentifier: [ 
+        !Ref PrivateSubnet1,
+        !Ref PrivateSubnet2,
+        !If [ HasThreeAZs, !Ref PrivateSubnet3, !Ref "AWS::NoValue" ],
+        !If [ HasSixAZs, !Ref PrivateSubnet4, !Ref "AWS::NoValue" ],
+        !If [ HasSixAZs, !Ref PrivateSubnet5, !Ref "AWS::NoValue" ],
+        !If [ HasSixAZs, !Ref PrivateSubnet6, !Ref "AWS::NoValue" ]
+      ]
       LaunchConfigurationName: !Ref EcsInstanceLc
       MinSize: '0'
       MaxSize: '0'
@@ -331,15 +696,6 @@ Resources:
                   - 'elasticloadbalancing:RegisterTargets'
                 Resource: '*'
 
-  SsmVpcEndpoint:
-    Type: AWS::EC2::VPCEndpoint
-    Properties:
-      VpcEndpointType: Interface
-      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.ssm'
-      VpcId: !Ref VPC
-      SecurityGroupIds: [ !Ref SecurityGroup ]
-      SubnetIds: [ !Ref SubnetPrivate ]
-      PrivateDnsEnabled: true
 
   EcsTaskRole:
     Type: AWS::IAM::Role
@@ -395,14 +751,6 @@ Resources:
 
       RequiresCompatibilities:
         - EC2
-      Volumes:
-        - Name: SatVolume
-          EFSVolumeConfiguration:
-            FilesystemId: !Ref FileSystem
-            TransitEncryption: ENABLED
-            AuthorizationConfig:
-              AccessPointId: !Ref AccessPoint
-
       ContainerDefinitions:
         - Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ProjectName}:leader"
           Name: !Sub "${ProjectName}-leader"
@@ -422,9 +770,6 @@ Resources:
               awslogs-group: !Sub "/ecs/${ProjectName}-leader"
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: ecs
-          MountPoints:
-            - ContainerPath: '/mount/efs'
-              SourceVolume: SatVolume
           PortMappings:
             - HostPort: 22
               ContainerPort: 22
@@ -444,13 +789,6 @@ Resources:
 
       RequiresCompatibilities:
         - EC2
-      Volumes:
-        - Name: SatVolume
-          EFSVolumeConfiguration:
-            FilesystemId: !Ref FileSystem
-            TransitEncryption: ENABLED
-            AuthorizationConfig:
-              AccessPointId: !Ref AccessPoint
 
       ContainerDefinitions:
         - Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ProjectName}:worker"
@@ -471,9 +809,6 @@ Resources:
               awslogs-group: !Sub "/ecs/${ProjectName}-worker"
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: ecs
-          MountPoints:
-            - ContainerPath: '/mount/efs'
-              SourceVolume: SatVolume
           PortMappings:
             - HostPort: 22
               ContainerPort: 22
@@ -523,7 +858,12 @@ Resources:
           SecurityGroups:
             - !Ref SecurityGroup
           Subnets:
-            - !Ref SubnetPrivate
+            - !Ref PrivateSubnet1
+            - !Ref PrivateSubnet2
+            - !If [ HasThreeAZs, !Ref PrivateSubnet3, !Ref "AWS::NoValue" ]
+            - !If [ HasSixAZs, !Ref PrivateSubnet4, !Ref "AWS::NoValue" ]
+            - !If [ HasSixAZs, !Ref PrivateSubnet5, !Ref "AWS::NoValue" ]
+            - !If [ HasSixAZs, !Ref PrivateSubnet6, !Ref "AWS::NoValue" ]
       TaskDefinition:
         Ref: SolverLeaderTaskDefinition
 
@@ -539,37 +879,15 @@ Resources:
           SecurityGroups:
             - !Ref SecurityGroup
           Subnets:
-            - !Ref SubnetPrivate
+            - !Ref PrivateSubnet1
+            - !Ref PrivateSubnet2
+            - !If [ HasThreeAZs, !Ref PrivateSubnet3, !Ref "AWS::NoValue" ]
+            - !If [ HasSixAZs, !Ref PrivateSubnet4, !Ref "AWS::NoValue" ]
+            - !If [ HasSixAZs, !Ref PrivateSubnet5, !Ref "AWS::NoValue" ]
+            - !If [ HasSixAZs, !Ref PrivateSubnet6, !Ref "AWS::NoValue" ]
       TaskDefinition:
         Ref: SolverWorkerTaskDefinition
 
-
-  AccessPoint:
-    Type: AWS::EFS::AccessPoint
-    Properties:
-      FileSystemId: !Ref FileSystem
-      PosixUser:
-        Uid: "1001"
-        Gid: "1001"
-      RootDirectory:
-        CreationInfo:
-          OwnerGid: "1001"
-          OwnerUid: "1001"
-          Permissions: "0755"
-        Path: "/sat-comp"
-
-  FileSystem:
-    Type: AWS::EFS::FileSystem
-    Properties:
-      PerformanceMode: generalPurpose
-
-  EFSMountTarget:
-    Type: AWS::EFS::MountTarget
-    Properties:
-      FileSystemId: !Ref FileSystem
-      SecurityGroups:
-        - !Ref SecurityGroup
-      SubnetId: !Ref SubnetPrivate
   SatCompQueue:
     Type: AWS::SQS::Queue
     Properties:
@@ -675,7 +993,7 @@ Resources:
 Outputs:
   Subnet:
     Value:
-      Ref: SubnetPrivate
+      Ref: PrivateSubnet1
     Export:
       Name: SubnetId
   SecurityGroupId:
