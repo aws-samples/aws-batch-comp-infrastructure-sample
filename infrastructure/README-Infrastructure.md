@@ -337,9 +337,15 @@ No. If you are submitting to the parallel track only, you do not need a worker i
 
 #### I attempted to use the quickstart-run or config-ecs, but the script keeps saying "Waiting for ECS" and not running my solver.  What happened?
 
-There are two likely causes.  First it could be that you submitted an SQS that asked for more workers than you configured when you set up your cluster.  Make sure that the number of worker nodes equals or exceeds the number of worker nodes that were requested in the SQS message.  Second, if you just set up the ECS cluster, then it is likely that either the requested EC2 servers have not yet initialized, or that the ECS cluster has not yet started running on them.  It takes 2-5 minutes for the resources to become available after they are requested.
+If you just started the script, then it is likely that either the requested EC2 servers have not yet initialized, or that the ECS cluster has not yet started running on them. It takes 2-5 minutes for the resources to become available after they are requested.  If it takes longer than 10 minutes, there is a problem.  Either the region/availability zone has run out of resources, or your account does not have a high enough resource cap to support the cluster you have requested. 
 
-There is also a less-likely cause, involving capacity limits.  EC2 sets default capacity limits on the number of compute nodes that are available to an account.  If you are running large-scale tests, it may be that you have exceeded the default number of nodes.  To check, navigate to the EC2 console for the account, and click on "Limits" on the left side.  Type "All standard" in the search bar and determine the current limit.  The limit is specified in terms of vCPUs, so each m6i-4xlarge image uses 16 vCPUs, and every m6i-16xlarge uses 64 CPUs.  If you need additional vCPUs, click on the "All Standard" link and request a limit increase.  **N.B.** Running a large cluster can become expensive.  Make sure you limit your large-scale testing to preserve your AWS credits.
+EC2 sets default capacity limits on the number of compute nodes that are available to an account. If you are running large-scale tests, it may be that you have exceeded the default number of nodes. To check, navigate to the EC2 console for the account, and click on "Limits" on the left side. Type "All standard" in the search bar and determine the current limit. The limit is specified in terms of vCPUs, so each m6i-4xlarge image uses 16 vCPUs, and every m6i-16xlarge uses 64 CPUs. If you need additional vCPUs, click on the "All Standard" link and request a limit increase. N.B. Running a large cluster can become expensive. Make sure you limit your large-scale testing to preserve your AWS credits.
+
+If your account has enough capacity and you are seeing this behavior, please contact us via email so that we can adjust the scripts to gather resources from more availability zones.
+
+#### I submitted a job but nothing happens.  When I look in the logs, the leader keeps saying it is waiting for worker nodes and not running my solver.  What happened? ####
+
+If you were able to create the cluster successfully using ecs_config, then what has happened is that you submitted an SQS that asked for more workers than you configured when you set up your cluster.  Make sure that the number of worker nodes equals or exceeds the number of worker nodes that were requested in the SQS message. 
 
 #### I'm watching the ECS cluster, but nothing is happening; no nodes are being created.  What happened?
 
