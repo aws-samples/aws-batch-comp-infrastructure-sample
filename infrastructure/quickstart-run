@@ -64,8 +64,8 @@ if __name__ == "__main__":
         + profile_args 
     logger.info(f"Setting up ECS cluster with {WORKER_NODES} worker nodes using ecs-config.")
     logger.info(f"command that is being executed is: {' '.join(cmd)}")
-    logger.info("This operation will likely take 5-7 minutes.")
-    logger.info("***Note that while configuration is in process, the system will report Autoscaling failures.  This is normal, but should not persist for more than 10 minutes.***")
+    logger.info("This operation will likely take 5-7 minutes, and can require up to 15 minutes.")
+    logger.info("***Note that while configuration is in process, the system will report Autoscaling failures.  This is normal, but should not persist for more than 15 minutes.***")
     try: 
         result = subprocess.run(cmd)
         pass
