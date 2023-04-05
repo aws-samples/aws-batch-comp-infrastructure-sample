@@ -78,6 +78,9 @@ This command will require 10-20 minutes to run.  Once it is complete, Mallob sho
 
 ### Quickstart Run
 
+**N.B.: For teams in China, new accounts are not configured with sufficient vCPU resources to run `quickstart-run`.  Please follow the directions in the Q&A section under: "How do I make sure I have enough vCPU capacity in my account to run my experiments?" prior to running `quickstart-run`.**   
+
+
 This command will spin up a cluster, submit a job to run called `test.cnf` that we uploaded to a storage location in S3 (the AWS storage service), and wait for the result, then spins down the cluster.  The form of the command is: 
 
 ```text
@@ -337,11 +340,13 @@ No. If you are submitting to the parallel track only, you do not need a worker i
 
 #### I attempted to use the quickstart-run or config-ecs, but the script keeps saying "Waiting for ECS" and not running my solver.  What happened?
 
-If you just started the script, then it is likely that either the requested EC2 servers have not yet initialized, or that the ECS cluster has not yet started running on them. It takes 2-5 minutes for the resources to become available after they are requested.  If it takes longer than 10 minutes, there is a problem.  Either the region/availability zone has run out of resources, or your account does not have a high enough resource cap to support the cluster you have requested. 
+If you just started the script, then it is likely that either the requested EC2 servers have not yet initialized, or that the ECS cluster has not yet started running on them. It typically takes 5-10 minutes for the resources to become available after they are requested.  If it takes longer than 15 minutes, there is a problem.  Either the region has entirely run out of resources (unlikely), or your account does not have a high enough resource cap to support the cluster you have requested.  See the Q&A for "How do I make sure I have enough vCPU capacity in my account to run my experiments?".
 
-EC2 sets default capacity limits on the number of compute nodes that are available to an account. If you are running large-scale tests, it may be that you have exceeded the default number of nodes. To check, navigate to the EC2 console for the account, and click on "Limits" on the left side. Type "All standard" in the search bar and determine the current limit. The limit is specified in terms of vCPUs, so each m6i-4xlarge image uses 16 vCPUs, and every m6i-16xlarge uses 64 CPUs. If you need additional vCPUs, click on the "All Standard" link and request a limit increase. N.B. Running a large cluster can become expensive. Make sure you limit your large-scale testing to preserve your AWS credits.
+#### How do I make sure I have enough vCPU capacity in my account to run my experiments?
+EC2 sets default capacity limits on the number of compute nodes that are available to an account.  For the USA and Europe, these are currently defaulted to 640 vCPUs, so unless you are running a distributed cluster with more than 39 workers (which is expensive!), the default limit should be o.k.  However, in China, the current default limit appears to be 32 vCPUs, which is not even enough to run the `quickstart-run` script.  
 
-If your account has enough capacity and you are seeing this behavior, please contact us via email so that we can adjust the scripts to gather resources from more availability zones.
+To check your account limits, navigate to the EC2 console for the account, and click on "Limits" on the left side. Type "All standard" in the search bar and determine the current limit. The limit is specified in terms of vCPUs, so each m6i-4xlarge image uses 16 vCPUs, and every m6i-16xlarge uses 64 CPUs. If you need additional vCPUs, click on the "All Standard" link and request a limit increase.  Turnaround time is usually around 24 hours for these requests.  Additional information on requesting increases can be found in the following [video](https://www.youtube.com/watch?v=F4zE3yVp-gg).  **N.B. Running a large cluster can become expensive. Make sure you limit your large-scale testing to preserve your AWS credits.**
+
 
 #### I submitted a job but nothing happens.  When I look in the logs, the leader keeps saying it is waiting for worker nodes and not running my solver.  What happened? ####
 
