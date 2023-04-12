@@ -49,20 +49,19 @@ Here are github repositories for the solvers from the 2022 competitions.  **Plea
 infrastructure for 2023 is slightly changed to facilitate better debugging and easier build.  In order to run these solvers on the current infrastructure, you must update `input.json` and `solver_out.json` as described in [README-changes.md](README-changes.md).
 
 SAT-Comp Parallel: 
-* [ParKissat-RS](https://github.com/mww-aws/ParKissat/tree/RS)
-* [ParKissat-PRE](https://github.com/mww-aws/ParKissat/tree/PRE)
-* [PaKis22](https://github.com/KTRDeveloper/PaKis22)
-* [PaKisMAB22](https://github.com/KTRDeveloper/PaKisMAB22)
 * [DPS-Kissat](https://github.com/nabesima/DPS-satcomp2022)
+* [gimsatul](https://github.com/arminbiere/gimsatul)
+* [Mallob-ki](https://github.com/domschrei/isc22-mallob/tree/ki)
 * [NPS-Kissat](https://github.com/nabesima/DPS-satcomp2022/tree/non-det)
 * [P-Kissat](https://github.com/vvallade/painless-sat-competition-2022/tree/pkissat)
 * [P-MCOMSPS](https://github.com/vvallade/painless-sat-competition-2022)
-* [Mallob-ki](https://github.com/domschrei/isc22-mallob/tree/ki)
-* [gimsatul](https://github.com/arminbiere/gimsatul)
+* [ParKissat-RS](https://github.com/mww-aws/ParKissat/tree/RS)
+* [PaKis22](https://github.com/KTRDeveloper/PaKis22)
+* [PaKisMAB22](https://github.com/KTRDeveloper/PaKisMAB22)
 
 SAT-Comp Cloud:
-* [Paracooba](https://github.com/maximaximal/paracooba-satcomp22)
 * [Mallob-kicaliglu](https://github.com/domschrei/isc22-mallob/tree/kicaliglu)
+* [Paracooba](https://github.com/maximaximal/paracooba-satcomp22)
 
 SMT-Comp Parallel:
 * [SMTS Cube and Conquer](https://github.com/usi-verification-and-security/aws-smts/tree/parallel-cube-and-conquer-fixed)
