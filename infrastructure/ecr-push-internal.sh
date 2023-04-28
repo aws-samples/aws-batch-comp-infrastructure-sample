@@ -1,4 +1,4 @@
-# /bin/bash
+#!/bin/bash
 
 print_args() {
     echo "usage: ecr-push-internal.sh -p PROFILE -j PROJECT -a ACCOUNT -r REGION -l LEADER [-h] [-w WORKER]"
