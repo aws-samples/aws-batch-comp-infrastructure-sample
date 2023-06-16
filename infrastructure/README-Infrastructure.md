@@ -378,7 +378,6 @@ The leader infrastructure performs the following steps:
 
 1. Pull and parse a message from the `ACCOUNT_NUMBER-us-east-1-SatCompQueue` SQS queue with the format described in the [Job Submission and Execution section](../infrastructure/README.md#fixme).  
 1. Pull the appropriate solver problem from S3 from the location provided in the SQS message.
-1. Save the solver problem on a shared EFS drive so that it can also be accessed by the worker nodes.
 1. Wait until the requested number of workers have reported their status as READY along with their IP addresses.
 1. Create a working directory for this problem.
 1. Create and write an `input.json` with the IP addresses of the worker nodes as well as the location of the problem to the working directory
@@ -441,7 +440,6 @@ The infrastructure pieces are as follows:
 * A registry for solver Docker image files, provided by the [Elastic Container Registry](https://aws.amazon.com/ecr/) (ECR) service.
 * A compute environment to support automated launching of containers on compute resources, provided by the [Elastic Container Service](https://aws.amazon.com/ecs/) (ECS) service.  
 * A storage location for solver queries that uses the [Simple Storage Service](https://aws.amazon.com/s3/) (S3) service.
-* A distributed file system that can be used for communication between leader and worker solvers, using the [Elastic File System](https://aws.amazon.com/efs/) (EFS) service.
 * A problem queue that the solver leader uses to extract the next problem to solve, provided by the [Simple Queue Service](https://aws.amazon.com/sqs/) (SQS).
 
 You can click the links about for more specifics on each each of the services.  
