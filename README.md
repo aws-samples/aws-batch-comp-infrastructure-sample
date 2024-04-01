@@ -43,10 +43,45 @@ You can find SMT problems from recent competitions here:
 - [2023](https://smt-comp.github.io/2023/benchmarks.html)
 
 
-## Additional Resources: Solvers
+## Additional Resources: Previous Entrants
 
-Here are github repositories for the solvers from the 2022 competitions.  **Please Note:** the 
-infrastructure for 2023 is slightly changed to facilitate better debugging and easier build.  In order to run these solvers on the current infrastructure, you must update `input.json` and `solver_out.json` as described in [README-changes.md](README-changes.md).
+Here are the github repositories for the 2023 solvers. You may find these useful as you connect your solver to the AWS cloud infrastructure.
+
+SAT-Comp Parallel: 
+* [DPS](https://github.com/nabesima/DPS-satcomp2023)
+* [Gimsatul](https://github.com/arminbiere/gimsatul/tree/master/aws/sc2023)
+* [Mallob-1](https://github.com/domschrei/aws-batch-comp-infrastructure-sample/tree/mallob23-parallel-1)
+* [Mallob-2](https://github.com/domschrei/aws-batch-comp-infrastructure-sample/tree/mallob23-parallel-2)
+* [Mallob-lin](https://github.com/solimul/mallob-lin)
+* [MergeSAT](https://github.com/conp-solutions/mergesat/tree/master/tools/aws_docker)
+* [MergeSAT-Pcasso](https://github.com/conp-solutions/mergesat/tree/v4.0-rc4-pcasso)
+* [NPS](https://github.com/nabesima/DPS-satcomp2023/tree/non-det)
+* [Pahkis23](https://github.com/KTRDeveloper/Pahkis23)
+* [PakisInc23](https://github.com/KTRDeveloper/PakisInc23)
+* [pDisKS-step (dead link)](https://github.com/sat-team-2023/pKisDS)
+* [pKisDS (dead link)](https://github.com/sat-team-2023/pKisDS)
+* [PKISSAT-RS-2G](https://github.com/vvallade/painless-sat-competition-2023/tree/main)
+* [PKISSAT-RS-STR](https://github.com/vvallade/painless-sat-competition-2023/tree/str)
+* [PRS-sc23](https://github.com/shaowei-cai-group/PRS-sc23/tree/PRS-sc23)
+* [PRS-nopre-sc23](https://github.com/shaowei-cai-group/PRS-sc23/tree/PRS-nopre-sc23)
+
+SAT-Comp Cloud:
+* [Mallob](https://github.com/domschrei/aws-batch-comp-infrastructure-sample/tree/mallob23-cloud)
+* [Mallob-lin](https://github.com/solimul/mallob-lin)
+* [PRS-distributed-sc23](https://github.com/shaowei-cai-group/PRS-sc23/tree/PRS-distributed-sc23)
+
+
+SMT-Comp Parallel:
+* [Vampire-parallel](https://github.com/vprover/vampire/tree/smtcomp23/dockers)
+* [z3-owl](https://github.com/ZJU-Automated-Reasoning-Group/arlib)
+
+SMT-Comp Cloud:
+* [cvc5-cloud](https://github.com/amaleewilson/smtcomp23)
+* [Vampire-cloud](https://github.com/vprover/vampire/tree/smtcomp23/dockers)
+
+
+<!---
+### 2022
 
 SAT-Comp Parallel: 
 * [DPS-Kissat](https://github.com/nabesima/DPS-satcomp2022)
@@ -73,6 +108,8 @@ SMT-Comp Cloud:
 * [SMTS Cube and Conquer](https://github.com/usi-verification-and-security/aws-smts/tree/cloud-cube-and-conquer-fixed)
 * [SMTS Portfolio](https://github.com/usi-verification-and-security/aws-smts/tree/cloud-portfolio)
 * [Vampire](https://github.com/vprover/vampire/tree/smtcomp22)
+
+--->
 
 ## FAQ
 
