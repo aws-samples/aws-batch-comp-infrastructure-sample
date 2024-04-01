@@ -1,0 +1,3 @@
+#!/bin/sh
+# --solver-type doesn't matter in this case, so we provide it. 
+python3 manage-solver-infrastructure.py --mode delete --solver-type parallel $*
