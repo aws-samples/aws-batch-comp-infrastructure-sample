@@ -1,8 +1,8 @@
-# SAT-Comp and SMT-Comp Cloud Track Instructions
+# SAT-Comp and SMT-Comp Parallel and Cloud Track Instructions
 
 Welcome to [SAT-comp](https://satcompetition.github.io/2024/) and [SMT-Comp 2024](https://smt-comp.github.io/2024/)!
 
-This repository will help you get your parallel or distributed solver running efficiently on AWS.  You will build docker containers with your solver and then connect them to the AWS infrastructure.
+This repository will help you get your parallel or distributed solver running on AWS. You will first build docker containers with your solver and then connect them to the AWS infrastructure.
 
 We recommend that you work in four steps:
 
@@ -13,9 +13,9 @@ We recommend that you work in four steps:
 
 ## Creating an AWS Account
 
-First, create a specific AWS account for the competition. If you have not created an AWS account previously, it is straightforward to do, requiring a cell phone number, credit card, and address. Make sure to register your account with an institutional email address (and not a private one), otherwise AWS cannot sponsor your account. To create an account, navigate to [aws.amazon.com](https://aws.amazon.com) and follow the instructions.
+First, create a specific AWS account for competition use. You can use the same account used in previous years. If you have not created an AWS account previously, it is straightforward to do, requiring a cell phone number, credit card, and address. Make sure to register your account with an institutional email address (and not a private one), otherwise AWS cannot sponsor your account. To create an account, navigate to [aws.amazon.com](https://aws.amazon.com) and follow the instructions.
 
-If you have previously created an AWS account for other purposes, we strongly advise that you create a separate AWS account for managing your SAT/SMTComp tool construction and testing. This makes it much easier for us to manage account credits and billing. Once the new account is created, email us the account number at: sat-comp@amazon.com (for SAT-Comp) or aws-smtcomp-2023@googlegroups.com (for SMT-Comp) and we will apply the appropriate credits to your account.
+If you have previously created an AWS account for other purposes, we strongly advise that you create a separate AWS account for managing your SAT/SMTComp tool construction and testing. This makes it much easier for us to manage account credits and billing. Once the new account is created, email us the account number at: sat-comp@amazon.com (for SAT-Comp) or aws-smtcomp-2024@googlegroups.com (for SMT-Comp) and we will apply the appropriate credits to your account.
 
 To find your account ID, click on your account name in the top right corner, and then click "My Account". You should see Account ID in the Account Settings
 
@@ -113,6 +113,6 @@ SMT-Comp Cloud:
 
 ## FAQ
 
-#### I already created my AWS account with a non-institutional email address. Can I still change the email address tied to my account?
+#### Q. I already created my AWS account with a non-institutional email address. Can I change the email address tied to my account?
 
 Yes. To change your email address, follow the instructions at https://repost.aws/knowledge-center/change-email-address.
