@@ -165,13 +165,13 @@ We use the AWS Simple Storage Service (S3) to store problems we want to solve.  
 You can copy files to the bucket with a command similar to this one (when executed from the root directory of this repository, this re-copies the `my-problem.cnf` file to the default bucket):
 
 ```text
-aws s3 cp my-problem.cnf s3://ACCOUNT_NUMBER-us-east-1-comp23
+aws s3 cp my-problem.cnf s3://ACCOUNT_NUMBER-us-east-1-comp24
 ```
 
 When `s3 cp` is complete, you will see your file(s) in the list of objects in the bucket:
 
 ```text
-aws s3 ls s3://ACCOUNT_NUMBER-us-east-1-comp23
+aws s3 ls s3://ACCOUNT_NUMBER-us-east-1-comp24
 ```
 
 More information on creating and managing S3 buckets is found [here](https://aws.amazon.com/s3/). The S3 command line interface is described in more detail [here](https://docs.aws.amazon.com/cli/latest/userguide/cli-services-s3-commands.html).
@@ -229,8 +229,8 @@ AWS typically requires 2-5 minutes to allocate nodes and host the ECS cluster. Y
 The next page will show a list of job queues, including:
 
 ```text
-job-queue-comp23-SolverLeaderService-...
-job-queue-comp23-SolverWorkerService-...
+job-queue-comp24-SolverLeaderService-...
+job-queue-comp24-SolverWorkerService-...
 ```
 
 The service is running and available when the number of running tasks for the leader is `1` and the number of running tasks for the Worker service is `n`, as chosen with `NUM_WORKERS` in the `ecs-config` script argument.
@@ -251,7 +251,7 @@ send_message --location S3_LOCATION --workers NUM_WORKERS [--timeout TIMEOUT] [-
 ```
 
 with required arguments:
-* `S3_LOCATION` is the S3 location of the query file. For example, for the bucket we described earlier, the location would be `s3://ACCOUNT_NUMBER-us-east-1-comp23/test.cnf`.
+* `S3_LOCATION` is the S3 location of the query file. For example, for the bucket we described earlier, the location would be `s3://ACCOUNT_NUMBER-us-east-1-comp24/test.cnf`.
 * `NUM_WORKERS` is the number of worker nodes to allocate for this problem. Again, we recommend that you start with `NUM_WORKERS` as `1` when beginning. For parallel solvers, you should always set `NUM_WORKERS` to `0`.
 
 and optional arguments:
@@ -277,7 +277,7 @@ To watch the logs in real-time you can navigate to the CloudWatch console and ch
 ![](readme-images/cloudwatch-menu.png)
 _Figure 2: CloudWatch log groups menu_
 
-After choosing the log groups menu item, you should see logs related to `/ecs/comp23-leader` and `/ecs/comp23-worker` as shown in Figure 3.  
+After choosing the log groups menu item, you should see logs related to `/ecs/comp24-leader` and `/ecs/comp24-worker` as shown in Figure 3.  
 
 ![](readme-images/cloudwatch-log-groups.png)
 _Figure 3: CloudWatch log groups view_
@@ -402,7 +402,7 @@ __Step 1:__  Update the size of the EC2 cluster using the EC2 console
 
 To control the instances in your cluster, go to the EC2 console and scroll down on the left side of the console and click on the link that says "Auto Scaling Groups".
 
-In the next page, you will see an autoscaling group called something like `job-queue-comp23-EcsInstance`.
+In the next page, you will see an autoscaling group called something like `job-queue-comp24-EcsInstance`.
 
 1. Select the queue by clicking on it, then click the "Edit" button in the "Group details" section.
 1. Set the desired, and maximum task capacity to n (where n includes 1 leader and n-1 workers, so there is a minimum useful size of 2), and click "Update".
@@ -414,8 +414,8 @@ Navigate to the ECS console, then select the SatCompCluster link.
 The next page should show a list of job queues, including:
 
 ```text
-job-queue-comp23-SolverLeaderService-...
-job-queue-comp23-SolverworkerService-...
+job-queue-comp24-SolverLeaderService-...
+job-queue-comp24-SolverworkerService-...
 ```
 
 Click on the SolverLeaderService job queue and choose "Update".  Set the number of tasks to 1, then choose "Skip to review", then click "Update Service".  You should then navigate back to the SatCompCluster link and click on the SolverWorkerService link.  Choose "Update" and set the number of tasks to n-1, where 'n' is the number of EC2 nodes you created in Setup Step 1.
@@ -436,7 +436,7 @@ You incur costs for the time the cluster is running.
 
 To control the instances in your cluster, go to the EC2 console and scroll down on the left side of the console and click on the link that says "Auto Scaling Groups".
  
-In the next page, you will see an autoscaling group called something like job-queue-comp23-EcsInstance.
+In the next page, you will see an autoscaling group called something like job-queue-comp24-EcsInstance.
  
 1. Select the queue by clicking on it, then click the "Edit" button in the "Group details" section.
 1. Set the desired and maximum task capacity to 0.  This shuts down any EC2 instances.
@@ -476,10 +476,10 @@ For example, for the bucket we described earlier, given a cluster with two nodes
 
 #### Q: What if I want to create different buckets other than the one provided for storing problems in?
 
-In case you wish to create a different bucket, here is a command to create a bucket named `comp23-satcomp-examples`:
+In case you wish to create a different bucket, here is a command to create a bucket named `comp24-satcomp-examples`:
 
 ```text
-aws s3api create-bucket --bucket comp23-satcomp-examples
+aws s3api create-bucket --bucket comp24-satcomp-examples
 ```
 
 [!NOTE]
@@ -494,7 +494,7 @@ aws s3api create-bucket --bucket comp23-satcomp-examples
 
 Amazon stores your solver images in the [Elastic Container Registry (ECR)](https://console.aws.amazon.com/ecr).
 
-The `create-solver-infrastructure` command described earlier creates an ECR repository named `comp23`.
+The `create-solver-infrastructure` command described earlier creates an ECR repository named `comp24`.
 
 
 This repository store the images for the leader and worker.  
@@ -503,7 +503,7 @@ The repository has an associated URI (shown on the console page), which is what 
 The format for URIs is
 
 ```text
-ACCOUNT_NUMBER.dkr.ecr.us-east-1.amazonaws.com/comp23
+ACCOUNT_NUMBER.dkr.ecr.us-east-1.amazonaws.com/comp24
 ```
 
 You will use these URIs to describe where to store our Docker images in AWS.  
@@ -520,18 +520,18 @@ aws ecr get-login-password --region us-east-1 | docker login --username AWS --pa
 Next, you need to tag the image to match the ECR repository.  For the worker, tag the image as:
 
 ```text
-docker tag [LOCAL_WORKER_IMAGE_ID] [AWS_ACCOUNT_NUMBER].dkr.ecr.us-east-1.amazonaws.com/comp23:worker
+docker tag [LOCAL_WORKER_IMAGE_ID] [AWS_ACCOUNT_NUMBER].dkr.ecr.us-east-1.amazonaws.com/comp24:worker
 ```
 
 where 
 
-* **LOCAL\_WORKER\_IMAGE\_ID** is the local worker image tag (e.g., `comp23:worker`).  
+* **LOCAL\_WORKER\_IMAGE\_ID** is the local worker image tag (e.g., `comp24:worker`).  
 * **AWS\_ACCOUNT\_ID** is the account ID where you want to store the image.
 
 For the leader, tag the image as:
 
 ```text
-docker tag LOCAL_LEADER_IMAGE_ID ACCOUNT_NUMBER.dkr.ecr.us-east-1.amazonaws.com/comp23:leader
+docker tag LOCAL_LEADER_IMAGE_ID ACCOUNT_NUMBER.dkr.ecr.us-east-1.amazonaws.com/comp24:leader
 ```
 
 where 
@@ -541,8 +541,8 @@ where
 After these steps, you can docker push the images:
 
 ```text
-docker push ACCOUNT_NUMBER.dkr.ecr.us-east-1.amazonaws.com/comp23:leader
-docker push ACCOUNT_NUMBER.dkr.ecr.us-east-1.amazonaws.com/comp23:worker
+docker push ACCOUNT_NUMBER.dkr.ecr.us-east-1.amazonaws.com/comp24:leader
+docker push ACCOUNT_NUMBER.dkr.ecr.us-east-1.amazonaws.com/comp24:worker
 ```
 
 You should see network progress bars for both images.

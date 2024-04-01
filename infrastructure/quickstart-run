@@ -27,7 +27,7 @@ class STS:
 def argument_parser(): 
     parser = argparse.ArgumentParser()
     parser.add_argument('--profile', required = False, help = "AWS profile")
-    parser.add_argument('--project', required = False, default = 'comp23', help = "ADVANCED USERS ONLY: Name of the project (default: 'comp23').")
+    parser.add_argument('--project', required = False, default = 'comp24', help = "ADVANCED USERS ONLY: Name of the project (default: 'comp24').")
     parser.add_argument('--keep-alive', required = False, help = "If True, then cluster is not destroyed after solving.")
     parser.add_argument('--s3-locations', nargs='+', required = False, help = "S3 URLs for problem location of the form: s3://BUCKET_NAME/OBJECT_LOCATION.  Default is to run test.cnf from the default bucket.  You can specify multiple URLs (space separated)")
     return parser

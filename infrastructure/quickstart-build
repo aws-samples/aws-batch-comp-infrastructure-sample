@@ -13,7 +13,7 @@ logger.setLevel(logging.INFO)
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--profile', required = False, help = "AWS profile")
-    parser.add_argument('--project', required = False, default = 'comp23', help = "ADVANCED USERS ONLY: Name of the project (default: 'comp23').")
+    parser.add_argument('--project', required = False, default = 'comp24', help = "ADVANCED USERS ONLY: Name of the project (default: 'comp24').")
     args = parser.parse_args()
 
     profile_args = ['--profile', args.profile] if args.profile else []
