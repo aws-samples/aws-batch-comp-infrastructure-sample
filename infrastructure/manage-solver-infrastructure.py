@@ -229,7 +229,7 @@ def delete_resources(session, s3, project_name, bucket) -> None:
 def arg_parser() -> dict: 
     parser = argparse.ArgumentParser()
     parser.add_argument('--profile', required = False, help = "AWS profile (uses 'default' if not provided)")
-    parser.add_argument('--project', required = False, default = 'comp23', help = "ADVANCED USERS ONLY: Name of the project (default: 'comp23').")
+    parser.add_argument('--project', required = False, default = 'comp24', help = "ADVANCED USERS ONLY: Name of the project (default: 'comp24').")
     parser.add_argument('--solver-type', required = True, choices = ('cloud', 'parallel'), help = "Either 'cloud' or 'parallel' depending on the desired configuration.")
     parser.add_argument('--mode', required = False, default = 'create', choices = ('create', 'update', 'delete'), help = "One of 'create', 'update', 'delete': create, update or delete the infrastructure.")
     # MWW: can add these back in for advanced users, but hiding for now.
