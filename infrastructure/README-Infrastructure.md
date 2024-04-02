@@ -26,7 +26,7 @@ To use the AWS infrastructure, you will need the following tools installed:
 
 Basic knowledge of AWS accounts and services is helpful, but we will walk you through all of the necessary steps. 
 
-We recommend that your development environment be hosted on Mac OS Sonoma, Amazon Linux 2 (AL2) or Ubuntu 22. Other platforms may work, but have not been tested. 
+We recommend that your development environment be hosted on Mac OS Sonoma, Amazon Linux 2 (AL2) or Ubuntu 20. Other platforms may work, but have not been tested. The competition itself runs on AL2.
 
 ### Installing the AWS CLI
 

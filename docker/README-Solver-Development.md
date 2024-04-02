@@ -4,11 +4,11 @@ This README covers the process of building your solver and embedding it in docke
 
 ## Prerequisites
 
-Platforms Amazon Linux 2 (AL2), Ubuntu 20, and Mac OS Monterey (v12.6) have been tested successfully. Builds on other platforms may work, but have not been tested.
+Platforms Amazon Linux 2 (AL2), Ubuntu 20, and Mac OS Sierra have been tested successfully. Builds on other platforms may work, but have not been tested.
 
 To build and run solvers, you will need the following tools installed:
 
-- [python3](https://www.python.org/).  To install the latest version for your platform, go to the [downloads](https://www.python.org/downloads/) page.
+- [python3](https://www.python.org/) (3.8 or newer). To install the latest version for your platform, go to the [downloads](https://www.python.org/downloads/) page.
 - [docker](https://www.docker.com/).  There is a button to download Docker Desktop on the main page.
 
 Basic familiarity with Docker will be helpful, but we will walk you through step-by-step. If you need more information, there are a number of excellent tutorials, such as [this](https://docs.docker.com/get-started/).
@@ -18,7 +18,10 @@ Basic familiarity with Docker will be helpful, but we will walk you through step
 
 This example covers two configurations: parallel (single node, multiple cores) and distributed (multiple nodes, multiple cores per node). Because building a distributed solver is a superset of of building a parallel solver; we will note steps that are only required for a distributed solver. 
 
-We use [Mallob](https://github.com/domschrei/mallob) as the running example for both parallel and distributed solvers. This example pulls a version of Mallob that we have tested with the AWS infrastructure. Note that although this repository is released under the MIT-0 license, the Dockerfiles use the Mallob project.  Mallob and the solvers it uses have other licenses, including the [LGPL 3.0](https://opensource.org/license/lgpl-3-0/) license.
+We use [Mallob](https://github.com/domschrei/mallob) as the running example for both parallel and distributed solvers. This example pulls a version of Mallob that we have tested with the AWS infrastructure. 
+
+[!NOTE]
+Note that while the Mallob repository above is released under the MIT-0 license, the Dockerfiles use the Mallob project.  Mallob and the solvers it uses have other licenses, including the [LGPL 3.0](https://opensource.org/license/lgpl-3-0/) license.
 
 This section proceeds in three steps:
 - Building base SATcomp Docker images
@@ -80,9 +83,10 @@ Before running mallob we need to create a docker bridge network that our contain
 
 ### Running Parallel Mallob
 
-To run parallel Mallob, navigate to the `runner` directory. We have created a simple shell script called `run_parallel.sh`, which you will use to run the mallob_parallel docker image, starting a container and running a SAT/SMT problem in the container. The script has two variables that can be configured if you wish (described in Q&A) but are set to sensible defaults.  
+To run parallel Mallob, navigate to the `runner` directory. We have created a simple shell script called `run_parallel.sh`, that you will use to run the mallob_parallel docker image, starting a container and running a SAT/SMT problem in the container. The script has two variables that can be configured if you wish (described in Q&A) but are set to sensible defaults.  
 
- **N.B.:** Because the docker image runs as a different user and group than the local host, you need to set the directory permissions so that Docker image can read and write to the directory.  Please run: `sudo chgrp -R 1000 . && chmod 775 .` from the `docker/runner` directory so that the container can access this portion of the filesystem..
+[!IMPORTANT]
+Because the docker image runs as a different user and group than the local host, you need to set the directory permissions so that Docker image can read and write to the directory.  Run: `sudo chgrp -R 1000 . && chmod 775 .` from the `docker/runner` directory so that the container can access this portion of the filesystem..
  
 The `run_parallel.sh` script requires two command-line arguments.
 - <docker_image_name>, which is `satcomp-mallob` for this example. 
@@ -92,7 +96,7 @@ To run the script with the `test.cnf` file we provided, call `run_parallel.sh sa
 
 The script will create an `input.json` file in the host run directory. This file will be copied to the docker run directory `/rundir`, where it will be read by the solver script.
 
-The script comments explain the various arguments to the `docker run` command. The `docker run` invocation uses bash as the docker entrypoint and passes `init_solver.sh` as a command to bash. The initialization script starts sshd and then runs `/competition/solver /rundir`, which will execute the solver on the query in `<query_file>`. At this point, you should see mallob STDOUT and STDERR on the terminal as mallob runs the solver query. 
+The script comments explain the various arguments to the `docker run` command. The `docker run` invocation uses bash as the docker entrypoint and passes `init_solver.sh` as a command to bash. The initialization script starts sshd and then runs `/competition/solver /rundir`, which will execute the solver on the query in `<query_file>`. At this point, you should see mallob's STDOUT and STDERR on the terminal as mallob runs the solver query. 
 
 ### Running Distributed Mallob
 
@@ -115,25 +119,26 @@ If mallob ran successfully, you will find three new files in `/rundir`:
 - `stdout.log`
 - `stderr.log`
 
-Again, note that the container directory `/rundir` is the mount point for the  host run directory as specified by the script variable `HOST_RUNDIR`. The files in `/rundir` will persist on the host filesystem, even after the docker container is stopped or removed.
+Again, note that the container directory `/rundir` is the mount point for the host's run directory as specified by the script variable `HOST_RUNDIR`. The files in `/rundir` will persist on the host filesystem, even after the docker container is stopped or removed.
 
 At this point, you can perform additional experiments or exit the docker shell.
 
 The competition infrastructure starts solver containers and keeps them running for multiple queries. Each query will have a new `input.json` file, and `/container/solver` will be run again.
 
-**N.B.:** When debugging your own solver, the key step (other than making sure your solver ran correctly) is to ensure that you clean up resources between runs of the solver.  You should ensure that no solver processes are running and any temporary files are removed between executions.  During the competition, the docker images will be left running throughout and each SAT/SMT problem will be injected into the running container.  You are responsible for cleaning up files and processes created by your solver.   In the case of Mallob, it performs the cleanup of temporary files for the leader when the solver starts (rather than when it finishes), so that you can inspect them after the solver completes execution.  
+[!NOTE]
+When debugging your own solver, the key step (other than making sure your solver ran correctly) is to ensure that you clean up resources between runs of the solver.  You should ensure that no solver processes are running and any temporary files are removed between executions.  During the competition, the docker images will be left running throughout and each SAT/SMT problem will be injected into the running container.  You are responsible for cleaning up files and processes created by your solver.   In the case of Mallob, it performs the cleanup of temporary files for the leader when the solver starts (rather than when it finishes), so that you can inspect them after the solver completes execution.  
 
 To check for orphaned jobs, use the `ps -ax` in both the leader and worker containers.  This should show you all running processes. Make sure there aren't any stray processes that continue execution.   In addition, check all the locations in the container where your solver places temporary files in order to make sure that they are removed after the run.
 
 If your solver doesn't run correctly in the docker container, you can remove the `/container/solver` commands from the `init_solver.sh` files. Once you are dropped into the docker container's bash shell, you can explore and debug directly, including running `/container/solver /rundir` from the container shell command line.
 
-We have now run, debugged, and inspected a sample solver.  It is a good idea to try out multiple files, inspect the results, and try running in both cloud and parallel configurations.  Once you are comfortable with these interactions, it is time to start working on your own solver.
+We have now run, debugged, and inspected a sample solver.  It is a good idea to try out multiple problem files, inspect the results, and try running in both cloud and parallel configurations.  Once you are comfortable with these interactions, it is time to start working on your own solver.
 
 # Preparing Your Own Solver Images
 
 In the previous section, we walked through building and running a sample solver in both cloud and parallel configurations.  We assume at this point that you know how to build with Docker and how to run it locally using the scripts that we have provided.  We recommend that you run through the Mallob example before you start building your own images, but of course you can start here and then follow the same steps as described in "Running Mallob" using your own images.
 
-In this section, we'll talk about how to build your own solvers into Docker containers that are derived from the base containers that we provide.  All of the interaction with AWS services for deployment on the cloud is managed by the Docker base images.  We provide two base images: one for leader nodes and one for worker nodes (N.B.: workers are only required for the cloud track).  The Leader Node is responsible for collecting IP addresses of available worker nodes before starting the solving process, pulling work from an SQS queue, downloading problem instances from S3, and sharing and coordinating with Worker Nodes. The Worker Node base container is responsible for reporting its status and IP address to the Leader Node.  As these base images manage the interaction with AWS, you can build and test your solvers locally, and they should work the same way when deployed on the cloud.
+In this section, we'll talk about how to build your own solvers into Docker containers that are derived from the base containers that we provide.  All of the interaction with AWS services for deployment on the cloud is managed by the Docker base images.  We provide two base images: one for leader nodes and one for worker nodes (Again, note that workers are only required for the cloud track.)  The Leader Node collects IP addresses of available worker nodes before starting the solving process, pulls work from an SQS queue, downloads problem instances from S3, and shares and coordinates with Worker Nodes. The Worker Node base container reports its status and IP address to the Leader Node.  As these base images manage the interaction with AWS, you can build and test your solvers locally, and they should work the same way when deployed on the cloud.
 
 ## Building from Competition Base Containers
 
@@ -179,7 +184,7 @@ where:
 * `formula_language` is the encoding of the problem (currently we use DIMACS for SAT-Comp and SMTLIB2 for SMT-Comp).  This field is optional and can be ignored by the solver.
 * `solver_argument_list` allows passthrough of arguments to the solver.  This allows you to try different strategies without rebuilding your docker container by varying the arguments.
 * `timeout_seconds` is the timeout for the solver.  It will be enforced by the infrastructure; a solver that doesn't complete within the timeout will be terminated.
-* `worker_node_ips` is unchanged; for cloud solvers, it is the list of worker nodes.  For parallel solvers this field will always be the empty list.
+* `worker_node_ips` is unchanged; for cloud solvers, it is the list of worker nodes.  For parallel solvers this field will be the empty list.
 
 For the interactive example in the first section, this file is generated by the [`run_parallel.sh`](runner/run_parallel.sh) script. 
 
