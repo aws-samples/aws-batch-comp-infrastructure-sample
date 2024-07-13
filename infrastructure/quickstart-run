@@ -2,8 +2,8 @@
 import argparse
 import logging
 import boto3
-import json    
-import subprocess   
+import json
+import subprocess
 from botocore.exceptions import ProfileNotFound
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -12,19 +12,19 @@ logger.setLevel(logging.INFO)
 
 WORKER_NODES = 3
 
-class STS: 
+class STS:
     def __init__(self, sts_client) -> None:
         self.sts = sts_client
 
-    def get_account_number(self) -> str: 
-        try: 
+    def get_account_number(self) -> str:
+        try:
             return self.sts.get_caller_identity()["Account"]
         except Exception as e:
             logger.error(f"Failed to get profile account number: {e}")
             raise e
 
 
-def argument_parser(): 
+def argument_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('--profile', required = False, help = "AWS profile")
     parser.add_argument('--project', required = False, default = 'comp24', help = "ADVANCED USERS ONLY: Name of the project (default: 'comp24').")
@@ -33,24 +33,24 @@ def argument_parser():
     return parser
 
 if __name__ == "__main__":
-    parser = argument_parser()   
+    parser = argument_parser()
     args = parser.parse_args()
 
     try:
         if args.profile:
             session = boto3.Session(profile_name=args.profile)
         else:
-            session = boto3.Session() 
+            session = boto3.Session()
     except ProfileNotFound as e:
         logger.error(f"Unable to create AWS session.  Please check that default profile is set up in the ~/.aws/config file and has appropriate rights (or if --profile was provided, that this profile has appropriate rights)")
         sys.exit(1)
 
 
-    sts = STS(session.client('sts'))    
+    sts = STS(session.client('sts'))
     account_number = sts.get_account_number()
 
+    s3_bucket = f"s3://{account_number}-us-east-1-{args.project}"
     if not args.s3_locations:
-        s3_bucket = f"s3://{account_number}-us-east-1-{args.project}"
         problem_locations = [f"{s3_bucket}/test.cnf"]
     else:
         problem_locations = args.s3_locations
@@ -58,20 +58,20 @@ if __name__ == "__main__":
     profile_args = ['--profile', args.profile] if args.profile else []
 
      # run the ecs-config script
-    cmd = ['python3', 'ecs-config', 
+    cmd = ['python3', 'ecs-config',
         '--workers', str(WORKER_NODES), \
         'setup'] \
-        + profile_args 
+        + profile_args
     logger.info(f"Setting up ECS cluster with {WORKER_NODES} worker nodes using ecs-config.")
     logger.info(f"command that is being executed is: {' '.join(cmd)}")
     logger.info("This operation will likely take 5-7 minutes, and can require up to 15 minutes.")
     logger.info("***Note that while configuration is in process, the system will report Autoscaling failures.  This is normal, but should not persist for more than 15 minutes.***")
-    try: 
+    try:
         result = subprocess.run(cmd)
         pass
-    except Exception as e: 
+    except Exception as e:
         logger.error(f"Unexpected error {e}: Unable to run {cmd}. ")
-        exit(-1)    
+        exit(-1)
     if result.returncode:
         logger.error(f"ecs-config failed with error code {result}")
         logger.error("Have you set up the default profile in your ~/.aws/config file?")
@@ -94,9 +94,9 @@ if __name__ == "__main__":
 
     if args.keep_alive:
         logger.info("Keep-alive option selected; not deleting cluster")
-    else: 
+    else:
         logger.info("Deleting the cluster.  This will require a minute or two.")
-        cmd = ['python3', 'ecs-config', 'shutdown'] + profile_args 
+        cmd = ['python3', 'ecs-config', 'shutdown'] + profile_args
         logger.info("Tearing down the cluster.")
         logger.info(f"command that is being executed is: {' '.join(cmd)}")
         try:
@@ -111,4 +111,3 @@ if __name__ == "__main__":
 
     logger.info("Run complete; quickstart-run successful!")
     exit(0)
-    
