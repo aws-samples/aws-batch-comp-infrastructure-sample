@@ -11,7 +11,6 @@ logger.setLevel(logging.INFO)
 QUEUE_WAIT_TIME = 10
 
 
-
 class SqsService:
     def __init__(self, client):
         self.sqs = client
@@ -24,14 +23,14 @@ class SqsService:
         """
         try:
             response = self.sqs.list_queues()
-            for service in response['QueueUrls']:
+            for service in response.get('QueueUrls', []):
                 if service.endswith('SatCompQueue'):
                     return service
-            
-            raise "No queue ending with 'SatCompQueue' "
         except Exception as e:
             logger.error(f"Failed to get SQS queue: {e}")
             raise e
+
+        raise RuntimeError("Fatal infrastructure error: No SQS queue ending with 'SatCompQueue' ")
 
     def get_satcomp_output_queue(self):
         """Get SQS services and return sat comp queue.
@@ -41,14 +40,14 @@ class SqsService:
         """
         try:
             response = self.sqs.list_queues()
-            for service in response['QueueUrls']:
+            for service in response.get('QueueUrls', []):
                 if service.endswith('SatCompOutputQueue'):
                     return service
-            
-            raise "No queue ending with 'SatCompOutputQueue' "
         except Exception as e:
             logger.error(f"Failed to get SQS queue: {e}")
             raise e
+
+        raise "No queue ending with 'SatCompOutputQueue' "
 
 
     def send_message(self, location, workers, timeout, solverName, language, solverOptions):
@@ -82,17 +81,30 @@ class SqsService:
 
         message_body_str = json.dumps(message_body, indent = 4)
         try:
-            response = self.sqs.send_message(
+            self.sqs.send_message(
                 QueueUrl = queue,
                 MessageBody = message_body_str
             )
         except Exception as e:
-            logger.error(f"Failed to send message: Exception: {e}")
+            logger.error(f"send_message: Failed to send message: Exception: {e}")
             raise e
 
 #
+# Example response message:
 #
 # {
+#     'ResponseMetadata': {
+#         'HTTPHeaders': {
+#             'connection': 'keep-alive',
+#             'content-length': '2',
+#             'content-type': 'application/x-amz-json-1.0',
+#             'date': 'Fri, 12 Jul 2024 23:58:33 GMT',
+#             'x-amzn-requestid': 'a7a76849-9d08-5f90-82cb-37425857c86d',
+#         },
+#         'HTTPStatusCode': 200,
+#         'RequestId': 'a7a76849-9d08-5f90-82cb-37425857c86d',
+#         'RetryAttempts': 0,
+#     },
 #     'Messages': [
 #         {
 #             'MessageId': 'string',
@@ -124,12 +136,13 @@ class SqsService:
         logger.info(f"Receiving and deleting message from queue {queue}")
         total_time = 0
         while (total_time < timeout + 5):
-            logger.info(f"Waiting up to 10s for a message.")
+            logger.info(f"Waiting up to {QUEUE_WAIT_TIME} s for a message.")
             response = self.sqs.receive_message(
                 QueueUrl = queue, 
                 WaitTimeSeconds = QUEUE_WAIT_TIME
             )
-            if response["Messages"]:
+            # response may only contain 'ResponseMetadata' as a key
+            if "Messages" in response:
                 for msg in response["Messages"]:
                     body = msg["Body"]
                     logger.info(f"Response from receive_message was: {body}")
@@ -168,5 +181,5 @@ if __name__ == "__main__":
         if args.await_response:
             sqs.receive_and_delete_message(args.timeout)
     except Exception as e:
-        logger.info(f"Failed to send message. {e}")
+        logger.info(f"__main__: Failed to send message. {e}")
         
