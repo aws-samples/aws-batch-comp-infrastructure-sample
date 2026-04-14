@@ -1,0 +1,45 @@
+
+# The local directory in which to log results and job statuses
+# Path can be absolute (e.g., "~/Desktop") or relative to this file's directory
+# This directory is always interpreted as a local file path
+results_dir: results
+
+# The formulas to solve
+# Each entry is an S3 URI (e.g., "s3://bucket-name/path/to/formulas").
+# Directories are listed recursively, and only files matching the
+# project's `solver_type` are submitted (.cnf for SAT, .smt2 for SMT).
+# Upload local files to S3 first, e.g. with `aws s3 sync`.
+formulas:
+  - s3://12345-us-east-1/benchmarks/sat/easy
+
+# Optional: Limit the number of jobs in formulas sent.
+# If not-null, the number of jobs is capped at the value of "limit".
+# The choice of which jobs to include is arbitrary/unspecified.
+limit: null
+
+# Options for your particular job
+# You'll probably adjust these before/between each run
+job_options:
+  # The number of seconds until timeout. Enforced by the solver harness
+  timeout_secs: 1000
+
+  # Solver-specific options to give to the solver. Must be a list of string tokens.
+  # These options will appear on every submitted job, and can be accessed
+  # in the `s_input` argument to `get_run_command()` in `solver_cmd.py`.
+  solver_options: []
+
+# ============================================================================
+# test-local specific settings
+# These fields are only used by `satcomp.py --jobs-test-local FILE test-local`
+# They are ignored by AWS commands (submit, process)
+# ============================================================================
+
+# Local formula directory for test-local command
+# Path can be absolute or relative to this file's directory
+# If not set, defaults to examples/formulas/ in the project root
+# formula_dir_test_local: my_tests/formulas/
+
+# Optional: Explicit path to expected.yml for test-local
+# If not set, looks for expected.yml in formula_dir_test_local (if set)
+# or defaults to examples/formulas/expected.yml
+# expected_file_test_local: my_tests/expected.yml

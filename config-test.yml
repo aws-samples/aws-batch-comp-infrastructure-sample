@@ -1,0 +1,19 @@
+# Minimal config for testing test-local command
+# Note: docker_dir is resolved relative to scripting/runner/ directory (../../ = project root)
+project: satcomp-test
+profile: default
+region: us-east-1
+solver_type: sat
+
+global_solver_options:
+  is_distributed: false
+  num_worker_nodes_per_leader: 0
+  ec2_instance_type: m6i.xlarge
+  disk_size: 32
+
+solvers:
+  - name: mock-solver
+    # Use $SATCOMP_ROOT for paths (set by satcomp-activate.sh)
+    docker_dir: $SATCOMP_ROOT
+    dockerfile: examples/solvers/mock-solver/Dockerfile
+    push: false

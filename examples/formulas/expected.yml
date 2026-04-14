@@ -1,0 +1,70 @@
+# Expected results for solver submission test formulas
+# Used by: satcomp.py test-local
+
+# CNF (DIMACS) format test formulas
+cnf:
+  easy:
+    sat.cnf:
+      expected_result: SAT
+      max_time_seconds: 60
+      description: "50 variables, 150 clauses - should solve quickly"
+    unsat.cnf:
+      expected_result: UNSAT
+      max_time_seconds: 60
+      description: "Pigeonhole 4-in-3 - unsatisfiable but small"
+
+  hard:
+    timeout.cnf:
+      expected_result: TIMEOUT
+      max_time_seconds: 10
+      description: "Pigeonhole 8-in-7 - exponentially hard, should timeout"
+
+  oom:
+    oom_big.cnf:
+      expected_result: CRASH
+      max_time_seconds: 60
+      description: "500K variables, 2M clauses - exceeds 128MB memory limit"
+
+  malformed:
+    bad_header.cnf:
+      expected_result: ERROR
+      max_time_seconds: 10
+      description: "Missing 'cnf' keyword in header"
+    bad_clause.cnf:
+      expected_result: ERROR
+      max_time_seconds: 10
+      description: "Variable out of declared range"
+
+# SMT-LIB format test formulas
+smtlib:
+  easy:
+    sat.smt2:
+      expected_result: SAT
+      max_time_seconds: 60
+      description: "Linear integer arithmetic - satisfiable"
+    unsat.smt2:
+      expected_result: UNSAT
+      max_time_seconds: 60
+      description: "Contradictory constraints - unsatisfiable"
+
+  hard:
+    timeout.smt2:
+      expected_result: TIMEOUT
+      max_time_seconds: 10
+      description: "Non-linear integer arithmetic - should timeout"
+
+  oom:
+    oom_big.smt2:
+      expected_result: CRASH
+      max_time_seconds: 60
+      description: "200K variables with chained constraints - exceeds 128MB memory limit"
+
+  malformed:
+    bad_header.smt2:
+      expected_result: ERROR
+      max_time_seconds: 10
+      description: "Missing set-logic declaration"
+    bad_syntax.smt2:
+      expected_result: ERROR
+      max_time_seconds: 10
+      description: "Invalid S-expression syntax"

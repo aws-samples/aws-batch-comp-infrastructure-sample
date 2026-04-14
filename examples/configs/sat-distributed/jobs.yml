@@ -1,0 +1,13 @@
+# Jobs configuration for distributed Mallob solver
+#
+# For AWS submission, populate formulas with S3 URIs from the test problem set.
+# For local testing, formula_dir_test_local points to the CNF test formulas.
+
+results_dir: results
+formulas: []
+job_options:
+  timeout_secs: 5000
+  solver_options: []
+
+# test-local specific settings
+formula_dir_test_local: ../../formulas/

@@ -1,0 +1,61 @@
+
+# The name of the project
+# Used to label things on AWS, such as the S3 bucket for storing solver results
+project: satcomp25
+
+# The name of the AWS profile you gave to `aws configure`
+profile: default
+
+# The region in which to request all AWS resources
+# Once you `deploy`, this value MUST remain fixed
+# We strongly recommend picking a region and then never changing this value
+# But if you must change regions, run `destroy all` before switching regions
+# Then re-run `bootstrap`
+region: us-east-1
+
+# The type of solver: "sat" or "smt"
+# Determines which formula file extensions are accepted during `submit`:
+#   sat -> .cnf files
+#   smt -> .smt2 files
+solver_type: sat
+
+# Global EC2 configuration values for any solver in `solvers`.
+# Any solver can override these values with their own fields.
+# If any solver omits one of these fields, the global value is used instead.
+global_solver_options:
+  is_distributed: false
+  num_worker_nodes_per_leader: 0
+  ec2_instance_type: m6i.xlarge
+  disk_size: 32
+
+# List of solvers to run on AWS
+solvers:
+  - # The name of the solver. This is used to label AWS resources,
+    # and to generally refer to the solver. Must be unique.
+    name: solvername
+
+    # Optional: The name of the author or team that built the solver
+    # Used to add additional labels to AWS resources, such as log file names
+    author: johndoe
+
+    # Path to the (super-)directory containing the Dockerfile
+    # Can be absolute (e.g. "~/dir/file") or relative to this file's directory
+    # This directory is where the `docker build` command is run from
+    # For more info, see https://docs.docker.com/build/concepts/context/
+    docker_dir: ./docker/
+
+    # Path to the Dockerfile, relative to "docker_dir"
+    dockerfile: solvername/Dockerfile
+
+    # Whether the solver is distributed, i.e., multi-node
+    is_distributed: false
+
+    # Number of worker nodes per leader. Only used for distributed solvers.
+    num_worker_nodes_per_leader: 0
+
+    # EC2 instance type to run your solver on. See `scripting/common/ec2_instance.py`
+    ec2_instance_type: m6i.xlarge
+
+    # The size of the disk for your solver's Docker container, in GB.
+    # Can be a float
+    disk_size: 32

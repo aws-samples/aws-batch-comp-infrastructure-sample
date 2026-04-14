@@ -1,0 +1,29 @@
+*.DS_Store
+.venv/
+*.swp
+*.swo
+/.vscode/settings.json
+__pycache__/
+*.pyc
+cdk.out/
+
+cdk_infra/solvers.json
+**/cdk.context.json
+**/runner/results/*.txt
+
+.idea/
+.kiro/
+.hypothesis/
+CLAUDE.md
+
+# Generated test formulas (run tools/generate_test_formulas.sh to create)
+test_formulas/cnf/timeout_*.cnf
+test_formulas/cnf/oom_*.cnf
+test_formulas/cnf/sat_*.cnf
+test_formulas/cnf/unsat_*.cnf
+test_formulas/cnf/malformed_*.cnf
+
+# Compiled Ramsey generator binary
+tools/ramsey-generator/ramsey-generator
+
+other/

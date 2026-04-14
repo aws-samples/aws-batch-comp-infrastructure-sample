@@ -1,0 +1,27 @@
+# Example jobs.yml for local testing with custom formula directory
+#
+# This file demonstrates how to configure test-local to use:
+# - A custom formula directory (formula_dir_test_local)
+# - A custom expected.yml file (expected_file_test_local)
+#
+# These settings are only used by `test-local` and are ignored by AWS commands.
+
+# Required for AWS commands (ignored by test-local, but must be valid YAML)
+results_dir: results
+formulas: []
+job_options:
+  timeout_secs: 1000
+  solver_options: []
+
+# ============================================================================
+# test-local specific settings
+# ============================================================================
+
+# Local formula directory for test-local
+# Path is relative to this file's directory
+# If not set, defaults to examples/formulas/ in the project root
+formula_dir_test_local: ../../formulas/
+
+# Optional: Explicit path to expected.yml
+# If not set, looks for expected.yml in formula_dir_test_local
+# expected_file_test_local: ../../formulas/expected.yml

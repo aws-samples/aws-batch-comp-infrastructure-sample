@@ -1,0 +1,20 @@
+# Distributed Mallob SAT solver configuration
+# 10-node cluster: 1 leader + 9 workers on m5.2xlarge instances
+# For 100-node runs, set num_worker_nodes_per_leader: 99
+
+project: sat-distributed-mallob
+profile: default
+region: us-east-1
+solver_type: sat
+
+global_solver_options:
+  is_distributed: true
+  num_worker_nodes_per_leader: 9
+  ec2_instance_type: m6i.2xlarge
+  disk_size: 64
+
+solvers:
+  - name: mallob
+    author: schrei
+    docker_dir: $SATCOMP_ROOT/examples/solvers/sat/parallel/mallob/
+    dockerfile: Dockerfile

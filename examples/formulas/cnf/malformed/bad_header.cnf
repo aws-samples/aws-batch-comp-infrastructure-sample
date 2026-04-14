@@ -1,0 +1,5 @@
+c Malformed CNF - invalid header line
+c Missing "cnf" keyword
+p 3 2
+1 2 0
+-1 3 0

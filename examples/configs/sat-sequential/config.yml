@@ -1,0 +1,29 @@
+# SAT sequential solver configuration
+# Three classic sequential SAT solvers on m6i.xlarge instances
+
+project: sat-sequential-demo
+profile: default
+region: us-east-1
+solver_type: sat
+
+global_solver_options:
+  is_distributed: false
+  num_worker_nodes_per_leader: 0
+  ec2_instance_type: m6i.xlarge
+  disk_size: 32
+
+solvers:
+  - name: kissat
+    author: biere
+    docker_dir: $SATCOMP_ROOT/examples/solvers/sat/sequential/kissat/
+    dockerfile: Dockerfile
+
+  - name: cadical
+    author: biere
+    docker_dir: $SATCOMP_ROOT/examples/solvers/sat/sequential/cadical/
+    dockerfile: Dockerfile
+
+  - name: minisat
+    author: een-sorensson
+    docker_dir: $SATCOMP_ROOT/examples/solvers/sat/sequential/minisat/
+    dockerfile: Dockerfile

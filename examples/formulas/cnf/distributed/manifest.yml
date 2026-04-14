@@ -1,0 +1,81 @@
+# Distributed test problem set manifest
+# Source: SAT Competition 2023/2024 benchmarks and Ramsey generator
+# S3 base: s3://<satcomp-bucket>/benchmarks/sat/easy
+#
+# To download: aws s3 cp <s3_uri> <local_file>
+# For Ramsey instances: cd other/sat-ramsay-generator && ./ramsey-generator <args>
+
+problems:
+  # --- Easy (solvable < 60s single-node) ---
+  - file: 3col20_5_6.shuffled.cnf
+    s3_key: 00f969737ba4338bd233cd3ed249bd55-3col20_5_6.shuffled.cnf
+    expected: UNSAT
+    difficulty: easy
+    source: "SAT Competition 2024 easy benchmarks"
+    notes: "Graph coloring, solved in <1s by cadical"
+
+  - file: barrel2.cnf
+    s3_key: 18f54820956791d3028868b56a09c6cd-barrel2.cnf
+    expected: UNSAT
+    difficulty: easy
+    source: "SAT Competition 2024 easy benchmarks"
+    notes: "Barrel shifter, solved in <1s by cadical"
+
+  - file: ramsey_25_3_11.cnf
+    expected: SAT
+    difficulty: easy
+    source: "Ramsey generator (other/sat-ramsay-generator)"
+    notes: "Generated via ./ramsey-generator 25 3 11; easy satisfiable Ramsey instance"
+
+  - file: ramsey_20_3_11.cnf
+    expected: SAT
+    difficulty: easy
+    source: "Ramsey generator (other/sat-ramsay-generator)"
+    notes: "Generated via ./ramsey-generator 20 3 11; small satisfiable Ramsey instance"
+
+  # --- Medium (60-600s on 10 nodes, benefits from distributed solving) ---
+  - file: maxor032.cnf
+    s3_key: 0a7f0ceb23af7028dc9a46f3da3bb027-maxor032.cnf
+    expected: UNSAT
+    difficulty: medium
+    source: "SAT Competition 2024 easy benchmarks"
+    notes: "Max-OR circuit, ~2.5s on single cadical, benefits from distribution"
+
+  - file: ACG-20-5t0.cnf
+    s3_key: 916035abcafaad8ed3a555c4b726e7fc-ACG-20-5t0.cnf
+    expected: UNSAT
+    difficulty: medium
+    source: "SAT Competition 2024 easy benchmarks"
+    notes: "Acyclic coloring, ~2.8s on single cadical"
+
+  - file: ramsey_26_3_11.cnf
+    expected: SAT
+    difficulty: medium
+    source: "Ramsey generator (other/sat-ramsay-generator)"
+    notes: "Generated via ./ramsey-generator 26 3 11; medium satisfiable Ramsey instance"
+
+  - file: simon-s02b-k2f-gr-rcs-w8.cnf
+    s3_key: 6ae9c8ca214ba34d8e77297d316f6e77-simon-s02b-k2f-gr-rcs-w8.cnf
+    expected: UNSAT
+    difficulty: medium
+    source: "SAT Competition 2024 easy benchmarks"
+    notes: "Simon verification, ~7.7s on single cadical, good distributed candidate"
+
+  # --- Hard (> 600s or timeout) ---
+  - file: ramsey_42_5_5.cnf
+    expected: UNKNOWN
+    difficulty: hard
+    source: "Ramsey generator (other/sat-ramsay-generator)"
+    notes: "Generated via ./ramsey-generator 42 5 5; runs forever on any solver"
+
+  - file: ramsey_43_5_5.cnf
+    expected: UNKNOWN
+    difficulty: hard
+    source: "Ramsey generator (other/sat-ramsay-generator)"
+    notes: "Generated via ./ramsey-generator 43 5 5; larger variant, runs forever"
+
+  - file: ramsey_44_5_5.cnf
+    expected: UNKNOWN
+    difficulty: hard
+    source: "Ramsey generator (other/sat-ramsay-generator)"
+    notes: "Generated via ./ramsey-generator 44 5 5; largest variant, runs forever"

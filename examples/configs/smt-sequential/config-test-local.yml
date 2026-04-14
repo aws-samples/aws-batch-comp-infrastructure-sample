@@ -1,0 +1,26 @@
+# Example config for local testing with SMT solvers
+# This config can be used with test-local to validate solver Docker images
+
+project: test-local-example
+profile: default
+region: us-east-1
+solver_type: smt
+
+# No AWS resources needed for local testing
+global_solver_options:
+  is_distributed: false
+  num_worker_nodes_per_leader: 0
+  ec2_instance_type: m6i.xlarge
+  disk_size: 32
+
+solvers:
+  - name: z3
+    author: microsoft
+    # Use $SATCOMP_ROOT for paths (set by satcomp-activate.sh)
+    docker_dir: $SATCOMP_ROOT/examples/solvers/smt/z3/
+    dockerfile: Dockerfile
+
+  - name: cvc5
+    author: stanford-iowa
+    docker_dir: $SATCOMP_ROOT/examples/solvers/smt/cvc5/
+    dockerfile: Dockerfile

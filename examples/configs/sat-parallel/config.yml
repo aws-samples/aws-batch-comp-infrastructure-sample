@@ -1,0 +1,35 @@
+# SAT parallel solver configuration
+# Parallel solvers from SAT Competition 2025 on m6i.4xlarge instances
+
+project: sat-parallel-demo
+profile: default
+region: us-east-1
+solver_type: sat
+
+global_solver_options:
+  is_distributed: false
+  num_worker_nodes_per_leader: 0
+  ec2_instance_type: m6i.16xlarge
+  disk_size: 32
+
+# comment solver blocks if you only want to run a single solver or subset
+solvers:
+  - name: gimsatul
+    author: biere
+    docker_dir: $SATCOMP_ROOT/examples/solvers/sat/satcomp25/parallel/gimsatul/
+    dockerfile: Dockerfile
+
+  - name: painless1
+    author: painless-team
+    docker_dir: $SATCOMP_ROOT/examples/solvers/sat/satcomp25/parallel/painless1/
+    dockerfile: Dockerfile
+
+  - name: painless2
+    author: painless-team
+    docker_dir: $SATCOMP_ROOT/examples/solvers/sat/satcomp25/parallel/painless2/
+    dockerfile: Dockerfile
+
+  - name: prs-sbva
+    author: prs-team
+    docker_dir: $SATCOMP_ROOT/examples/solvers/sat/satcomp25/parallel/prs-sbva/
+    dockerfile: Dockerfile

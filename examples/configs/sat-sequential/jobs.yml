@@ -1,0 +1,14 @@
+# Jobs configuration for SAT sequential solvers
+#
+# For local testing, formula_dir_test_local points to the CNF test formulas.
+# For AWS submission, configure the formulas list with S3 URIs.
+
+# Required for AWS commands (ignored by test-local, but must be valid YAML)
+results_dir: results
+formulas: []
+job_options:
+  timeout_secs: 1000
+  solver_options: []
+
+# test-local specific settings
+formula_dir_test_local: ../../formulas/
