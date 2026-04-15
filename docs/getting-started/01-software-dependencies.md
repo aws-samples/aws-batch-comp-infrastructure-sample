@@ -38,7 +38,7 @@ The script installs the dependencies into a
 placed at the project's root
 in `.venv/`.
 The list of Python dependencies can be found at
-`/scripting/requirements.txt`.
+`/requirements.txt`.
 
 The `satcomp-activate.sh` script also sets `$PYTHONPATH` and `$SATCOMP_ROOT` and activates the virtual environment. You should source this file before using this project.
 ```bash

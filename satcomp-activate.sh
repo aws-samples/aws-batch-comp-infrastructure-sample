@@ -60,8 +60,8 @@ if [ ! -d "$SCRIPT_DIR/.venv" ]; then
   echo "% source $SCRIPT_DIR/.venv/bin/activate"
   source $SCRIPT_DIR/.venv/bin/activate
 
-  echo "% python3 -m pip install -r $SCRIPT_DIR/scripting/requirements.txt"
-  python3 -m pip install -r $SCRIPT_DIR/scripting/requirements.txt
+  echo "% python3 -m pip install -r $SCRIPT_DIR/requirements.txt"
+  python3 -m pip install -r $SCRIPT_DIR/requirements.txt
 else
   echo "% source $SCRIPT_DIR/.venv/bin/activate"
   source $SCRIPT_DIR/.venv/bin/activate

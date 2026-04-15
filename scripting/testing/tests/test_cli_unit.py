@@ -1,6 +1,6 @@
 """Unit tests for CLI --acceptance-test, --acceptance-test-aws, --acceptance-test-timeout flags."""
 
-# We need a valid config file for the parser. Use config-test.yml from project root.
+# We need a valid config file for the parser. Use config-test.yml from examples/configs.
 import os
 from pathlib import Path
 
@@ -8,7 +8,7 @@ import pytest
 from runner.runner_cli import SatCompArgParser
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
-CONFIG_PATH = str(PROJECT_ROOT / "config-test.yml")
+CONFIG_PATH = str(PROJECT_ROOT / "examples" / "configs" / "config-test.yml")
 
 
 def _parse(args):
