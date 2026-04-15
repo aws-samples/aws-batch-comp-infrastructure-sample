@@ -32,15 +32,3 @@ typing_extensions==4.13.2
 tqdm==4.67.1
 urllib3==2.2.3
 virtualenv==20.31.2
-# Analysis suite dependencies
-matplotlib>=3.0.0
-numpy>=1.18.0
-pandas>=1.0.0
-pyoptinterface>=0.2.0
-highsbox>=1.5.0
-seaborn>=0.11.0
-openpyxl>=3.0.0
-# Linting and formatting
-black>=24.0.0
-flake8>=7.0.0
-isort>=5.0.0

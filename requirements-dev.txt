@@ -1,0 +1,6 @@
+# Dev tools for contributors
+# Install with: pip install -r requirements-dev.txt
+# Then run: black . && isort . && flake8
+black>=24.0.0
+flake8>=7.0.0
+isort>=5.0.0
