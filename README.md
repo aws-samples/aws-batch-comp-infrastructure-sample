@@ -88,13 +88,12 @@ It's time to [Get Started](/docs/getting-started/README.md)! In this step, you w
 
 ## Getting Help
 
-If you run into issues not covered by the documentation, contact us:
-
-- SAT Competition: [sat-comp@amazon.com](mailto:sat-comp@amazon.com)
-- SMT Competition: [aws-smtcomp-2024@googlegroups.com](mailto:aws-smtcomp-2024@googlegroups.com)
+If you run into issues not covered by the documentation, contact us: [solver-competitions@amazon.com](mailto:solver-competitions@amazon.com)]
 
 ## Submitting Your Solver (Competitors)
 
-Send us a link repository containing your Dockerfile and `solver_cmd.py` files.
+Ensure that your solver passes the submission tests.
+
+Send us a repository link that contains your Dockerfile and `solver_cmd.py` files.
 We will clone those, along with the solver code (and any other code) that your build downloads.
-Note that everything must be built from source to meet both the open-source spirit of the competition and for security reasons.
+Note that everything must be built from source to meet the open-source requirement of the competition and for security reasons.
