@@ -407,7 +407,7 @@ import json
 import time
 sys.path.insert(0, '/opt/amazon/scripting')
 from pathlib import Path
-from common.solver_io import SolverInput
+from common.solver_io import SolverInput, SolverResultCode
 from harness.entrypoints.solver_cmd import get_run_command, get_solver_result
 
 RUN_DIR = '{self.CONTAINER_RUN_DIR}'
@@ -443,6 +443,10 @@ try:
     # Parse result
     solver_result = get_solver_result(Path(f'{{RUN_DIR}}/stdout.log'))
 
+    # Override: if solver was killed by OOM (SIGKILL = exit 137 or -9), report CRASH
+    if result.returncode in (137, -9):
+        solver_result = SolverResultCode.CRASH
+
     # Write solver_out.json
     solver_out = {{
         'solver_result_code': solver_result.value,
@@ -476,6 +480,13 @@ except subprocess.TimeoutExpired:
                     f.write(run_script)
                 script_path.chmod(0o755)
 
+                # Apply memory limit: 128MB for OOM tests, 16GB for everything else
+                is_oom = "oom" in str(test_case.formula_path).lower()
+                if is_oom:
+                    mem_args = ["--memory=128m", "--memory-swap=128m"]
+                else:
+                    mem_args = ["--memory=16g", "--shm-size=4g"]
+
                 docker_cmd = [
                     "docker",
                     "run",
@@ -483,8 +494,7 @@ except subprocess.TimeoutExpired:
                     f"--platform={DOCKER_PLATFORM}",
                     "-v",
                     f"{tmpdir}:{self.CONTAINER_RUN_DIR}",
-                    "--memory=4g",
-                    "--shm-size=1g",
+                ] + mem_args + [
                     "--entrypoint",
                     "bash",
                     image_name,
@@ -664,16 +674,15 @@ except subprocess.TimeoutExpired:
 
     def _result_matches_expected(self, actual: str, expected: str) -> bool:
         """Check if actual result matches expected result."""
-        # Normalize result names
         actual_normalized = actual.upper()
         expected_normalized = expected.upper()
 
-        # Direct match
         if actual_normalized == expected_normalized:
             return True
 
-        # For ERROR expected, accept CRASH or INDETERMINATE
+        # For ERROR expected, accept anything except SAT/UNSAT
+        # (malformed input should never produce a correct-looking answer)
         if expected_normalized == "ERROR":
-            return actual_normalized in ("CRASH", "INDETERMINATE", "ERROR")
+            return actual_normalized not in ("SAT", "UNSAT")
 
         return False

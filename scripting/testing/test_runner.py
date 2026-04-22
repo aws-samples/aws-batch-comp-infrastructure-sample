@@ -236,7 +236,7 @@ class AcceptanceTestRunner:
                 if is_oom:
                     docker_cmd.extend(["--memory", "128m", "--memory-swap", "128m"])
                 else:
-                    docker_cmd.extend(["--memory", "4g", "--shm-size", "1g"])
+                    docker_cmd.extend(["--memory", "16g", "--shm-size", "4g"])
 
             docker_cmd.extend(
                 [

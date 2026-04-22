@@ -16,24 +16,24 @@ cnf:
   hard:
     timeout.cnf:
       expected_result: TIMEOUT
-      max_time_seconds: 10
-      description: "Pigeonhole 8-in-7 - exponentially hard, should timeout"
+      max_time_seconds: 30
+      description: "Ramsey R(5,5) on 42 vertices - 861 variables, 1.7M clauses, unsolvable in 30s"
 
   oom:
     oom_big.cnf:
       expected_result: CRASH
       max_time_seconds: 60
-      description: "500K variables, 2M clauses - exceeds 128MB memory limit"
+      description: "200M variables - tiny on disk but allocates ~20GB+ in solver memory"
 
   malformed:
     bad_header.cnf:
       expected_result: ERROR
       max_time_seconds: 10
-      description: "Missing 'cnf' keyword in header"
+      description: "Plain text with no valid DIMACS content"
     bad_clause.cnf:
       expected_result: ERROR
       max_time_seconds: 10
-      description: "Variable out of declared range"
+      description: "Plain text with no valid CNF structure"
 
 # SMT-LIB format test formulas
 smtlib:

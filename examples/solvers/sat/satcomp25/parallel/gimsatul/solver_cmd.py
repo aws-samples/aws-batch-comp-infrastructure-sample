@@ -21,7 +21,7 @@ def get_run_command(s_input: SolverInput) -> List[str]:
         for ip in all_ips:
             f.write(f"{ip} slots=1\n")  # distributed default
 
-    cmd = ["/gimsatul/gimsatul", str(s_input.run_dir / "input.json"), "--threads=32", "-r"]
+    cmd = ["/gimsatul/gimsatul", str(s_input.formula_file), "--threads=32", "-r"]
     return cmd
 
 
