@@ -2,8 +2,8 @@
 
 # Get the full absolute path to the project root
 # (i.e., the directory containing this script)
-SCRIPT_PATH=$(readlink -f "$0")
-SCRIPT_DIR=$(dirname "$SCRIPT_PATH")
+# Use BASH_SOURCE[0] instead of $0 because this script is sourced, not executed
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Check dependencies (see docs/reference/software-requirements.md)
 # Python 3.12+ is required; all others are warnings.
