@@ -15,4 +15,4 @@ python-dateutil==2.9.0.post0
 s3transfer==0.13.1
 typeguard==2.13.3
 typing_extensions==4.13.2
-urllib3==2.2.3
+urllib3==2.7.0
