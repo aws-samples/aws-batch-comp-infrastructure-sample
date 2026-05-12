@@ -30,5 +30,5 @@ six==1.17.0
 typeguard==2.13.3
 typing_extensions==4.13.2
 tqdm==4.67.1
-urllib3==2.2.3
+urllib3==2.7.0
 virtualenv==20.31.2
