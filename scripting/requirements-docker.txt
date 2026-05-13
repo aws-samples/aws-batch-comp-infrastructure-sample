@@ -4,7 +4,7 @@ botocore==1.39.9
 cattrs==24.1.3
 charset-normalizer==3.4.2
 constructs==10.4.2
-filelock==3.16.1
+filelock==3.20.3
 importlib_resources==6.4.5
 jmespath==1.0.1
 jsii==1.108.0
