@@ -16,20 +16,20 @@ global_solver_options:
 solvers:
   - name: gimsatul
     author: biere
-    docker_dir: $SATCOMP_ROOT/examples/solvers/sat/satcomp25/parallel/gimsatul/
+    docker_dir: $SATCOMP_ROOT/examples/solvers/sat/satcomp25-parallel/gimsatul/
     dockerfile: Dockerfile
 
   - name: painless1
     author: painless-team
-    docker_dir: $SATCOMP_ROOT/examples/solvers/sat/satcomp25/parallel/painless1/
+    docker_dir: $SATCOMP_ROOT/examples/solvers/sat/satcomp25-parallel/painless1/
     dockerfile: Dockerfile
 
   - name: painless2
     author: painless-team
-    docker_dir: $SATCOMP_ROOT/examples/solvers/sat/satcomp25/parallel/painless2/
+    docker_dir: $SATCOMP_ROOT/examples/solvers/sat/satcomp25-parallel/painless2/
     dockerfile: Dockerfile
 
   - name: prs-sbva
     author: prs-team
-    docker_dir: $SATCOMP_ROOT/examples/solvers/sat/satcomp25/parallel/prs-sbva/
+    docker_dir: $SATCOMP_ROOT/examples/solvers/sat/satcomp25-parallel/prs-sbva/
     dockerfile: Dockerfile
