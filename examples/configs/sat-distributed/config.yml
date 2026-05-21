@@ -16,5 +16,5 @@ global_solver_options:
 solvers:
   - name: mallob
     author: schrei
-    docker_dir: $SATCOMP_ROOT/examples/solvers/sat/parallel/mallob/
+    docker_dir: $SATCOMP_ROOT/examples/solvers/sat/distributed/mallob/
     dockerfile: Dockerfile
