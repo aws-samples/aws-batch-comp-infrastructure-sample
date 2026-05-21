@@ -253,7 +253,7 @@ The project includes an acceptance test suite for validating solver submissions.
 ./satcomp.py config.yml --test-local mysolver --num-workers 2
 ```
 
-The acceptance test formulas are generated at build time and placed in the Docker image at `/opt/amazon/test_formulas/`. The `--test` command uses these generated formulas, while `--test-local` uses the formulas in `examples/formulas/`.
+The acceptance test formulas are generated at build time and placed in the Docker image at `/opt/amazon/test_formulas/`. The `--acceptance-test` command uses these generated formulas, while `--test-local` uses the formulas in `examples/formulas/`.
 
 ### CI Tests
 

@@ -14,3 +14,4 @@ No prior prerequisites — start here.
 ## Next Step
 
 [Prepare and package](/docs/solver-preparation/README.md) your solver for the competition.
+

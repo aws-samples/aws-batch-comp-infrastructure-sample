@@ -256,5 +256,5 @@ This creates:
 
 ## Next Steps
 
-- [Troubleshooting](05-troubleshooting.md) for common issues
-- [Running the Competition](../organizer-guide/03-running-competition.md) for batch execution
+- See [Troubleshooting](05-troubleshooting.md) for solutions to common issues.
+- Then move to the next section: [Running on AWS](../running-on-AWS/README.md).

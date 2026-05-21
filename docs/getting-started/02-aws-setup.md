@@ -150,9 +150,7 @@ Then bootstrap for the new region:
 Competition participants receive AWS credits. To receive credits:
 
 1. Create your AWS account with an institutional email
-2. Email your account ID to:
-   - SAT: [sat-comp@amazon.com](mailto:sat-comp@amazon.com)
-   - SMT: [aws-smtcomp-2024@googlegroups.com](mailto:aws-smtcomp-2024@googlegroups.com)
+2. Email your account ID to [solver-competitions@amazon.com](mailto:solver-competitions@amazon.com)
 
 Credits will be applied to your account before the competition.
 -->

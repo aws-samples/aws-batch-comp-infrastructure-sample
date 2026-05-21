@@ -9,7 +9,7 @@ information to a satcomp configuration file.
 
 We recommend putting these files in a directory outside the competition infrastructure. By default the scripting will look for a `config.yml` in the run directory, but you can name it anything.
 
-The directory [examples/configs/](../examples/configs/) contains examples for several solvers, and should contain good starting points for you.  A fully-documented reference [config-reference.yml](../examples/configs/config-reference.yml) is also available.
+The directory [examples/configs/](../../examples/configs/) contains examples for several solvers, and should contain good starting points for you.  A fully-documented reference [config-reference.yml](../../examples/configs/config-reference.yml) is also available.
 
 ## Basic Configuration
 
