@@ -1,6 +1,8 @@
 # Teardown
 
-This page explains how to teardown (delete) AWS resources when you're done.
+You should use `terminate-instances` to delete your solver tasks when you are done running tests.
+
+This page explains how to teardown (delete) the rest of the AWS resources associated with the competition package.
 
 ## Why Teardown Matters
 
@@ -24,13 +26,13 @@ This removes:
 - SQS queues
 - DynamoDB tables
 - VPC, subnets, and endpoints
-- S3 bucket (if empty)
-- ECR repository (if empty)
+- S3 bucket (only if empty)
+- ECR repository (only if empty)
 - CloudWatch log groups
 - All associated IAM roles and security groups
 
 **Note:** `teardown all` will fail if S3 bucket or ECR repository contains data.
-Empty them first or use AWS Console to force delete.
+Empty them first or use the [AWS Console](https://docs.aws.amazon.com/awsconsolehelpdocs/latest/gsg/what-is.html) to force delete.
 
 ## Partial Teardown
 
@@ -165,5 +167,5 @@ To use the project again after full teardown:
 
 ## Next Steps
 
-- [Troubleshooting](06-troubleshooting.md) if you encounter issues
-- Return to [Running the Competition](03-running-competition.md) for a new run
+- [Troubleshooting](05-troubleshooting.md) if you encounter issues
+- Return to [Running Solvers](02-running-solvers.md) for a new run

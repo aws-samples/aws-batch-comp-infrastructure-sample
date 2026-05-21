@@ -160,8 +160,12 @@ If you run into a permission error,
 you might want to install it with `sudo` instead:
 ```bash
 sudo npm install -g aws-cdk
-``` -->
+```
 
 ## Wrapping up
 
 Run `satcomp-activate.sh` again to confirm that all dependencies are now satisfied.
+
+## Next Step
+
+Now [set up your AWS account](02-aws-setup.md).

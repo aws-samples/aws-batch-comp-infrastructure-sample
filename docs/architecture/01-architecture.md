@@ -30,8 +30,6 @@ We use Docker for several reasons:
 4. **AWS Integration** - ECS provides mature container orchestration with logging,
    monitoring, and auto-scaling
 
-See [why_docker.md](/docs/design/why_docker.md) in the archived design docs for
-the full rationale.
 
 ## AWS Services Used
 
@@ -151,7 +149,7 @@ CLI implementation library:
 All AWS resources follow a consistent naming pattern using `--` as a field separator.
 This allows resources to be identified and grouped by project and solver.
 
-See [Resource Naming](../reference/resource-naming.md) for the full specification.
+See [Resource Naming](02-key-abstractions.md#resource-naming) for the full specification.
 
 ## Solver Types
 

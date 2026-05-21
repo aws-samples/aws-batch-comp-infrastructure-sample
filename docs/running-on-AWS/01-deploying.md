@@ -6,8 +6,8 @@ This page explains how to bootstrap CDK and provision AWS infrastructure to run 
 
 Before deploying, ensure you have:
 
-1. Installed all software dependencies (see [Software Requirements](../reference/software-requirements.md))
-2. Configured AWS credentials (see [AWS Setup](01-aws-setup.md))
+1. Installed all software dependencies (see [Software Dependencies](../getting-started/01-software-dependencies.md))
+2. Configured AWS credentials (see [AWS Setup](../getting-started/02-aws-setup.md))
 3. Registered your solver(s) in `config.yml`
 
 ## Bootstrapping CDK (One-Time)
@@ -161,8 +161,4 @@ User: arn:aws:iam::... is not authorized to perform: ...
 
 ## Next Steps
 
-After deployment:
-
-1. [Build and push solver images](03-running-competition.md#building-and-pushing-images)
-2. [Start solver instances](03-running-competition.md#starting-solvers)
-3. [Submit jobs](03-running-competition.md#submitting-jobs)
+After deployment, it's time to [Run your solver](02-running-solvers.md)

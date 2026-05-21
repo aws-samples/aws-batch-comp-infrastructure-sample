@@ -40,7 +40,7 @@ ERROR: failed to solve: satcomp-infrastructure: pull access denied
 **Solution:**
 Build the base image first:
 ```bash
-./satcomp.py build-base
+./satcomp.py build
 ```
 
 ### Build Fails: Out of Disk Space
@@ -273,6 +273,8 @@ If these solutions don't resolve your issue:
 
 1. Check CloudWatch logs for detailed error messages
 2. Review the ECS task status in AWS Console
-3. Contact the competition organizers:
-   - SAT: [sat-comp@amazon.com](mailto:sat-comp@amazon.com)
-   - SMT: [aws-smtcomp-2024@googlegroups.com](mailto:aws-smtcomp-2024@googlegroups.com)
+3. Contact us at: [solver-competitions@amazon.com](mailto:solver-competitions@amazon.com)
+
+## Next Step
+
+When your solver builds and passes tests, it's time to [run on AWS](/docs/running-on-AWS/README.md).

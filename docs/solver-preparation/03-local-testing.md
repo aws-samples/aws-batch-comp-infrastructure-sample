@@ -258,7 +258,7 @@ for this platform by default.
 
 **Solution:** Build the base image first:
 ```bash
-./satcomp.py build-base
+./satcomp.py build
 ```
 
 ## Testing on AWS (Quick Test)
@@ -503,5 +503,5 @@ See [Troubleshooting](05-troubleshooting.md) for common issues and solutions.
 
 After testing locally:
 
-1. [Deploy to AWS](../organizer-guide/02-deploying.md)
-2. For distributed solvers, see [Distributed Solvers](04-distributed-solvers.md)
+1. [Deploy to AWS](../running-on-AWS/01-deploying.md)
+2. For distributed solvers, first see [Distributed Solvers](04-distributed-solvers.md)

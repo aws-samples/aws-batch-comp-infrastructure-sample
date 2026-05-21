@@ -16,7 +16,7 @@ running code on one system that was developed on another. It standardizes how so
 code is compiled, making it easier for competitors to submit solvers and for organizers
 to run them consistently.
 
-For more details on how Docker is used, see the [Architecture section](/architecture/README.md).
+For more details on how Docker is used, see the [Architecture section](/docs/architecture/README.md).
 
 Your Dockerfile needs to:
 
@@ -131,10 +131,6 @@ def get_cleanup_command() -> List[str]:
 
 This command is called on all nodes (leader and workers) after each job completes.
 
-## Next Steps
+## Next Step
 
-After preparing your Dockerfile and solver_cmd.py:
-
-1. [Configure your solver in config.yml](02-configuration.md)
-2. [Test locally](03-local-testing.md)
-3. [Deploy to AWS](../organizer-guide/02-deploying.md)
+After preparing your Dockerfile and solver_cmd.py, register your solver in a [config.yml](02-configuration.md) file.

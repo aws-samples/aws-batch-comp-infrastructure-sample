@@ -282,6 +282,4 @@ If these solutions don't resolve your issue:
    - CloudWatch log excerpts
    - CloudFormation event details
 
-2. Contact competition organizers:
-   - SAT: [sat-comp@amazon.com](mailto:sat-comp@amazon.com)
-   - SMT: [aws-smtcomp-2024@googlegroups.com](mailto:aws-smtcomp-2024@googlegroups.com)
+2. Contact us at: [solver-competitions@amazon.com](mailto:solver-competitions@amazon.com)

@@ -4,7 +4,7 @@ This page explains how to collect and analyze solver results.
 
 ## Collecting Results
 
-Use the `process` command to collect results from solver output queues:
+Use the `collect` command to collect results from solver output queues:
 
 ```bash
 ./satcomp.py collect
@@ -12,7 +12,7 @@ Use the `process` command to collect results from solver output queues:
 
 Or combine with terminate-instances:
 ```bash
-./satcomp.py terminate-instances process
+./satcomp.py terminate-instances collect
 ```
 
 ### Using a Custom Jobs File
@@ -80,7 +80,7 @@ Each job's details are uploaded to S3 and can be found in:
 
 To download all results from S3 to the local directory `s3_results`:
 ```bash
-aws s3 sync s3://{bucket}/2025-parallel-{solver}/ ./s3_results/
+aws s3 sync s3://{bucket}/2026-parallel-{solver}/ ./s3_results/
 ```
 
 ## Analyzing Results
@@ -131,14 +131,16 @@ If some jobs failed (ERROR result), you can re-run them:
    ./satcomp.py my_reruns.yml submit
    ```
 
+This helps in the unusual case that your jobs encountered a transient failure.
+
 ## Debugging Failed Jobs
 
 For jobs that failed, check the logs:
 
 1. Find the `upload_uri` from results.csv
-2. Download the logs:
+2. Download the logs to a local directory, e.g. `debug`:
    ```bash
-   aws s3 cp --recursive s3://{upload_uri}/ ./debug/
+   aws s3 sync s3://{upload_uri}/ ./debug/
    ```
 3. Examine stdout.txt and stderr.txt for error messages
 
@@ -153,11 +155,11 @@ Common failure causes:
 To start fresh:
 
 ```bash
-rm -rf results/
+rm -rf results/.      # Collecting results always appends to existing files.
 ./satcomp.py purge    # Clear any remaining queue messages
 ```
 
 ## Next Steps
 
-- [Teardown](05-teardown.md) to tear down resources
-- [Troubleshooting](06-troubleshooting.md) for common issues
+- [Teardown](04-teardown.md) to tear down resources
+- [Troubleshooting](05-troubleshooting.md) for common issues
