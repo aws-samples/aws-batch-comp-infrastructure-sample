@@ -86,6 +86,14 @@ def check_node_version():
 def create_boto3_session(project: ProjectConfig) -> Session:
     """Create a boto3 session from the project config."""
     profile = project.profile
+    env_profile = os.environ.get("AWS_PROFILE")
+    if env_profile and env_profile != profile:
+        logger.error(
+            f'Error: AWS_PROFILE environment variable ("{env_profile}") does not match '
+            f'the profile in your config file ("{profile}").'
+        )
+        logger.error("Either update your config file, or set AWS_PROFILE to match.")
+        exit(1)
     try:
         session = boto3.Session(region_name=project.region, profile_name=profile)
         return session
