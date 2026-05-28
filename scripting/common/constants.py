@@ -80,7 +80,7 @@ SAT_FORMULA_EXTENSION = ".cnf"
 SMT_FORMULA_EXTENSION = ".smt2"
 
 # Supported compression extensions for formula files
-COMPRESSION_EXTENSIONS = (".bz2", ".xz")
+COMPRESSION_EXTENSIONS = (".gz", ".bz2", ".xz")
 
 
 # =============================================================================

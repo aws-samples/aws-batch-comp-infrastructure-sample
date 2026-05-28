@@ -8,7 +8,7 @@ from typing import List, Optional
 import common.pathing as pathing
 import yaml
 from common import CompetitionQueueOutput, LoggingManager
-from common.constants import SAT_FORMULA_EXTENSION, SMT_FORMULA_EXTENSION
+from common.constants import COMPRESSION_EXTENSIONS, SAT_FORMULA_EXTENSION, SMT_FORMULA_EXTENSION
 from harness.aws_shim import S3FileSystem, SqsQueue
 from utils import SolverRequester
 
@@ -77,7 +77,8 @@ class SolverJobManager:
                 exit(1)
             bucket, prefix = pathing.split_s3_uri(location)
             found = s3.ls(bucket, prefix, recursive=True, style=S3FileSystem.UriStyle.FULL_URI)
-            self.jobs += [f for f in found if f.endswith(ext)]
+            valid_suffixes = (ext,) + tuple(ext + c for c in COMPRESSION_EXTENSIONS)
+            self.jobs += [f for f in found if f.endswith(valid_suffixes)]
 
         if self.limit is not None:
             self.jobs = self.jobs[: self.limit]

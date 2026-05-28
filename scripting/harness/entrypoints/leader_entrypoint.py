@@ -111,9 +111,8 @@ def download_formula(s3: S3FileSystem, formula_url: str, dir: Path) -> Path:
     """
     Downloads a formula to `dir` and returns its `Path`.
 
-    If the formula has an extension indicating it is a compressed file,
-    (one of ".bz2", ".xz", ),
-    then this function decompresses it to a new file without the extension
+    If the formula has a compression extension (.gz, .bz2, .xz),
+    decompresses it to a new file without the extension
     and then deletes the compressed file.
     """
     formula_path = s3.download_file_uri(formula_url, dir)
@@ -125,9 +124,11 @@ def download_formula(s3: S3FileSystem, formula_url: str, dir: Path) -> Path:
         new_formula_path = formula_path.parent / formula_path.stem
 
         # Lazily import functionality for the specific compression type
-        # TODO: Handle broader classes of compression
-        # Note: tarfile.is_tarfile() returns 'False' for ".xz" files
-        if suffix == ".bz2":
+        if suffix == ".gz":
+            import gzip
+
+            f = gzip.open(formula_path, "rb")
+        elif suffix == ".bz2":
             from bz2 import BZ2File
 
             f = BZ2File(formula_path, "rb")

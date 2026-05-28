@@ -208,3 +208,91 @@ class TestMockedS3EdgeCases:
         # Should only get .cnf files, not readme.txt
         assert count == 5
         assert not any("readme.txt" in j for j in jm.jobs)
+
+
+# ---------------------------------------------------------------------------
+# Compressed formula files
+# ---------------------------------------------------------------------------
+
+class TestMockedS3CompressedFormulas:
+    """Test prepare_jobs matches compressed formula files (.gz, .bz2, .xz)."""
+
+    def test_finds_cnf_gz_files(self, tmp_path, mock_s3):
+        """Verify that .cnf.gz files are matched for SAT solver type."""
+        client = mock_s3["client"]
+        bucket = mock_s3["bucket"]
+        for i in range(3):
+            client.put_object(
+                Bucket=bucket,
+                Key=f"sat/compressed/formula_{i}.cnf.gz",
+                Body=b"\x1f\x8b\x08\x00"  # gzip magic bytes
+            )
+
+        uri = f"s3://{bucket}/sat/compressed"
+        jobs_path = _write_jobs_yaml(tmp_path, [uri])
+        jm = SolverJobManager(jobs_path)
+
+        count = jm.prepare_jobs(mock_s3["s3fs"], "sat")
+
+        assert count == 3
+        assert all(j.endswith(".cnf.gz") for j in jm.jobs)
+
+    def test_finds_cnf_bz2_files(self, tmp_path, mock_s3):
+        """Verify that .cnf.bz2 files are matched for SAT solver type."""
+        client = mock_s3["client"]
+        bucket = mock_s3["bucket"]
+        for i in range(2):
+            client.put_object(
+                Bucket=bucket,
+                Key=f"sat/compressed/formula_{i}.cnf.bz2",
+                Body=b"BZh"  # bzip2 magic bytes
+            )
+
+        uri = f"s3://{bucket}/sat/compressed"
+        jobs_path = _write_jobs_yaml(tmp_path, [uri])
+        jm = SolverJobManager(jobs_path)
+
+        count = jm.prepare_jobs(mock_s3["s3fs"], "sat")
+
+        assert count == 2
+        assert all(j.endswith(".cnf.bz2") for j in jm.jobs)
+
+    def test_finds_cnf_xz_files(self, tmp_path, mock_s3):
+        """Verify that .cnf.xz files are matched for SAT solver type."""
+        client = mock_s3["client"]
+        bucket = mock_s3["bucket"]
+        client.put_object(
+            Bucket=bucket,
+            Key="sat/compressed/formula.cnf.xz",
+            Body=b"\xfd7zXZ\x00"  # xz magic bytes
+        )
+
+        uri = f"s3://{bucket}/sat/compressed"
+        jobs_path = _write_jobs_yaml(tmp_path, [uri])
+        jm = SolverJobManager(jobs_path)
+
+        count = jm.prepare_jobs(mock_s3["s3fs"], "sat")
+
+        assert count == 1
+        assert jm.jobs[0].endswith(".cnf.xz")
+
+    def test_mixed_compressed_and_uncompressed(self, tmp_path, mock_s3):
+        """Verify that both compressed and uncompressed files are matched."""
+        uri = f"s3://{mock_s3['bucket']}/sat/easy"
+        client = mock_s3["client"]
+        bucket = mock_s3["bucket"]
+        # Add compressed files alongside the existing uncompressed ones
+        for i in range(3):
+            client.put_object(
+                Bucket=bucket,
+                Key=f"sat/easy/compressed_{i}.cnf.gz",
+                Body=b"\x1f\x8b\x08\x00"
+            )
+
+        jobs_path = _write_jobs_yaml(tmp_path, [uri])
+        jm = SolverJobManager(jobs_path)
+
+        count = jm.prepare_jobs(mock_s3["s3fs"], "sat")
+
+        # 5 uncompressed .cnf + 3 compressed .cnf.gz
+        assert count == 8
