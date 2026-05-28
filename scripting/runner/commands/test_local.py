@@ -492,6 +492,7 @@ except subprocess.TimeoutExpired:
                     "run",
                     "--rm",
                     f"--platform={DOCKER_PLATFORM}",
+                    "--user", "ecs-user",
                     "-v",
                     f"{tmpdir}:{self.CONTAINER_RUN_DIR}",
                 ] + mem_args + [

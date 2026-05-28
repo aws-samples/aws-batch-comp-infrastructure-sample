@@ -63,9 +63,11 @@ There are two approaches:
 ### Notes
 
 - The base image runs Ubuntu Noble (v24.04). *Software must be configured for Linux*.
-- Files copied with `COPY` should be owned by `ecs-user`:
+- Your solver runs as `ecs-user`, not root. Files and directories your solver writes to
+  at runtime must be owned by `ecs-user`:
   ```dockerfile
   COPY --chown=ecs-user src /solver
+  RUN mkdir /mydir && chown ecs-user:ecs-user /mydir
   ```
 - Your docker containers will not have internet access when running on AWS.
 - **Everything must build from source** - Copying/installing pre-compiled binaries into your docker container is not allowed for security reasons. We will check.

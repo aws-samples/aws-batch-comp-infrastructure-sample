@@ -129,6 +129,24 @@ ldd /path/to/solver
 /path/to/solver --help
 ```
 
+### Permission Denied at Runtime
+
+**Symptom:**
+```
+mkdir: cannot create directory '/mydir': Permission denied
+```
+or similar "Permission denied" errors when your solver tries to write files or create directories.
+
+**Cause:**
+Your solver runs as `ecs-user`, not root. Directories created by `RUN mkdir` in the
+Dockerfile are owned by root and not writable by `ecs-user`.
+
+**Solution:**
+Pre-create the directory in your Dockerfile with correct ownership:
+```dockerfile
+RUN mkdir /mydir && chown ecs-user:ecs-user /mydir
+```
+
 ### Solver Times Out on Every Job
 
 **Possible Causes:**

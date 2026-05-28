@@ -233,14 +233,26 @@ RUN apt-get update && apt-get install -y <missing-package>
 
 ### Issue: Permission Denied
 
-**Symptom:** Build or runtime errors about permissions
+**Symptom:** Runtime errors about permissions (e.g., "mkdir: cannot create directory: Permission denied")
 
-**Solution:** Ensure files are owned by `ecs-user`:
+**Explanation:** Both `test-local` and AWS run your solver as `ecs-user`, not root.
+Any directories or files your solver writes to at runtime must be writable by `ecs-user`.
+Even if your Dockerfile uses `USER root` for build steps, the solver process itself
+runs as `ecs-user`.
+
+**Solutions:**
+
+Ensure files are owned by `ecs-user`:
 ```dockerfile
 COPY --chown=ecs-user src /solver
 ```
 
-Add executable permissions to your solver image:
+If your solver creates directories at runtime, pre-create them with correct ownership:
+```dockerfile
+RUN mkdir /mydir && chown ecs-user:ecs-user /mydir
+```
+
+Add executable permissions to your solver binary:
 ```dockerfile
 RUN chmod +x /solver/build/mysolver
 ```
