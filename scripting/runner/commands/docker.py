@@ -8,14 +8,17 @@ from runner.commands.base import CommandContext, CommandHandler
 class BuildCommand(CommandHandler):
     """Build Docker images from config file."""
 
-    def execute(self, **kwargs) -> int:
+    def execute(self, no_cache: bool = False, **kwargs) -> int:
         """Build all Docker images defined in the project config.
+
+        Args:
+            no_cache: If True, disable Docker layer cache
 
         Returns:
             0 on success, 1 on error
         """
         self.logger.info("build: Build Docker images from a config file")
-        self.sdc.build_images()
+        self.sdc.build_images(no_cache=no_cache)
         return 0
 
     @property

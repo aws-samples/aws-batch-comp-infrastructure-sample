@@ -22,6 +22,14 @@ If you modify a solver's Dockerfile or `solver_cmd.py`, rebuild and push:
 
 Docker caches build steps, so subsequent builds are faster.
 
+If your Dockerfile fetches from external sources (e.g., `git clone`, `apt-get install`)
+and the upstream content has changed but the Dockerfile hasn't, use `--no-cache` to
+force a full rebuild:
+
+```bash
+./satcomp.py build --no-cache push
+```
+
 ### Verifying Images
 
 Check that images were pushed:

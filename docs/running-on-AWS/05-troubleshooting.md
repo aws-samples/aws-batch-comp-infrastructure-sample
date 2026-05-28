@@ -147,6 +147,7 @@ aws s3 ls s3://your-bucket/your-path/ --recursive | head
 1. Solver binary not found or not executable
 2. `solver_cmd.py` has bugs
 3. Base image incompatibility
+4. Stale Docker build cache (upstream source changed but Dockerfile didn't — try `build --no-cache`)
 
 **Debug:**
 1. Check CloudWatch logs for error messages

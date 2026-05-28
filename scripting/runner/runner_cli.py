@@ -299,7 +299,7 @@ class SatCompArgParser:
             description="Manage solver Docker images, AWS resources, and formula jobs.",
             epilog="Example: ./satcomp.py bootstrap provision build push",
             # Note: this string is multiline on purpose
-            usage="satcomp.py [config] [-h] [ls [OPT]] [build] [push] [test-local [solver]] [acceptance-test [solver]] [bootstrap] [provision [OPT]] [start-instances [n]] [standby-instances [n]] [refresh-instances] [terminate-instances] [submit [path/jobs.yml]] [collect [path/jobs.yml]] [purge] [teardown [OPT]]",
+            usage="satcomp.py [config] [-h] [ls [OPT]] [build [--no-cache]] [push] [test-local [solver]] [acceptance-test [solver]] [bootstrap] [provision [OPT]] [start-instances [n]] [standby-instances [n]] [refresh-instances] [terminate-instances] [submit [path/jobs.yml]] [collect [path/jobs.yml]] [purge] [teardown [OPT]]",
         )
 
         # Docker options
@@ -331,6 +331,12 @@ class SatCompArgParser:
             "--build",
             action="store_true",
             help="Build the Docker images. This is required before running the solver or pushing any images.",
+        )
+
+        dg.add_argument(
+            "--no-cache",
+            action="store_true",
+            help="Disable Docker layer cache when building images. Use when upstream dependencies (git repos, packages) have changed.",
         )
 
         dg.add_argument(
@@ -507,6 +513,7 @@ class SatCompArgParser:
         self.is_using_aws = False
 
         self.build = False
+        self.no_cache = False
         self.push = False
         self.terminate_instances = False
         self.rmi = False
@@ -594,6 +601,9 @@ class SatCompArgParser:
         # If `rmi` or `rmc` is specified, can't specify `rm`
         if (p["rmi"] or p["rmc"]) and p["rm"]:
             self.parser.error("Cannot specify `rm` along with `rmi` or `rmc`")
+
+        if self.no_cache and not self.build:
+            self.parser.error("`--no-cache` can only be used with `build`")
 
         # Can't `teardown` along with any other "active" AWS commands
         if is_cmd_specified("teardown"):

@@ -180,7 +180,7 @@ class SolverDockerClient:
         except ImageNotFound:
             return None
 
-    def build_image(self, sc: SolverConfig) -> None:
+    def build_image(self, sc: SolverConfig, no_cache: bool = False) -> None:
         name = sc.get_docker_name()
         d_cwd = str(sc.docker_dir)
         d_path = sc.get_rel_dockerfile_path()
@@ -210,17 +210,21 @@ class SolverDockerClient:
 
             # The command we are replicating:
             # `docker build --platform=${PLATFORM} -f path/to/Dockerfile -t ${image}:${tag} .`
+            cmd = [
+                "docker",
+                "build",
+                f"--platform={DOCKER_PLATFORM}",
+                "-f",
+                d_path,
+                "-t",
+                name,
+            ]
+            if no_cache:
+                cmd.append("--no-cache")
+            cmd.append(".")
+
             subproc_result = subprocess.run(
-                [
-                    "docker",
-                    "build",
-                    f"--platform={DOCKER_PLATFORM}",
-                    "-f",
-                    d_path,
-                    "-t",
-                    name,
-                    ".",
-                ],
+                cmd,
                 # capture_output=True,  # Un-comment to stop sending Docker build output to the terminal
                 cwd=d_cwd,
                 text=True,
@@ -242,12 +246,13 @@ class SolverDockerClient:
                 tag=name,  # 'tag' is semantically overloaded. Here, the value is expected to be `name:tag`
                 rm=True,  # Remove any intermediate images (the CLI removes these by default)
                 forcerm=True,  # Remove any intermediate images, even on unsuccessful builds
+                nocache=no_cache,
             )
 
         self.images[name] = image
         logger.info(f"Building image {name}... success")
 
-    def cache_or_build_image(self, sc: SolverConfig, force_rebuild: bool) -> None:
+    def cache_or_build_image(self, sc: SolverConfig, force_rebuild: bool, no_cache: bool = False) -> None:
         """
         Caches the Docker image, or builds it if it doesn't exist or if `force_rebuild` is `True`.
 
@@ -255,7 +260,7 @@ class SolverDockerClient:
         """
         name = sc.get_docker_name()
         if force_rebuild:
-            self.build_image(sc)
+            self.build_image(sc, no_cache=no_cache)
         else:
             # See if the image is in the Docker client already - don't build if it is
             try:
@@ -263,9 +268,9 @@ class SolverDockerClient:
                 self.images[name] = image
                 logger.info(f'The image "{name}" has already been built... success')
             except ImageNotFound:
-                self.build_image(image)
+                self.build_image(image, no_cache=no_cache)
 
-    def build_images(self, force_rebuild: bool = True) -> None:
+    def build_images(self, force_rebuild: bool = True, no_cache: bool = False) -> None:
         """
         Builds the images in `self.project.images`.
 
@@ -282,7 +287,7 @@ class SolverDockerClient:
         # they appear in the config file, since later solvers might depend
         # on earlier ones (although this should be rare).
         for image in self.project.solvers:
-            self.cache_or_build_image(image, force_rebuild)
+            self.cache_or_build_image(image, force_rebuild, no_cache=no_cache)
         logger.info("Building all Docker images... success")
 
     def remove_image(self, sc: SolverConfig) -> None:

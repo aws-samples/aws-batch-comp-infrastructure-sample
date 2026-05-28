@@ -193,7 +193,7 @@ if __name__ == "__main__":
             exit(result)
 
     if parser.build:
-        result = BuildCommand(ctx).execute()
+        result = BuildCommand(ctx).execute(no_cache=parser.no_cache)
         if result != 0:
             exit(result)
 
