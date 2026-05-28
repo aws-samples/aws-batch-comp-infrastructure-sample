@@ -321,21 +321,33 @@ class SolverDockerClient:
         solvers.sort()
         return solvers
 
-    def tag_image(self, sc: SolverConfig, repo: str) -> None:
+    def tag_image(self, sc: SolverConfig, repo: str) -> bool:
         image = self.get_image(sc)
 
         # Remove previous tagged images if the hashes are different
         # This prevents dangling Docker images, which can clog up disk space
         remote_image = self.get_repo_tagged_image(sc, repo)
+        removed = True
         if remote_image is not None and remote_image.id != image.id:
-            remote_image.remove()
+            try:
+                remote_image.remove()
+            except APIError:
+                removed = False
 
         image.tag(repo, self.rn.get_ecr_image_tag(sc.name))
         logger.debug(f"Tagging {sc.name} for repo {repo}... success")
+        return removed
 
     def tag_images(self, repo: str) -> None:
+        stale_count = 0
         for solver in self.project.aws_solvers:
-            self.tag_image(solver, repo)
+            if not self.tag_image(solver, repo):
+                stale_count += 1
+        if stale_count > 0:
+            logger.warning(
+                f"{stale_count} stale image(s) could not be removed. "
+                "Run `docker system prune` to reclaim disk space."
+            )
         logger.info("Tagging images for remote repository... success")
 
     def push_image(self, sc: SolverConfig, repo: str) -> bool:
