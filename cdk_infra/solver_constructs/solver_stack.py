@@ -103,6 +103,7 @@ class SolverStack(Stack):
         # User data commands to run when EC2 instances gets launched in the ECS cluster
         user_data: ec2.UserData = ec2.UserData.for_linux(shebang="#!/bin/bash -xe")
         user_data.add_commands(f"echo ECS_CLUSTER={self.ecs_cluster.cluster_name} >> /etc/ecs/ecs.config")
+        user_data.add_commands("echo ECS_IMAGE_PULL_BEHAVIOR=always >> /etc/ecs/ecs.config")
         user_data.add_commands("yum install -y aws-cfn-bootstrap python-pip")
         user_data.add_commands("pip install awscli boto3")
 
