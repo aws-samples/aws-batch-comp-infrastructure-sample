@@ -220,6 +220,36 @@ class TestTagOperations:
             # Old image should be removed
             mock_old_tagged_image.remove.assert_called_once()
 
+    def test_tag_image_still_tags_when_remove_raises_api_error(self, mock_project_config, mock_docker_client):
+        """Test that tag_image still applies the tag even when remote_image.remove() raises APIError.
+
+        Previously the method returned False early, skipping the tag. Now it catches
+        the APIError, still applies the tag, but returns False to indicate stale removal failed.
+        """
+        from docker.errors import APIError
+
+        mock_image = MagicMock()
+        mock_image.id = "new-hash"
+
+        mock_old_tagged_image = MagicMock()
+        mock_old_tagged_image.id = "old-hash"
+        mock_old_tagged_image.remove.side_effect = APIError("Conflict: image is in use")
+
+        # First call returns the new image, second returns the old tagged image
+        mock_docker_client.images.get.side_effect = [mock_image, mock_old_tagged_image]
+
+        with patch("runner.runner_docker.docker.from_env", return_value=mock_docker_client):
+            from runner.runner_docker import SolverDockerClient
+            client = SolverDockerClient(mock_project_config)
+
+            sc = mock_project_config.solvers[0]
+            result = client.tag_image(sc, "test-repo")
+
+            # The tag should still be applied even though remove failed
+            mock_image.tag.assert_called_once()
+            # Result should be False because stale removal failed
+            assert result is False
+
 
 # ---------------------------------------------------------------------------
 # Push operations tests

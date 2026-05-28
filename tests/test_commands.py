@@ -8,7 +8,7 @@ from runner.commands.base import CommandContext, CommandHandler
 from runner.commands.docker import BuildCommand, PushCommand
 from runner.commands.deploy import DeployCommand, BootstrapCommand
 from runner.commands.destroy import DestroyCommand
-from runner.commands.ecs import EcsServiceManager, StartCommand, StandbyCommand, StopCommand
+from runner.commands.ecs import EcsServiceManager, StartCommand, StandbyCommand, StopCommand, RefreshCommand
 from runner.commands.jobs import SubmitCommand, ProcessCommand, PurgeCommand
 from runner.commands.ls import LsCommand
 from runner.commands.cdk import CdkHelper, exec_cdk_command
@@ -1148,3 +1148,183 @@ class TestProcessCommand:
             # Should process each solver's output queue
             assert mock_jm.process_jobs.call_count == 2
             assert MockQueue.get_sqs_queue_from_session.call_count == 2
+
+
+class TestRefreshCommand:
+    """Tests for RefreshCommand."""
+
+    @patch.object(EcsServiceManager, 'wait_for_tasks_stopped')
+    @patch.object(EcsServiceManager, 'scale_solver')
+    @patch.object(EcsServiceManager, 'validate_ecr_images')
+    @patch.object(EcsServiceManager, 'validate_env_vars')
+    @patch.object(EcsServiceManager, 'get_current_desired_count')
+    @patch.object(EcsServiceManager, 'has_stale_images')
+    def test_refresh_errors_if_count_is_zero(
+        self, mock_has_stale, mock_get_count, mock_validate_env,
+        mock_validate_ecr, mock_scale, mock_wait, ctx
+    ):
+        """Test that RefreshCommand returns error when current desired count is 0."""
+        mock_get_count.return_value = 0
+
+        cmd = RefreshCommand(ctx)
+        result = cmd.execute()
+
+        assert result == 1
+        mock_scale.assert_not_called()
+
+    @patch('runner.commands.ecs.prompt_purge_queues')
+    @patch.object(EcsServiceManager, 'wait_for_tasks_stopped')
+    @patch.object(EcsServiceManager, 'scale_solver')
+    @patch.object(EcsServiceManager, 'validate_ecr_images')
+    @patch.object(EcsServiceManager, 'validate_env_vars')
+    @patch.object(EcsServiceManager, 'get_current_desired_count')
+    @patch.object(EcsServiceManager, 'has_stale_images')
+    def test_refresh_calls_standby_then_start(
+        self, mock_has_stale, mock_get_count, mock_validate_env,
+        mock_validate_ecr, mock_scale, mock_wait, mock_purge, ctx
+    ):
+        """Test that RefreshCommand calls standby (scale to 0 leaders) then start with correct count."""
+        mock_get_count.return_value = 3
+        mock_scale.return_value = True
+        mock_wait.return_value = True
+        mock_validate_ecr.return_value = True
+        mock_validate_env.return_value = True
+        mock_has_stale.return_value = False
+
+        mock_solver_config = MagicMock()
+        mock_solver_config.is_distributed = False
+        ctx.project.get_solver.return_value = mock_solver_config
+
+        cmd = RefreshCommand(ctx)
+        result = cmd.execute()
+
+        assert result == 0
+        # First standby calls scale_solver with num_leaders=0
+        # Then start calls scale_solver with num_leaders=max_count
+        # We have 2 solvers, so scale_solver is called 2 times for standby + 2 for start
+        assert mock_scale.call_count == 4
+        # First two calls (standby): num_leaders=0, num_copies=3
+        standby_calls = mock_scale.call_args_list[:2]
+        for call in standby_calls:
+            args = call[0]
+            assert args[1] == 0  # num_leaders
+            assert args[2] == 3  # num_copies
+
+        # Last two calls (start): num_leaders=3, num_copies=3
+        start_calls = mock_scale.call_args_list[2:]
+        for call in start_calls:
+            args = call[0]
+            assert args[1] == 3  # num_leaders
+            assert args[2] == 3  # num_copies
+
+
+class TestHasStaleImages:
+    """Tests for EcsServiceManager.has_stale_images."""
+
+    def test_has_stale_images_returns_true_when_digests_differ(self, ctx):
+        """Test that has_stale_images returns True when running container has different digest."""
+        mock_ecr = MagicMock()
+        mock_ecr.describe_images.return_value = {
+            'imageDetails': [
+                {'imageTags': ['test-project--solver1'], 'imageDigest': 'sha256:new123'},
+                {'imageTags': ['test-project--solver2'], 'imageDigest': 'sha256:new456'},
+            ]
+        }
+        ctx.set_client('ecr', mock_ecr)
+
+        mock_ecs = MagicMock()
+        mock_ecs.list_tasks.return_value = {
+            'taskArns': ['arn:aws:ecs:us-west-2:123:task/cluster/task1']
+        }
+        mock_ecs.describe_tasks.return_value = {
+            'tasks': [{
+                'containers': [{
+                    'imageDigest': 'sha256:old999'  # Different from ECR
+                }]
+            }]
+        }
+        ctx.set_client('ecs', mock_ecs)
+
+        ctx.rn.get_ecr_image_tag.side_effect = lambda s: f"test-project--{s}"
+        ctx.rn.get_ecr_repo_name.return_value = "test-repo"
+        ctx.rn.get_ecs_cluster_name.return_value = "test-cluster"
+
+        manager = EcsServiceManager(ctx)
+        result = manager.has_stale_images(["solver1"])
+
+        assert result is True
+
+    def test_has_stale_images_returns_false_when_digests_match(self, ctx):
+        """Test that has_stale_images returns False when running container has same digest."""
+        mock_ecr = MagicMock()
+        mock_ecr.describe_images.return_value = {
+            'imageDetails': [
+                {'imageTags': ['test-project--solver1'], 'imageDigest': 'sha256:abc123'},
+            ]
+        }
+        ctx.set_client('ecr', mock_ecr)
+
+        mock_ecs = MagicMock()
+        mock_ecs.list_tasks.return_value = {
+            'taskArns': ['arn:aws:ecs:us-west-2:123:task/cluster/task1']
+        }
+        mock_ecs.describe_tasks.return_value = {
+            'tasks': [{
+                'containers': [{
+                    'imageDigest': 'sha256:abc123'  # Same as ECR
+                }]
+            }]
+        }
+        ctx.set_client('ecs', mock_ecs)
+
+        ctx.rn.get_ecr_image_tag.side_effect = lambda s: f"test-project--{s}"
+        ctx.rn.get_ecr_repo_name.return_value = "test-repo"
+        ctx.rn.get_ecs_cluster_name.return_value = "test-cluster"
+
+        manager = EcsServiceManager(ctx)
+        result = manager.has_stale_images(["solver1"])
+
+        assert result is False
+
+
+class TestGetCurrentDesiredCount:
+    """Tests for EcsServiceManager.get_current_desired_count."""
+
+    def test_returns_desired_count_from_service(self, ctx):
+        """Test that get_current_desired_count returns the service's desiredCount."""
+        mock_ecs = MagicMock()
+        mock_ecs.list_services.return_value = {
+            'serviceArns': [
+                'arn:aws:ecs:us-west-2:123:service/cluster/test-project--solver1--stack-SolverLeaderService-abc123'
+            ]
+        }
+        mock_ecs.describe_services.return_value = {
+            'services': [{
+                'desiredCount': 5
+            }]
+        }
+        ctx.set_client('ecs', mock_ecs)
+        ctx.rn.get_ecs_cluster_name.return_value = "test-cluster"
+        ctx.rn.get_solver_stack_name.return_value = "test-project--solver1--stack"
+
+        manager = EcsServiceManager(ctx)
+        result = manager.get_current_desired_count("solver1")
+
+        assert result == 5
+
+    def test_returns_zero_when_no_leader_service_found(self, ctx):
+        """Test that get_current_desired_count returns 0 when leader service is not found."""
+        mock_ecs = MagicMock()
+        mock_ecs.list_services.return_value = {
+            'serviceArns': [
+                'arn:aws:ecs:us-west-2:123:service/cluster/some-other-service'
+            ]
+        }
+        ctx.set_client('ecs', mock_ecs)
+        ctx.rn.get_ecs_cluster_name.return_value = "test-cluster"
+        ctx.rn.get_solver_stack_name.return_value = "test-project--solver1--stack"
+
+        manager = EcsServiceManager(ctx)
+        result = manager.get_current_desired_count("solver1")
+
+        assert result == 0

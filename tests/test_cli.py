@@ -371,6 +371,18 @@ class TestCliIntegration:
         assert parser.provision is True
         assert parser.start_instances is True
 
+    def test_parse_build_no_cache(self, tmp_path):
+        """Test that build --no-cache sets no_cache=True and build=True."""
+        config_path = _create_test_config(tmp_path)
+        cdk_path = _create_cdk_dir(tmp_path)
+
+        parser = SatCompArgParser()
+        parser.cdk = cdk_path
+        parser.parse_args([str(config_path), "build", "--no-cache"])
+
+        assert parser.build is True
+        assert parser.no_cache is True
+
     def test_parse_submit_with_jobs_file(self, tmp_path):
         config_path = _create_test_config(tmp_path)
         jobs_path = _create_test_jobs(tmp_path)
@@ -468,3 +480,101 @@ class TestCliValidationErrors:
 
         with pytest.raises(SystemExit):
             parser.parse_args([str(config_path)])
+
+    def test_no_cache_without_build_exits(self, tmp_path):
+        """Test that --no-cache without build produces an error."""
+        config_path = _create_test_config(tmp_path)
+        cdk_path = _create_cdk_dir(tmp_path)
+
+        parser = SatCompArgParser()
+        parser.cdk = cdk_path
+
+        with pytest.raises(SystemExit):
+            parser.parse_args([str(config_path), "--no-cache"])
+
+    def test_refresh_and_terminate_together_exits(self, tmp_path):
+        """Test that refresh-instances + terminate-instances together produces an error."""
+        config_path = _create_test_config(tmp_path)
+        cdk_path = _create_cdk_dir(tmp_path)
+
+        parser = SatCompArgParser()
+        parser.cdk = cdk_path
+
+        with pytest.raises(SystemExit):
+            parser.parse_args([str(config_path), "refresh-instances", "terminate-instances"])
+
+    def test_start_and_refresh_together_exits(self, tmp_path):
+        """Test that start-instances + refresh-instances together produces an error."""
+        config_path = _create_test_config(tmp_path)
+        cdk_path = _create_cdk_dir(tmp_path)
+
+        parser = SatCompArgParser()
+        parser.cdk = cdk_path
+
+        with pytest.raises(SystemExit):
+            parser.parse_args([str(config_path), "start-instances", "refresh-instances"])
+
+
+# ---------------------------------------------------------------------------
+# create_boto3_session tests
+# ---------------------------------------------------------------------------
+
+class TestCreateBoto3Session:
+    """Test the create_boto3_session function in satcomp.py."""
+
+    def test_aws_profile_mismatch_exits(self, monkeypatch):
+        """Test that a mismatched AWS_PROFILE env var causes exit(1)."""
+        from unittest.mock import MagicMock
+
+        monkeypatch.setenv("AWS_PROFILE", "wrong-profile")
+
+        mock_project = MagicMock()
+        mock_project.profile = "correct-profile"
+        mock_project.region = "us-east-1"
+
+        # Import create_boto3_session from satcomp module
+        # We need to handle the PYTHONPATH check at the top of satcomp.py
+        import importlib
+        import sys
+
+        # Ensure the scripting dir is on PYTHONPATH so the import check passes
+        script_dir = "/home/rbtjones/satcomp/SATSMTCompPublicInfrastructure"
+        scripting_dir = f"{script_dir}/scripting"
+        monkeypatch.setenv("PYTHONPATH", scripting_dir)
+
+        # Load satcomp as a module
+        spec = importlib.util.spec_from_file_location("satcomp", f"{script_dir}/satcomp.py")
+        satcomp_mod = importlib.util.module_from_spec(spec)
+        sys.modules["satcomp"] = satcomp_mod
+        spec.loader.exec_module(satcomp_mod)
+
+        with pytest.raises(SystemExit):
+            satcomp_mod.create_boto3_session(mock_project)
+
+    def test_aws_profile_matches_does_not_exit(self, monkeypatch):
+        """Test that a matching AWS_PROFILE env var does not cause exit."""
+        from unittest.mock import MagicMock, patch
+
+        monkeypatch.setenv("AWS_PROFILE", "my-profile")
+
+        mock_project = MagicMock()
+        mock_project.profile = "my-profile"
+        mock_project.region = "us-east-1"
+
+        import importlib
+        import sys
+
+        script_dir = "/home/rbtjones/satcomp/SATSMTCompPublicInfrastructure"
+        scripting_dir = f"{script_dir}/scripting"
+        monkeypatch.setenv("PYTHONPATH", scripting_dir)
+
+        spec = importlib.util.spec_from_file_location("satcomp", f"{script_dir}/satcomp.py")
+        satcomp_mod = importlib.util.module_from_spec(spec)
+        sys.modules["satcomp"] = satcomp_mod
+        spec.loader.exec_module(satcomp_mod)
+
+        # Mock boto3.Session to avoid needing real AWS credentials
+        with patch.object(satcomp_mod.boto3, "Session") as mock_session_cls:
+            mock_session_cls.return_value = MagicMock()
+            session = satcomp_mod.create_boto3_session(mock_project)
+            assert session is not None
