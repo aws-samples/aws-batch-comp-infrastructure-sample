@@ -31,6 +31,7 @@ from runner.commands import (
     ProcessCommand,
     PurgeCommand,
     PushCommand,
+    RefreshCommand,
     StandbyCommand,
     StartCommand,
     StopCommand,
@@ -226,6 +227,10 @@ if __name__ == "__main__":
 
     if parser.start_instances:
         result = StartCommand(ctx).execute(num_copies=parser.start_instances_opt)
+        if result != 0:
+            exit(result)
+    elif parser.refresh_instances:
+        result = RefreshCommand(ctx).execute()
         if result != 0:
             exit(result)
     elif parser.standby_instances:

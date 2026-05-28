@@ -840,10 +840,11 @@ class TestStartCommand:
 class TestStandbyCommand:
     """Tests for StandbyCommand."""
 
+    @patch('runner.commands.ecs.prompt_purge_queues')
     @patch.object(EcsServiceManager, 'validate_ecr_images')
     @patch.object(EcsServiceManager, 'validate_env_vars')
     @patch.object(EcsServiceManager, 'scale_solver')
-    def test_execute_keeps_instances_stops_tasks(self, mock_scale, mock_validate_env, mock_validate_ecr, ctx):
+    def test_execute_keeps_instances_stops_tasks(self, mock_scale, mock_validate_env, mock_validate_ecr, mock_purge, ctx):
         """Test that standby keeps EC2 instances but stops tasks."""
         mock_validate_ecr.return_value = True
         mock_validate_env.return_value = True
@@ -857,6 +858,7 @@ class TestStandbyCommand:
         result = cmd.execute(num_copies=3)
 
         assert result == 0
+        mock_purge.assert_called_once()
         # Verify scale_solver was called with 0 leaders but 3 copies
         for call in mock_scale.call_args_list:
             args, kwargs = call

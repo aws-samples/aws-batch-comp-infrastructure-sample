@@ -275,6 +275,7 @@ class SatCompArgParser:
         "provision",
         "start-instances",
         "standby-instances",
+        "refresh-instances",
         "terminate-instances",
         "ls",
         "submit",
@@ -298,7 +299,7 @@ class SatCompArgParser:
             description="Manage solver Docker images, AWS resources, and formula jobs.",
             epilog="Example: ./satcomp.py bootstrap provision build push",
             # Note: this string is multiline on purpose
-            usage="satcomp.py [config] [-h] [ls [OPT]] [bootstrap] [provision] [start-instances] [terminate-instances] [submit [path/jobs.yml]] ...",
+            usage="satcomp.py [config] [-h] [ls [OPT]] [build] [push] [test-local [solver]] [acceptance-test [solver]] [bootstrap] [provision [OPT]] [start-instances [n]] [standby-instances [n]] [refresh-instances] [terminate-instances] [submit [path/jobs.yml]] [collect [path/jobs.yml]] [purge] [teardown [OPT]]",
         )
 
         # Docker options
@@ -352,6 +353,12 @@ class SatCompArgParser:
             const=1,
             type=int,
             help="Request/keep underlying EC2 instances, but stop any running solvers.",
+        )
+
+        dg.add_argument(
+            "--refresh-instances",
+            action="store_true",
+            help="Cycle running tasks to pick up new ECR images. Standby, wait for drain, then restart.",
         )
 
         dg.add_argument(
@@ -522,6 +529,7 @@ class SatCompArgParser:
         self.start_instances_opt = None
         self.standby_instances = None
         self.standby_instances_opt = None
+        self.refresh_instances = False
 
         self.bootstrap = False
         self.submit = None
@@ -576,7 +584,7 @@ class SatCompArgParser:
         # Can specify at most one Docker removal command
         # If removal is specified, shouldn't be building, pushing, or running
         removal_commands = ["rmc", "rmi", "rm"]
-        other_docker_commands = ["build", "push", "start-instances", "terminate-instances"]
+        other_docker_commands = ["build", "push", "start-instances", "refresh-instances", "terminate-instances"]
         has_removal = any(is_cmd_specified(cmd) for cmd in removal_commands)
         has_other_docker = any(is_cmd_specified(cmd) for cmd in other_docker_commands)
 
@@ -595,9 +603,18 @@ class SatCompArgParser:
 
         self.validate_and_set_jobs_opts()
 
-        # `start`/`softstart` include an argument for how many copies to start
-        if self.start_instances is not None and self.standby_instances is not None:
-            self.parser.error("Cannot specify both `start-instances` and `standby-instances` at the same time.")
+        # Only one instance lifecycle command at a time
+        instance_cmds = []
+        if self.start_instances is not None:
+            instance_cmds.append("start-instances")
+        if self.standby_instances is not None:
+            instance_cmds.append("standby-instances")
+        if self.refresh_instances:
+            instance_cmds.append("refresh-instances")
+        if self.terminate_instances:
+            instance_cmds.append("terminate-instances")
+        if len(instance_cmds) > 1:
+            self.parser.error(f"Cannot specify multiple instance commands at the same time: {', '.join(instance_cmds)}")
 
         self.start_instances_opt = self.start_instances
         self.start_instances = self.start_instances is not None

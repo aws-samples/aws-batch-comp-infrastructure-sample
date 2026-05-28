@@ -1,13 +1,51 @@
 """ECS commands for starting, stopping, and managing solver tasks."""
 
+import time
 from typing import List, Tuple
 
 from common import LoggingManager, ResourceNamer
 from common.solver_env import SolverEnvironment, SolverNodeType
+from harness.aws_shim import SqsQueue
 from runner.commands.base import CommandContext, CommandHandler
 from runner.runner_docker import SolverConfig
 
 lm = LoggingManager()
+
+
+def prompt_purge_queues(ctx: "CommandContext", logger) -> None:
+    """Check input queues for pending messages and offer to purge them.
+
+    If any solver's input queue has messages, prompts the operator
+    to purge all input queues before proceeding.
+    """
+    if ctx.boto3_session is None:
+        return
+
+    aws_solvers = ctx.aws_solvers
+    rn = ctx.rn
+
+    try:
+        total_messages = 0
+        for solver in aws_solvers:
+            rn.set_solver(solver)
+            q_in_name = rn.get_sqs_input_queue_name()
+            q_in = SqsQueue.get_sqs_queue_from_session(ctx.boto3_session, q_in_name)
+            total_messages += q_in.len()
+    except Exception:
+        return
+
+    if total_messages == 0:
+        return
+
+    logger.warning(f"Input queues contain ~{total_messages} pending message(s).")
+    response = input("Purge input queues before stopping? [y/N] ").strip().lower()
+    if response == "y":
+        for solver in aws_solvers:
+            rn.set_solver(solver)
+            q_in_name = rn.get_sqs_input_queue_name()
+            q_in = SqsQueue.get_sqs_queue_from_session(ctx.boto3_session, q_in_name)
+            q_in.purge()
+        logger.info("Input queues purged.")
 
 
 class EcsServiceManager:
@@ -205,6 +243,104 @@ class EcsServiceManager:
         )
         return True
 
+    def get_running_task_count(self, solver: str) -> int:
+        """Get the number of running tasks for a solver's cluster.
+
+        Args:
+            solver: Solver name
+
+        Returns:
+            Number of running tasks
+        """
+        self.rn.set_solver(solver)
+        cluster_name = self.rn.get_ecs_cluster_name()
+        response = self.ecs_client.list_tasks(cluster=cluster_name, desiredStatus="RUNNING")
+        return len(response.get("taskArns", []))
+
+    def has_stale_images(self, aws_solvers: List[str]) -> bool:
+        """Check if any running tasks are using images that differ from ECR.
+
+        Compares the image digest in running task containers against the
+        current digest for each solver's tag in ECR.
+
+        Returns:
+            True if any running task uses a stale image, False otherwise
+        """
+        ecr_repo_name = self.rn.get_ecr_repo_name()
+        ecr_response = self.ecr_client.describe_images(
+            repositoryName=ecr_repo_name, filter={"tagStatus": "TAGGED"}
+        )
+        ecr_images = ecr_response["imageDetails"]
+        tag_to_digest = {}
+        for img in ecr_images:
+            for tag in img.get("imageTags", []):
+                tag_to_digest[tag] = img["imageDigest"]
+
+        for solver in aws_solvers:
+            self.rn.set_solver(solver)
+            cluster_name = self.rn.get_ecs_cluster_name()
+            task_arns = self.ecs_client.list_tasks(
+                cluster=cluster_name, desiredStatus="RUNNING"
+            ).get("taskArns", [])
+            if not task_arns:
+                continue
+
+            tasks = self.ecs_client.describe_tasks(cluster=cluster_name, tasks=task_arns)
+            ecr_tag = self.rn.get_ecr_image_tag(solver)
+            expected_digest = tag_to_digest.get(ecr_tag)
+            if expected_digest is None:
+                continue
+
+            for task in tasks.get("tasks", []):
+                for container in task.get("containers", []):
+                    image_digest = container.get("imageDigest")
+                    if image_digest and image_digest != expected_digest:
+                        return True
+
+        return False
+
+    def get_current_desired_count(self, solver: str) -> int:
+        """Get the current desired task count for a solver's leader service.
+
+        Args:
+            solver: Solver name
+
+        Returns:
+            Current desired count, or 0 if the service is not found
+        """
+        self.rn.set_solver(solver)
+        cluster_name = self.rn.get_ecs_cluster_name()
+        ecs_response = self.ecs_client.list_services(cluster=cluster_name)
+        service_arns = ecs_response.get("serviceArns", [])
+        leader_service = f"{self.rn.get_solver_stack_name()}-SolverLeaderService"
+
+        for arn in service_arns:
+            if leader_service in arn:
+                desc = self.ecs_client.describe_services(cluster=cluster_name, services=[arn])
+                services = desc.get("services", [])
+                if services:
+                    return services[0].get("desiredCount", 0)
+        return 0
+
+    def wait_for_tasks_stopped(self, aws_solvers: List[str], timeout_secs: int = 300) -> bool:
+        """Poll until all running tasks have stopped.
+
+        Args:
+            aws_solvers: List of solver names to check
+            timeout_secs: Maximum time to wait
+
+        Returns:
+            True if all tasks stopped, False if timed out
+        """
+        start = time.time()
+        while time.time() - start < timeout_secs:
+            total_running = sum(self.get_running_task_count(s) for s in aws_solvers)
+            if total_running == 0:
+                return True
+            self.logger.info(f"Waiting for {total_running} task(s) to stop...")
+            time.sleep(10)
+        return False
+
     def scale_solver(self, solver: str, num_leaders: int, num_copies: int) -> bool:
         """Scale a solver's ECS service and ASG.
 
@@ -264,6 +400,18 @@ class StartCommand(CommandHandler):
             0 on success, 1 on error
         """
         self.logger.info("start: Start tasks on ECS")
+
+        manager = EcsServiceManager(self.ctx, self.logger)
+        aws_solvers = self.ctx.aws_solvers
+        if manager.has_stale_images(aws_solvers):
+            self.logger.warning(
+                "Running tasks are using stale images that differ from ECR. "
+                "Use `refresh-instances` to cycle tasks with the new images."
+            )
+            response = input("Would you like to refresh instead? [y/N] ").strip().lower()
+            if response == "y":
+                return RefreshCommand(self.ctx).execute()
+
         return self._execute_ecs_action(num_leaders=num_copies, num_copies=num_copies, action="start")
 
     def _execute_ecs_action(self, num_leaders: int, num_copies: int, action: str) -> int:
@@ -324,6 +472,7 @@ class StandbyCommand(StartCommand):
             0 on success, 1 on error
         """
         self.logger.info("standby: Request/keep EC2 instances, but stop any running solvers")
+        prompt_purge_queues(self.ctx, self.logger)
         return self._execute_ecs_action(num_leaders=0, num_copies=num_copies, action="standby")
 
 
@@ -338,3 +487,55 @@ class StopCommand(StartCommand):
         """
         self.logger.info("stop: Stop running tasks on ECS")
         return self._execute_ecs_action(num_leaders=0, num_copies=0, action="stop")
+
+
+class RefreshCommand(CommandHandler):
+    """Cycle ECS tasks to pick up new images from ECR."""
+
+    def execute(self, **kwargs) -> int:
+        """Stop running tasks, wait for drain, then restart with fresh images.
+
+        Reads the current desired count per solver from ECS before stopping,
+        and restores those same counts on restart.
+
+        Returns:
+            0 on success, 1 on error
+        """
+        self.logger.info("refresh: Cycling tasks to pick up new ECR images")
+        aws_solvers = self.ctx.aws_solvers
+        manager = EcsServiceManager(self.ctx, self.logger)
+
+        # Read current desired count per solver before stopping
+        solver_counts = {s: manager.get_current_desired_count(s) for s in aws_solvers}
+        max_count = max(solver_counts.values())
+        if max_count == 0:
+            self.logger.error("No running tasks to refresh. Use `start-instances` instead.")
+            return 1
+        for solver, count in solver_counts.items():
+            self.logger.info(f"  {solver}: {count} instance(s)")
+
+        # Check queues and offer to purge
+        prompt_purge_queues(self.ctx, self.logger)
+
+        # Standby: keep EC2 instances but stop tasks
+        self.logger.info("Putting solvers in standby...")
+        result = self._execute_ecs_action_direct(manager, num_leaders=0, num_copies=max_count)
+        if result != 0:
+            return result
+
+        # Wait for all tasks to stop
+        self.logger.info("Waiting for running tasks to stop...")
+        if not manager.wait_for_tasks_stopped(aws_solvers):
+            self.logger.error("Timed out waiting for tasks to stop. Try again or use terminate-instances.")
+            return 1
+
+        self.logger.info("All tasks stopped. Starting with fresh images...")
+        return StartCommand(self.ctx).execute(num_copies=max_count)
+
+    def _execute_ecs_action_direct(self, manager: EcsServiceManager, num_leaders: int, num_copies: int) -> int:
+        """Scale solvers without validation (used during refresh cycle)."""
+        aws_solvers = self.ctx.aws_solvers
+        for solver in aws_solvers:
+            if not manager.scale_solver(solver, num_leaders, num_copies):
+                return 1
+        return 0
