@@ -115,6 +115,8 @@ Update `ec2_instance_type` in config.yml and redeploy:
 2. Wrong `solver_type` (e.g., `.cnf` files with `solver_type: smt`)
 3. S3 path doesn't exist
 
+**Note:** Compressed formula files (`.cnf.gz`, `.cnf.bz2`, `.cnf.xz` and `.smt2.gz`, `.smt2.bz2`, `.smt2.xz`) are supported and matched automatically.
+
 **Debug:**
 ```bash
 # Check if files exist

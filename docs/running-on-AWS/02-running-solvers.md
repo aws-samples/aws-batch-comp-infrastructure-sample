@@ -72,12 +72,27 @@ swap in new images without waiting for instance launch.
 
 ```bash
 ./satcomp.py standby-instances 5    # Warm up 5 instances per solver
-# ... make local changes, rebuild, est ...
+# ... make local changes, rebuild, test ...
 ./satcomp.py build push
 ./satcomp.py start-instances 5      # Starts new solver images quickly on warm instances
 ```
 
 **Note:** Running `standby-instances` after `start-instances` will stop running tasks, but keep the compute instances alive (and keeps charging your account for the underlying instances)
+
+### Refreshing running tasks with new images
+
+If you've already started instances and push new images, use `refresh-instances`
+to cycle tasks without losing your warm EC2 instances:
+
+```bash
+./satcomp.py build push
+./satcomp.py refresh-instances    # Standby, wait for drain, then restart
+```
+
+This reads the current desired count from ECS, puts solvers in standby, waits for
+all running tasks to fully drain, then restarts with the same count using fresh images.
+
+**Note:** If you run `start-instances` when tasks are already running with outdated images, it will detect the mismatch and offer to refresh for you. You can use `refresh-instances` directly if you already know your images have changed, or simply use `start-instances` and let it prompt you.
 
 ## Submitting Jobs
 
@@ -114,8 +129,8 @@ and 5 solvers, 500 total jobs are submitted (100 per solver).
 ### Filtering by File Extension
 
 The `solver_type` in config.yml determines which files are submitted:
-- `sat`: Only `.cnf` files
-- `smt`: Only `.smt2` files
+- `sat`: `.cnf` files (including compressed: `.cnf.gz`, `.cnf.bz2`, `.cnf.xz`)
+- `smt`: `.smt2` files (including compressed: `.smt2.gz`, `.smt2.bz2`, `.smt2.xz`)
 
 ### Limiting Job Count
 

@@ -77,6 +77,7 @@ Starting containers, running tests, stopping containers:
 
 ```bash
 satcomp.py start-instances [n]        # start n instances for each solver (activate compute, can take 15 minutes)
+satcomp.py refresh-instances           # cycle running tasks to pick up new images after build push
 satcomp.py submit                     # Submit the jobs referenced in jobs.yml
 satcomp.py terminate-instances        # terminate solvers (when input queues are empty)
 satcomp.py collect                    # read solver output from AWS output queues and copy into local results

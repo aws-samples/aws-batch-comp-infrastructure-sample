@@ -15,6 +15,9 @@
 # Start 5 copies of each solver
 ./satcomp.py start-instances 5
 
+# Refresh running tasks after pushing new images
+./satcomp.py refresh-instances
+
 # Submit jobs from jobs.yml
 ./satcomp.py submit
 
@@ -62,16 +65,20 @@ source satcomp-activate.sh
 After provisioning:
 
 ```bash
-# Keep EC2 instances warm while rebuilding
-./satcomp.py standby-instances 5
-
-# rinse and repeat as needed
+# First time: start instances
 ./satcomp.py build push
 ./satcomp.py start-instances 5
+
+# Iterate: rebuild and refresh running tasks with new images
+./satcomp.py build push
+./satcomp.py refresh-instances
 ./satcomp.py submit
 # wait for completion
 ./satcomp.py collect 
 ```
+
+**Note:** You can also use `start-instances` after pushing new images — it will detect stale
+running tasks and offer to refresh for you.
 
 Don't forget to `terminate-instances` when finished debugging,
 and `teardown all` when finished with the competition.
