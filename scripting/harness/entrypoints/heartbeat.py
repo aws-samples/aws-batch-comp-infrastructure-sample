@@ -86,6 +86,25 @@ class HeartbeatThread(Thread):
         self.release()
 
     def run(self):
+        consecutive_failures = 0
+        MAX_CONSECUTIVE_FAILURES = 10
         while True:
-            self.beat()
+            try:
+                self.beat()
+                consecutive_failures = 0
+            except Exception as e:
+                consecutive_failures += 1
+                logger.error(
+                    f"Heartbeat failed ({consecutive_failures}/{MAX_CONSECUTIVE_FAILURES}): "
+                    f"{type(e).__name__}: {e}"
+                )
+                if consecutive_failures >= MAX_CONSECUTIVE_FAILURES:
+                    logger.error(
+                        "Heartbeat has failed too many times in a row. "
+                        "Workers will consider this leader dead. "
+                        "Likely cause: expired credentials that cannot be refreshed. "
+                        "Terminating process so ECS can restart with fresh credentials."
+                    )
+                    import os
+                    os._exit(1)
             sleep(self.interval)
