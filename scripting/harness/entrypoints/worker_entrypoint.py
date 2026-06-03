@@ -19,14 +19,42 @@ lm = LoggingManager()
 logger = lm.get_logger("Worker entrypoint")
 
 
-def get_leader(ip: IpItem, ip_table: DynamoTable, timestamp_table: DynamoTable) -> TimestampItem:
+def ensure_registered(ip: IpItem, ip_table: DynamoTable, ts: TimestampItem, timestamp_table: DynamoTable):
+    """Re-register this worker if its IP entry was deleted from DynamoDB.
+
+    This can happen when clean_up_crashed_nodes deletes our IP entry because
+    our heartbeat timestamp expired — e.g., due to a transient credential
+    failure. The worker process is still alive, but it's become invisible to
+    the leader's get_unclaimed_workers() scan. Without re-registration, the
+    leader sees 0 available workers and the workers wait forever to be claimed,
+    creating a permanent deadlock.
+
+    If re-registration fails (credentials still dead), we exit so ECS can
+    restart the worker with fresh credentials.
+    """
+    entry = ip_table.get_item(Key=ip.uuid)
+    if entry is None:
+        logger.info("My IP entry was deleted from DynamoDB — re-registering")
+        try:
+            ip.write_to(ip_table)
+            ts.set_time()
+            ts.write_to(timestamp_table)
+            logger.info("Re-registration successful")
+        except Exception as e:
+            logger.error(f"Failed to re-register: {type(e).__name__}: {e}. Exiting so ECS can restart.")
+            exit(1)
+
+
+def get_leader(ip: IpItem, ip_table: DynamoTable, timestamp_table: DynamoTable, ts: TimestampItem) -> TimestampItem:
     old_leader = None
     while True:
         # Sleep until we are assigned a (new) leader
+        ensure_registered(ip, ip_table, ts, timestamp_table)
         ip.read_from(ip_table)
         while ip.led_by.value == ip.UNOWNED_UUID or ip.led_by.value == old_leader:
             logger.info("My IP node has not been claimed yet, waiting for a bit before checking again")
             sleep(DConsts.LED_BY_SLEEP_INTERVAL)
+            ensure_registered(ip, ip_table, ts, timestamp_table)
             ip.read_from(ip_table)
 
         logger.info(f"Provisionally assigned leader with id {ip.led_by.value}")
@@ -94,7 +122,7 @@ def run(senv: SolverEnvironment):
     # and if the leader ever says to clean up, the worker invokes the cleanup command
     while True:
         logger.info("Getting a leader")
-        leader_ts = get_leader(ip, ip_table, timestamp_table)
+        leader_ts = get_leader(ip, ip_table, timestamp_table, ts)
 
         logger.info("Waiting for cleanup signal")
         wait_for_cleanup_signal(leader_ts, timestamp_table)
