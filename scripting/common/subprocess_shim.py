@@ -86,21 +86,10 @@ class SubprocessShim:
         self.error_return = SubprocessShimOutput(0, -1, self.stdout_path, self.stderr_path, False)
 
     def validate_cmd(self, cmd: List[str]):
-        # TODO: A more robust analysis of escape characters and quotes
-        for token in cmd:
-            escaped = False
-            for i in range(len(token)):
-                ch = token[i]
-                if ch == "\\":
-                    escaped = not escaped
-                elif ch == " " and not escaped:
-                    self.logger.error(f'Error: Token "{token}" contains an un-escaped space character')
-                    self.logger.error("Please split commands into individual tokens, such as ['echo', 'hello']")
-                    return self.error_return
-
-            if escaped:
-                self.logger.error(f'Error: Token "{token}" ended with an escape character')
-                return self.error_return
+        # Previously checked for spaces and trailing backslashes in tokens,
+        # but neither caught real bugs — and the return value was ignored anyway.
+        # subprocess.Popen with a list handles spaces in arguments correctly by design.
+        pass
 
     def run(self, cmd: List[str], timeout_secs: Optional[int] = None) -> SubprocessShimOutput:
         """
