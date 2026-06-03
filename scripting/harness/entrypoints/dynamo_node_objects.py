@@ -1,3 +1,4 @@
+import logging
 from enum import Enum
 from time import sleep, time
 from typing import List, Optional, Union
@@ -6,6 +7,8 @@ from uuid import UUID, uuid4
 from common.misc import get_local_ip_address
 from dist_consts import DistributedConsts as DConsts
 from harness.aws_shim.ddb_shim import DynamoAttr, DynamoTable, DynamoType
+
+logger = logging.getLogger("DynamoNodeObjects")
 
 ################################################################################
 
@@ -132,17 +135,44 @@ class IpItem:
         table: DynamoTable,
         num_workers: int,
         retry_interval: int | float = DConsts.LEADER_CLAIM_WORKERS_SLEEP_INTERVAL,
+        timeout_secs: int = 120,
     ) -> List["IpItem"]:
-        """Atomically claims `num_workers` workers in the IP table. Returns a list of IP addresses claimed."""
+        """Atomically claims `num_workers` workers in the IP table.
+
+        Returns the list of workers claimed. If unable to claim the requested
+        number within timeout_secs, returns however many were claimed so far
+        (may be fewer than num_workers). This prevents an infinite hang when
+        workers are permanently unavailable (e.g., orphaned claims from a dead
+        leader that wasn't properly cleaned up).
+        """
         assert num_workers > 0
+        import time
+        start = time.time()
 
         ips = []
         num_left_to_claim = num_workers
         while num_left_to_claim > 0:
+            # Bail out after timeout_secs to avoid an infinite loop. The loop
+            # below hangs forever when get_unclaimed_workers() consistently
+            # returns fewer workers than needed — this happens when workers are
+            # still "claimed" by a dead leader whose IP entry was deleted before
+            # its workers were unclaimed (see clean_up_crashed_nodes). The
+            # caller's retry loop in leader_entrypoint.claim_workers() handles
+            # the shortfall by re-running cleanup and trying again.
+            if time.time() - start > timeout_secs:
+                logger.info(
+                    f"claim_workers timed out after {timeout_secs}s. "
+                    f"Claimed {len(ips)}/{num_workers} workers."
+                )
+                return ips
+
             unclaimed = IpItem.get_unclaimed_workers(table)
 
             # Sleep if there aren't enough workers for us to claim in one go
             if len(unclaimed) < num_left_to_claim:
+                logger.info(
+                    f"Waiting for workers: {len(unclaimed)} unclaimed, need {num_left_to_claim} more"
+                )
                 sleep(retry_interval)
                 continue
 

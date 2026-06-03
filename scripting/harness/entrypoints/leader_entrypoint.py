@@ -162,16 +162,20 @@ def clean_up_crashed_nodes(
         return
 
     logger.info(f"Deleting the following crashed nodes from the tables: {deleted_uuid_strs}")
-    IpItem.batch_delete_item(ip_table, deleted_uuids)
 
-    # In addition to deleting the IP entries for expired nodes,
-    # we also need to unclaim any (alive) workers if their leader has crashed.
-    # (This happens if the leader crashes, but none of the workers do.)
+    # IMPORTANT: Unclaim workers BEFORE deleting the dead leader's IP entry.
+    # If we delete the IP entry first, we can no longer find the dead leader
+    # in the IP table, so we can't identify which workers it owned. Those
+    # workers would remain permanently "claimed" by a UUID that no longer
+    # exists, making them invisible to get_unclaimed_workers() and causing
+    # the new leader to hang forever waiting for enough unclaimed workers.
     all_leaders = IpItem.scan(ip_table, is_leader=True)
-    dead_leaders = filter(lambda x: x.uuid.value in deleted_uuid_strs, all_leaders)
+    dead_leaders = [x for x in all_leaders if x.uuid.value in deleted_uuid_strs]
     for leader in dead_leaders:
         logger.info(f"Unclaiming workers for dead leader {leader.uuid.value}")
         leader.unclaim_workers(ip_table)
+
+    IpItem.batch_delete_item(ip_table, deleted_uuids)
 
 
 def claim_workers(
@@ -179,38 +183,61 @@ def claim_workers(
     timestamp_table: DynamoTable,
     ip: IpItem | None,
     num_workers: int,
+    max_attempts: int = 30,
+    retry_interval_secs: int = 10,
 ) -> List[str]:
-    """Claims workers and checks that they're healthy."""
+    """Claims workers and checks that they're healthy.
+
+    Retries up to max_attempts times if not enough workers are available.
+    Raises RuntimeError if unable to claim the required number of workers.
+    """
     if ip is None or num_workers == 0:
         return []
 
-    clean_up_crashed_nodes(ip_table, timestamp_table)
+    for attempt in range(max_attempts):
+        clean_up_crashed_nodes(ip_table, timestamp_table)
 
-    # Scan for any worker nodes that we have already claimed
-    workers = IpItem.scan(ip_table, is_leader=False, led_by=ip.uuid.value)
-    logger.info(f"Found {len(workers)} workers already claimed by me (out of {num_workers} needed workers)")
+        # Scan for any worker nodes that we have already claimed
+        workers = IpItem.scan(ip_table, is_leader=False, led_by=ip.uuid.value)
+        logger.info(f"Found {len(workers)} workers already claimed by me (out of {num_workers} needed workers)")
 
-    # If we don't have enough workers, claim some extras until we hit our quota
-    if len(workers) < num_workers:
-        logger.info("We don't have enough workers. Claiming more...")
-        num_left_to_claim = num_workers - len(workers)
-        newly_claimed = ip.claim_workers(ip_table, num_left_to_claim)
-        workers.extend(newly_claimed)
+        # If we don't have enough workers, claim some extras until we hit our quota
+        if len(workers) < num_workers:
+            logger.info("We don't have enough workers. Claiming more...")
+            num_left_to_claim = num_workers - len(workers)
+            newly_claimed = ip.claim_workers(ip_table, num_left_to_claim)
+            workers.extend(newly_claimed)
 
-    assert len(workers) == num_workers
+        if len(workers) < num_workers:
+            logger.info(
+                f"Only {len(workers)}/{num_workers} workers available "
+                f"(attempt {attempt + 1}/{max_attempts}). Retrying in {retry_interval_secs}s..."
+            )
+            sleep(retry_interval_secs)
+            continue
 
-    # Now that we've claimed workers, check that their heartbeats are active
-    logger.info(f"Claimed the following {len(workers)} workers: {workers}.")
-    logger.info("Checking that all workers are healthy")
-    curr_time = TimestampItem.get_curr_time()
-    worker_uuids = [w.uuid for w in workers]
-    tss = TimestampItem.batch_get(timestamp_table, worker_uuids)
-    for t in tss:
-        if not t.is_alive(time=curr_time):
-            logger.info(f"Worker with ID {t.uuid.value} is dead, cleaning up...")
-            claim_workers(ip_table, timestamp_table, ip, num_workers)
+        # Now that we've claimed workers, check that their heartbeats are active
+        logger.info(f"Claimed the following {len(workers)} workers: {workers}.")
+        logger.info("Checking that all workers are healthy")
+        curr_time = TimestampItem.get_curr_time()
+        worker_uuids = [w.uuid for w in workers]
+        tss = TimestampItem.batch_get(timestamp_table, worker_uuids)
 
-    return [w.ip_address.value for w in workers]
+        has_dead_worker = False
+        for t in tss:
+            if not t.is_alive(time=curr_time):
+                logger.info(f"Worker with ID {t.uuid.value} is dead, will retry claim...")
+                has_dead_worker = True
+                break
+
+        if has_dead_worker:
+            sleep(retry_interval_secs)
+            continue
+
+        return [w.ip_address.value for w in workers]
+
+    logger.error(f"Failed to claim {num_workers} workers after {max_attempts} attempts")
+    raise RuntimeError(f"Could not claim {num_workers} workers")
 
 
 def clean_up_self(logger: Logger, run_dir: Path) -> None:
@@ -367,13 +394,28 @@ def run(senv: SolverEnvironment):
     need_to_claim_workers = senv.is_distributed
     while MAX_EMPTY_QUEUE_ATTEMPTS is None or num_times_empty_queue < MAX_EMPTY_QUEUE_ATTEMPTS:
         # If distributed, claim the desired number of worker nodes
-        # This protocol is somewhat complicated, see the docs in `/docs/design`
         if need_to_claim_workers:
-            worker_ips = claim_workers(ip_table, timestamp_table, ip, senv.num_workers)
-            need_to_claim_workers = False
+            try:
+                logger.info(f"Attempting to claim {senv.num_workers} workers...")
+                worker_ips = claim_workers(ip_table, timestamp_table, ip, senv.num_workers)
+                need_to_claim_workers = False
+            except RuntimeError as e:
+                logger.error(f"Failed to claim workers: {e}")
+                logger.error("claim_workers already retried internally for 5 minutes. Exiting so ECS can restart with fresh credentials and state.")
+                exit(1)
+            except Exception as e:
+                logger.error(f"Unexpected error claiming workers: {type(e).__name__}: {e}")
+                logger.error("This is likely a credential or network failure. Exiting so ECS can restart with fresh credentials.")
+                exit(1)
 
         # Get a message from the queue. If no message, loop again
-        message = q_in.get_message(wait_time_secs=QUEUE_WAIT_TIME)
+        try:
+            message = q_in.get_message(wait_time_secs=QUEUE_WAIT_TIME)
+        except Exception as e:
+            logger.error(f"Error polling queue: {type(e).__name__}: {e}")
+            logger.error("SQS failure is likely a credential or network issue. Exiting so ECS can restart with fresh credentials.")
+            exit(1)
+
         if message is None:
             logger.info("No message on the queue, trying again")
             num_times_empty_queue += 1
@@ -385,17 +427,23 @@ def run(senv: SolverEnvironment):
         q_input: SolverQueueInput = SolverQueueInput.from_json(message_body)
         message.delete()
 
-        q_output_msg = run_job(
-            s3,
-            s3_results_bucket,
-            q_input,
-            senv,
-            node_ip=ip.ip_address.value,
-            worker_ips=worker_ips,
-            heartbeat=hb,
-        )
+        try:
+            q_output_msg = run_job(
+                s3,
+                s3_results_bucket,
+                q_input,
+                senv,
+                node_ip=ip.ip_address.value,
+                worker_ips=worker_ips,
+                heartbeat=hb,
+            )
+            q_out.put_message(q_output_msg.to_json())
+        except Exception as e:
+            logger.error(
+                f"Error running job for formula {q_input.formula_url}: {type(e).__name__}: {e}. "
+                "Skipping this job and continuing to next."
+            )
 
-        q_out.put_message(q_output_msg.to_json())
         need_to_claim_workers = senv.is_distributed
 
     # If we are on AWS, we never get to this point
