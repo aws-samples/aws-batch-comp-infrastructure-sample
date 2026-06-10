@@ -11,7 +11,7 @@ charset-normalizer==3.4.2
 constructs==10.4.2
 distlib==0.3.9
 docker==7.1.0
-filelock==3.16.1
+filelock==3.20.3
 idna==3.10
 importlib_resources==6.4.5
 jmespath==1.0.1
