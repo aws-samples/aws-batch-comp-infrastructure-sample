@@ -24,7 +24,7 @@ publication==0.0.3
 pytest==9.0.3
 python-dateutil==2.9.0.post0
 PyYAML==6.0.2
-requests==2.32.3
+requests==2.33.0
 s3transfer==0.13.1
 six==1.17.0
 typeguard==2.13.3
