@@ -21,7 +21,7 @@ more-itertools==10.5.0
 platformdirs==4.3.6
 psutil==7.0.0
 publication==0.0.3
-pytest==8.3.5
+pytest==9.0.3
 python-dateutil==2.9.0.post0
 PyYAML==6.0.2
 requests==2.32.3
