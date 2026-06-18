@@ -129,7 +129,7 @@ class TestProcessJobsBatchDelete:
         # First call returns messages, second returns empty (queue drained)
         mock_queue.receive_messages.side_effect = [messages, []]
 
-        jm.process_jobs(mock_queue)
+        jm.process_jobs(mock_queue, "test")
 
         # Batch delete should have been called once with all 3 messages
         mock_queue.delete_message_batch.assert_called_once_with(messages)
@@ -151,7 +151,7 @@ class TestProcessJobsBatchDelete:
         mock_queue = MagicMock(spec=SqsQueue)
         mock_queue.receive_messages.side_effect = [batch1, batch2, []]
 
-        jm.process_jobs(mock_queue)
+        jm.process_jobs(mock_queue, "test")
 
         assert mock_queue.delete_message_batch.call_count == 2
         mock_queue.delete_message_batch.assert_any_call(batch1)
@@ -169,9 +169,9 @@ class TestProcessJobsBatchDelete:
         mock_queue = MagicMock(spec=SqsQueue)
         mock_queue.receive_messages.side_effect = [messages, []]
 
-        jm.process_jobs(mock_queue)
+        jm.process_jobs(mock_queue, "test")
 
-        results_file = tmp_path / "results" / "results.txt"
+        results_file = tmp_path / "results" / "results-test.txt"
         assert results_file.exists()
         lines = results_file.read_text().strip().split("\n")
         assert len(lines) == 5
@@ -188,7 +188,7 @@ class TestProcessJobsBatchDelete:
         mock_queue = MagicMock(spec=SqsQueue)
         mock_queue.receive_messages.return_value = []
 
-        jm.process_jobs(mock_queue)
+        jm.process_jobs(mock_queue, "test")
 
         mock_queue.delete_message_batch.assert_not_called()
 
@@ -218,13 +218,13 @@ class TestMalformedMessages:
         mock_queue.receive_messages.side_effect = [messages, []]
 
         # Should not raise
-        jm.process_jobs(mock_queue)
+        jm.process_jobs(mock_queue, "test")
 
         # All messages should still be deleted (including malformed)
         mock_queue.delete_message_batch.assert_called_once_with(messages)
 
         # Valid results should be written
-        results_file = tmp_path / "results" / "results.txt"
+        results_file = tmp_path / "results" / "results-test.txt"
         lines = results_file.read_text().strip().split("\n")
         assert len(lines) == 2  # Only 2 valid messages
 
@@ -250,8 +250,8 @@ class TestMalformedMessages:
         mock_queue.receive_messages.side_effect = [messages, []]
 
         # Should not raise
-        jm.process_jobs(mock_queue)
+        jm.process_jobs(mock_queue, "test")
 
-        results_file = tmp_path / "results" / "results.txt"
+        results_file = tmp_path / "results" / "results-test.txt"
         lines = results_file.read_text().strip().split("\n")
         assert len(lines) == 1  # Only 1 valid message

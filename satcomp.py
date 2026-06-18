@@ -260,7 +260,7 @@ if __name__ == "__main__":
                 exit(result)
 
         if parser.collect:
-            result = ProcessCommand(ctx, jm).execute()
+            result = ProcessCommand(ctx, jm).execute(versioned=parser.versioned)
             if result != 0:
                 exit(result)
 

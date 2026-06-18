@@ -113,7 +113,16 @@ class SolverJobManager:
         queue.send_messages(messages, display_progress_bar=True)
         queue.logger.setLevel(lvl)
 
-    def process_jobs(self, queue: SqsQueue, wait_time_secs: int = 1) -> None:
+    def get_results_file_path(self, project: str, versioned: bool) -> str:
+        """Determine the results file path based on project name and versioning mode."""
+        if versioned:
+            n = 0
+            while os.path.exists(os.path.join(self.results_dir, f"results-{project}-{n}.txt")):
+                n += 1
+            return os.path.join(self.results_dir, f"results-{project}-{n}.txt")
+        return os.path.join(self.results_dir, f"results-{project}.txt")
+
+    def process_jobs(self, queue: SqsQueue, project: str, versioned: bool = False, wait_time_secs: int = 1) -> None:
         """
         Pull results from the output queue and store them in the `results` directory.
 
@@ -124,7 +133,8 @@ class SolverJobManager:
         TODO: Implement deduplication by tracking processed message IDs or formula URIs.
         """
 
-        results_file_path = os.path.join(self.results_dir, "results.txt")
+        results_file_path = self.get_results_file_path(project, versioned)
+        logger.info(f"Writing results to {results_file_path}")
         with open(results_file_path, "a") as f:
             total_messages_read = 0
             malformed_count = 0

@@ -312,9 +312,9 @@ class TestProcessJobs:
         """Test process_jobs with empty queue."""
         manager = SolverJobManager(str(jobs_config_file))
         manager.make_results_dir()
-        manager.process_jobs(local_output_queue, wait_time_secs=0)
+        manager.process_jobs(local_output_queue, "test", wait_time_secs=0)
 
-        results_file = tmp_path / "results" / "results.txt"
+        results_file = tmp_path / "results" / "results-test.txt"
         assert results_file.exists()
         assert results_file.read_text() == ""
 
@@ -327,9 +327,9 @@ class TestProcessJobs:
 
         manager = SolverJobManager(str(jobs_config_file))
         manager.make_results_dir()
-        manager.process_jobs(local_output_queue, wait_time_secs=0)
+        manager.process_jobs(local_output_queue, "test", wait_time_secs=0)
 
-        results_file = tmp_path / "results" / "results.txt"
+        results_file = tmp_path / "results" / "results-test.txt"
         content = results_file.read_text()
         assert "test-solver" in content
         assert "s3://test-bucket/formulas/test.cnf" in content
@@ -352,9 +352,9 @@ class TestProcessJobs:
 
         manager = SolverJobManager(str(jobs_config_file))
         manager.make_results_dir()
-        manager.process_jobs(local_output_queue, wait_time_secs=0)
+        manager.process_jobs(local_output_queue, "test", wait_time_secs=0)
 
-        results_file = tmp_path / "results" / "results.txt"
+        results_file = tmp_path / "results" / "results-test.txt"
         lines = results_file.read_text().strip().split("\n")
         assert len(lines) == 5
 
@@ -369,9 +369,9 @@ class TestProcessJobs:
 
         manager = SolverJobManager(str(jobs_config_file))
         manager.make_results_dir()
-        manager.process_jobs(local_output_queue, wait_time_secs=0)
+        manager.process_jobs(local_output_queue, "test", wait_time_secs=0)
 
-        results_file = tmp_path / "results" / "results.txt"
+        results_file = tmp_path / "results" / "results-test.txt"
         lines = results_file.read_text().strip().split("\n")
         # Only the valid message should be written
         assert len(lines) == 1
@@ -386,7 +386,7 @@ class TestProcessJobs:
 
         manager = SolverJobManager(str(jobs_config_file))
         manager.make_results_dir()
-        manager.process_jobs(local_output_queue, wait_time_secs=0)
+        manager.process_jobs(local_output_queue, "test", wait_time_secs=0)
 
         # Queue should be empty after processing
         assert local_output_queue.len() == 0
@@ -460,10 +460,10 @@ class TestEndToEndPipeline:
         assert output_queue.len() == 3
 
         # Phase 3: Process results
-        manager.process_jobs(output_queue, wait_time_secs=0)
+        manager.process_jobs(output_queue, "test", wait_time_secs=0)
 
         # Verify results
-        results_file = tmp_path / "results" / "results.txt"
+        results_file = tmp_path / "results" / "results-test.txt"
         assert results_file.exists()
         lines = results_file.read_text().strip().split("\n")
         assert len(lines) == 3
@@ -580,9 +580,9 @@ class TestPipelineErrorHandling:
         manager = SolverJobManager(str(jobs_config_file))
         manager.make_results_dir()
 
-        results_file = tmp_path / "results" / "results.txt"
+        results_file = tmp_path / "results" / "results-test.txt"
         assert not results_file.exists()
 
-        manager.process_jobs(local_output_queue, wait_time_secs=0)
+        manager.process_jobs(local_output_queue, "test", wait_time_secs=0)
 
         assert results_file.exists()

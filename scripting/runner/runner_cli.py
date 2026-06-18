@@ -440,6 +440,12 @@ class SatCompArgParser:
             help="Purge all input queues of messages. Useful with `stop`, if you don't want new solvers to run those jobs.",
         )
 
+        jobs_g.add_argument(
+            "--versioned",
+            action="store_true",
+            help="Create a new numbered results file (results-<project>-<n>.txt) instead of appending to a single file.",
+        )
+
         # Testing
         tg = self.parser.add_argument_group(
             "Testing options", "Run (local) tests on built Docker solver images with these options."
@@ -542,6 +548,7 @@ class SatCompArgParser:
         self.submit = None
         self.collect = None
         self.purge = False
+        self.versioned = False
 
         # `ls`, `provision` and `teardown` have sub-commands
         self.ls = None
