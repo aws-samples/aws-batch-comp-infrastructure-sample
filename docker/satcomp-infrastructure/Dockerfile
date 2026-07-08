@@ -2,12 +2,19 @@
 # Since we always run the containers on AWS with Amazon Linux,
 # we hard-code using the amd64 Linux architecture. This has the benefit of
 # reducing the disk size of the generated image.
+#
+# Security note: This image runs apt-get upgrade at build time to apply the
+# latest OS patches available. However, as this image ages, new vulnerabilities
+# may be discovered. As a security best practice, both competition organizers
+# and solver authors should rebuild this base image (and any images derived
+# from it) regularly to ensure OS packages remain up to date.
 FROM amd64/ubuntu:noble
 
 # Set up ecs-user, install software dependencies, and set up the SSH daemon
 RUN useradd -ms /bin/bash ecs-user \
     # Install software dependencies, including OpenMPI
     && apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get upgrade -y \
     && DEBIAN_FRONTEND=noninteractive apt install -y vim python3.12 python3-pip python3.12-venv git openssh-server iproute2 openmpi-bin openmpi-common iputils-ping \
     # Alias `python` and `python3` to the just-installed python3.12
     && update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1 \
