@@ -1,5 +1,5 @@
 attrs==25.3.0
-aws-cdk-lib==2.183.0
+aws-cdk-lib==2.253.0
 aws-cdk.asset-awscli-v1==2.2.227
 aws-cdk.asset-node-proxy-agent-v6==2.1.0
 aws-cdk.cloud-assembly-schema==40.7.0
