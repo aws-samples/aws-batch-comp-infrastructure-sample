@@ -318,6 +318,15 @@ For a quick AWS test without running a full suite of tests:
 
 The `--acceptance-test` command runs a built-in acceptance test suite that validates your solver handles all expected scenarios. This is the "admission test" for the competition; we will run the same tests on your solver.
 
+Before the first run, generate the test formulas with:
+
+```bash
+./tools/generate_test_formulas.sh
+```
+
+This puts some CNF and SMT-LIB files in `test_formulas/`.
+
+
 ```bash
 # Run acceptance tests for a specific solver
 ./satcomp.py config.yml --acceptance-test mysolver

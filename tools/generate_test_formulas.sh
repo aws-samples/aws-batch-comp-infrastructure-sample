@@ -2,8 +2,9 @@
 # Generate all test formulas for acceptance testing and distributed testing.
 # Run from the repo root: ./tools/generate_test_formulas.sh
 #
-# This compiles the Ramsey generator and creates benchmark CNF files
-# in test_formulas/cnf/ for use by the acceptance test suite.
+# This compiles the Ramsey generator and creates benchmark CNF files in
+# test_formulas/cnf/, and copies SMT-LIB benchmark files into
+# test_formulas/smtlib/, for use by the acceptance test suite.
 
 set -e
 
@@ -11,8 +12,10 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 GEN_DIR="$SCRIPT_DIR/ramsey-generator"
 OUT_DIR="$REPO_ROOT/test_formulas/cnf"
+SMT_OUT_DIR="$REPO_ROOT/test_formulas/smtlib"
+SMT_SRC_DIR="$REPO_ROOT/examples/formulas/smtlib"
 
-mkdir -p "$OUT_DIR"
+mkdir -p "$OUT_DIR" "$SMT_OUT_DIR"
 
 # Compile the Ramsey generator if needed
 if [ ! -f "$GEN_DIR/ramsey-generator" ]; then
@@ -69,7 +72,25 @@ EOF
 fi
 
 echo ""
-echo "Done! Generated formulas:"
-ls -lh "$OUT_DIR"/*.cnf
+echo "Copying SMT-LIB test formulas to $SMT_OUT_DIR..."
+
+copy_smt() {
+    local src="$SMT_SRC_DIR/$1"
+    local dst="$SMT_OUT_DIR/$2"
+    if [ ! -f "$dst" ]; then
+        echo "  Copying $2..."
+        cp "$src" "$dst"
+    fi
+}
+
+copy_smt "easy/sat.smt2"              "sat_small_01.smt2"
+copy_smt "easy/unsat.smt2"            "unsat_small_01.smt2"
+copy_smt "hard/timeout.smt2"          "timeout_hard_01.smt2"
+copy_smt "oom/oom_big.smt2"           "oom_large_01.smt2"
+copy_smt "malformed/bad_header.smt2"  "malformed_bad_header_01.smt2"
+
 echo ""
-echo "To run acceptance tests: ./satcomp.py <config.yml> --test [solver-name]"
+echo "Done! Generated formulas:"
+ls -lh "$OUT_DIR"/*.cnf "$SMT_OUT_DIR"/*.smt2
+echo ""
+echo "To run acceptance tests: ./satcomp.py <config.yml> acceptance-test [solver-name]"

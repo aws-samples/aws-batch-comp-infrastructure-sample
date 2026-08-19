@@ -88,17 +88,23 @@ class AcceptanceTestRunner:
                 logger.warning(str(e))
                 test_cases = registry.discover_test_cases()
 
+            test_cases = self._filter_by_solver_type(test_cases)
+
             if not test_cases:
-                logger.error(f"No test cases found in {self.formula_dir}")
+                logger.error(
+                    f"No test cases found in {self.formula_dir} "
+                    f"for solver type '{self.project.solver_type}'."
+                )
+                logger.error(
+                    "Generate the acceptance test formulas by running "
+                    "`./tools/generate_test_formulas.sh` from the repository root."
+                )
                 report = TestReport(
                     solver_name=solver.name,
                     timeout_secs=self.timeout_secs,
                 )
                 report.print_report()
                 return report
-
-            # Filter by solver type (cnf for SAT, smt2 for SMT)
-            test_cases = self._filter_by_solver_type(test_cases)
 
             logger.info(f"Running {len(test_cases)} test cases for solver '{solver.name}'")
 
