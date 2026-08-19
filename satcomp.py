@@ -9,7 +9,7 @@ from pathlib import Path
 SCRIPT_DIR = os.path.normpath(os.path.dirname(__file__))
 SCRIPTING_DIR = os.path.normpath(os.path.join(SCRIPT_DIR, "scripting"))
 if os.environ.get("PYTHONPATH") is None or SCRIPTING_DIR not in os.environ["PYTHONPATH"]:
-    print("Error: You must run `source venv.sh` before using this project.", file=sys.stderr)
+    print("Error: You must run `source satcomp-activate.sh` before using this project.", file=sys.stderr)
     exit(1)
 
 import json
