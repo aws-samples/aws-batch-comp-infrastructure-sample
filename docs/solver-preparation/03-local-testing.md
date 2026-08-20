@@ -182,11 +182,27 @@ You should see your solver image listed with a tag matching your solver name.
 
 ## Testing Your Image Manually
 
-You can run your Docker container directly to test:
+You can run your Docker container directly to test.
+
+NOTE: To use the solver harness inside the container,
+you must provide a certain set of shell environment variables.
+For example, `SOLVER_NAME`, `PROJECT_NAME`, `SOLVER_NODE_TYPE`, and `NUM_WORKERS`.
+For the full set, consult `_build_env_vars()` in `scripting/runner/commands/test_local_distributed.py`,
+or `02-key-abstractions.md`.
+You can pass these environment variables explicitly to `docker` with the `-e` flag,
+or you can `export` them to the shell once you're inside the container.
+
+If you want to invoke the solver directly, then you won't need these environment variables.
+
+Also note that to test distributed solvers with the harness, you will need to mount a shared volume to each Docker container.
+Consult `_create_shared_volume()` in `test_local_distributed.py`.
 
 ```bash
-# Run a shell in your container
+# Launch the docker image, and then invoke the shell in the container
 docker run -it --rm your-solver-image /bin/bash
+  -e SOLVER_NAME=cadical
+  -e PROJECT_NAME=test
+  -e ...
 
 # Inside the container, test your solver manually
 /solver/build-path/my-solver /path/to/test.cnf
@@ -325,7 +341,6 @@ Before the first run, generate the test formulas with:
 ```
 
 This puts some CNF and SMT-LIB files in `test_formulas/`.
-
 
 ```bash
 # Run acceptance tests for a specific solver

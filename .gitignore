@@ -22,6 +22,7 @@ test_formulas/cnf/oom_*.cnf
 test_formulas/cnf/sat_*.cnf
 test_formulas/cnf/unsat_*.cnf
 test_formulas/cnf/malformed_*.cnf
+test_formulas/smtlib/*.smt2
 
 # Compiled Ramsey generator binary
 tools/ramsey-generator/ramsey-generator

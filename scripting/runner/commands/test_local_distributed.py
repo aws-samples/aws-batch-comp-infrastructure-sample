@@ -19,12 +19,22 @@ from uuid import uuid4
 import yaml
 from common import LoggingManager
 from common.constants import DOCKER_PLATFORM, SAT_FORMULA_EXTENSION, SMT_FORMULA_EXTENSION
+from common.misc import get_curr_year
 from common.solver_io import SolverResultCode
 from runner.commands.test_local import TestCase, TestResult
 from runner.runner_config import ProjectConfig, SolverConfig
 
 lm = LoggingManager()
 logger = lm.get_logger("DistributedTestRunner")
+
+# Exit codes signalling that the OS killed the solver (out-of-memory / SIGKILL).
+OOM_RETURN_CODES = (137, -9)
+
+# Artifact file names written by the leader harness into each per-run directory.
+SOLVER_OUT_FILENAME = "solver_out.json"
+INPUT_FILENAME = "input.json"
+STDOUT_FILENAME = "stdout.txt"
+STDERR_FILENAME = "stderr.txt"
 
 
 class DistributedTestRunner:
@@ -57,6 +67,17 @@ class DistributedTestRunner:
 
         # Shared volume temp directory
         self._shared_dir: Optional[str] = None
+
+        # Host directory bind-mounted onto the leader's work dir so that the
+        # per-run artifacts the leader writes (solver_out.json, input.json,
+        # stdout.txt, stderr.txt) survive the container and can be read back.
+        self._artifacts_dir: Optional[str] = None
+
+        # The leader harness writes its work dir at /tmp/{year}-dist-{solver}
+        # (see leader_entrypoint.make_work_dir). We mount a host directory onto
+        # exactly that path. The year is computed the same way the leader does.
+        self._leader_work_dir_name = f"{get_curr_year()}-dist-{self.solver.name}"
+        self._leader_work_dir = f"/tmp/{self._leader_work_dir_name}"
 
         # Cleanup flag for signal handling
         self._cleanup_requested = False
@@ -98,6 +119,19 @@ class DistributedTestRunner:
         self._shared_dir = tempfile.mkdtemp(prefix="satcomp-shared-")
         os.chmod(self._shared_dir, 0o777)
         logger.info(f"Created shared state directory: {self._shared_dir}")
+
+    def _create_artifacts_volume(self):
+        """Create a host temp directory to capture the leader's per-run artifacts.
+
+        This directory is bind-mounted onto the leader's work dir. Because the
+        mount is world-writable and the leader (running as ecs-user) writes its
+        solver_out.json/input.json/stdout.txt/stderr.txt there, the runner can
+        read structured results back after the container exits, exactly like the
+        sequential/parallel local test path reads solver_out.json.
+        """
+        self._artifacts_dir = tempfile.mkdtemp(prefix="satcomp-artifacts-")
+        os.chmod(self._artifacts_dir, 0o777)
+        logger.info(f"Created artifacts directory: {self._artifacts_dir}")
 
     def _build_env_vars(self, node_type: str) -> Dict[str, str]:
         """Build environment variables dict for a container."""
@@ -172,6 +206,8 @@ class DistributedTestRunner:
             f"{self._shared_dir}:/shared",
             "-v",
             f"{self.test_formulas_path}:/opt/amazon/test_formulas:ro",
+            "-v",
+            f"{self._artifacts_dir}:{self._leader_work_dir}",
         ]
         for k, v in env.items():
             cmd.extend(["-e", f"{k}={v}"])
@@ -201,124 +237,193 @@ class DistributedTestRunner:
             logger.warning("Leader container timed out, stopping all containers")
 
     def _collect_results(self, test_cases: List[TestCase]) -> List[TestResult]:
-        """Collect results from leader container logs."""
-        result = subprocess.run(
-            ["docker", "logs", self.leader_name],
-            capture_output=True,
-            text=True,
-        )
-        stdout = result.stdout
-        stderr = result.stderr
-        # docker logs sends container stdout to result.stdout and container stderr to result.stderr
-        # Python logging defaults to stderr, so check both
-        combined = stdout + "\n" + stderr
+        """Collect results from the leader's structured per-run artifacts.
 
-        # Parse output queue messages from leader logs
-        # The leader logs JSON output queue messages
-        output_messages = []
-        for line in combined.split("\n"):
-            # Leader entrypoint logs messages like: {"solver": "...", "solver_result_code": ...}
-            line = line.strip()
-            if not line:
-                continue
-            # Try to find JSON in the log line (may be prefixed by logger info)
-            brace_idx = line.find("{")
-            if brace_idx >= 0:
-                json_str = line[brace_idx:]
-                try:
-                    msg = json.loads(json_str)
-                    if "solver_result_code" in msg:
-                        output_messages.append(msg)
-                except (json.JSONDecodeError, KeyError):
-                    pass
+        Mirrors the sequential/parallel local test path: instead of scraping the
+        leader's stdout logs for JSON, we read the `solver_out.json` files the
+        leader harness writes into its (host-mounted) work dir, one per formula.
 
-        # Build expected results map from test cases
-        logger.info(f"Found {len(output_messages)} result messages from leader logs")
-        expected_by_formula = {}
+        For any formula that produced no artifact, we surface the leader log for
+        diagnosis rather than silently reporting NO_RESULT.
+        """
+        leader_log = self._get_leader_logs()
+        artifacts_by_formula = self._read_artifacts()
+        logger.info(f"Read {len(artifacts_by_formula)} solver_out.json artifact(s) from leader work dir")
+
+        results: List[TestResult] = []
         for tc in test_cases:
-            formula_name = tc.formula_path.name
-            expected_by_formula[formula_name] = tc
-
-        results = []
-        matched_formulas = set()
-
-        for msg in output_messages:
-            formula_url = msg.get("formula_s3_uri", "")
-            formula_name = os.path.basename(formula_url)
-            solver_result_code = msg.get("solver_result_code", -6)
-            runtime_millis = msg.get("solver_runtime_millis", 0)
-
-            result_code = SolverResultCode.from_int(solver_result_code)
-            actual_result = str(result_code)
-            elapsed = runtime_millis / 1000.0
-
-            tc = expected_by_formula.get(formula_name)
-            if tc is None:
-                continue
-
-            matched_formulas.add(formula_name)
-            passed = actual_result.upper() == tc.expected_result.upper()
-            # For ERROR expected, accept anything except SAT/UNSAT
-            if tc.expected_result.upper() == "ERROR":
-                passed = actual_result.upper() not in ("SAT", "UNSAT")
-
-            # For CRASH expected, accept INDETERMINATE (OOM may report either)
-            if tc.expected_result.upper() == "CRASH":
-                passed = passed or actual_result.upper() in ("CRASH", "INDETERMINATE")
-
-            # For TIMEOUT expected, accept INDETERMINATE if solver ran long enough
-            if tc.expected_result.upper() == "TIMEOUT":
-                passed = passed or actual_result.upper() not in ("SAT", "UNSAT")
-
-            results.append(
-                TestResult(
-                    test_case=tc,
-                    actual_result=actual_result,
-                    elapsed_time=elapsed,
-                    passed=passed,
-                    stdout=stdout,
-                    stderr=stderr,
-                    solver_result_code=solver_result_code,
-                    process_return_code=0,
-                )
-            )
-
-        # Any test cases that didn't produce output
-        for tc in test_cases:
-            if tc.formula_path.name not in matched_formulas:
-                expected = tc.expected_result.upper()
-                # No output is acceptable for TIMEOUT and CRASH tests
-                if expected in ("TIMEOUT", "CRASH"):
-                    logger.warning(
-                        f"No output for {tc.formula_path.name} (expected {expected}); inferring pass"
-                    )
-                    actual = "TIMEOUT" if expected == "TIMEOUT" else "CRASH"
-                    results.append(
-                        TestResult(
-                            test_case=tc,
-                            actual_result=actual,
-                            elapsed_time=0.0,
-                            passed=True,
-                            stdout=stdout,
-                            stderr=stderr,
-                            solver_result_code=-7 if expected == "TIMEOUT" else -8,
-                            process_return_code=0,
-                        )
-                    )
-                else:
-                    results.append(
-                        TestResult(
-                            test_case=tc,
-                            actual_result="NO_RESULT",
-                            elapsed_time=0.0,
-                            passed=False,
-                            error_message="No result produced by distributed run",
-                            stdout=stdout,
-                            stderr=stderr,
-                        )
-                    )
+            artifact = artifacts_by_formula.get(tc.formula_path.name)
+            if artifact is not None:
+                results.append(self._result_from_artifact(tc, artifact))
+            else:
+                results.append(self._result_for_missing_artifact(tc, leader_log))
 
         return results
+
+    def _get_leader_logs(self) -> str:
+        """Fetch the leader container's combined stdout+stderr for diagnostics only."""
+        try:
+            proc = subprocess.run(
+                ["docker", "logs", self.leader_name],
+                capture_output=True,
+                text=True,
+                timeout=30,
+            )
+        except Exception as e:
+            logger.debug(f"Could not read leader logs: {e}")
+            return ""
+        return (proc.stdout or "") + "\n" + (proc.stderr or "")
+
+    def _read_artifacts(self) -> Dict[str, dict]:
+        """Read every `solver_out.json` under the artifacts dir, keyed by formula name.
+
+        Each run directory (written by the leader) contains `input.json` (which
+        names the formula), `solver_out.json` (the structured result), and
+        `stdout.txt`/`stderr.txt`. We key by the formula's filename so results
+        can be matched to test cases exactly, without relying on log formatting.
+        """
+        artifacts: Dict[str, dict] = {}
+        if not self._artifacts_dir:
+            return artifacts
+
+        base = Path(self._artifacts_dir)
+        for solver_out_path in base.rglob(SOLVER_OUT_FILENAME):
+            run_dir = solver_out_path.parent
+            formula_name = self._formula_name_from_run_dir(run_dir)
+            if formula_name is None:
+                logger.debug(f"Skipping run dir with no resolvable formula name: {run_dir}")
+                continue
+
+            solver_out = self._read_json(solver_out_path)
+            if solver_out is None:
+                logger.warning(f"Could not parse {solver_out_path}; skipping")
+                continue
+
+            artifacts[formula_name] = {
+                "solver_result_code": solver_out.get("solver_result_code", SolverResultCode.INDETERMINATE.value),
+                "process_return_code": solver_out.get("process_return_code", -1),
+                "elapsed_time": solver_out.get("elapsed_time", 0.0),
+                "stdout": self._read_text(run_dir / STDOUT_FILENAME),
+                "stderr": self._read_text(run_dir / STDERR_FILENAME),
+            }
+
+        return artifacts
+
+    def _formula_name_from_run_dir(self, run_dir: Path) -> Optional[str]:
+        """Resolve the formula filename for a run dir by reading its input.json."""
+        input_data = self._read_json(run_dir / INPUT_FILENAME)
+        if not input_data:
+            return None
+        formula_file = input_data.get("formula_file", "")
+        return os.path.basename(formula_file) if formula_file else None
+
+    def _result_from_artifact(self, tc: TestCase, artifact: dict) -> TestResult:
+        """Build a TestResult from a formula's structured solver_out.json artifact."""
+        solver_result_code = artifact["solver_result_code"]
+        process_return_code = artifact["process_return_code"]
+        elapsed = artifact["elapsed_time"]
+
+        actual_result = str(SolverResultCode.from_int(solver_result_code))
+
+        # Mirror the inference the sequential path and harness apply:
+        #   - an OS kill (OOM/SIGKILL) is reported as a CRASH
+        #   - a solver that produced no SAT/UNSAT answer but ran out its budget
+        #     is reported as a TIMEOUT
+        if process_return_code in OOM_RETURN_CODES:
+            actual_result = "CRASH"
+            solver_result_code = SolverResultCode.CRASH.value
+        elif actual_result not in ("SAT", "UNSAT") and elapsed >= tc.max_time_seconds:
+            actual_result = "TIMEOUT"
+            solver_result_code = SolverResultCode.TIMEOUT.value
+
+        return TestResult(
+            test_case=tc,
+            actual_result=actual_result,
+            elapsed_time=elapsed,
+            passed=self._matches_expected(actual_result, tc.expected_result),
+            stdout=artifact["stdout"],
+            stderr=artifact["stderr"],
+            solver_result_code=solver_result_code,
+            process_return_code=process_return_code,
+        )
+
+    def _result_for_missing_artifact(self, tc: TestCase, leader_log: str) -> TestResult:
+        """Build a TestResult for a formula that produced no artifact.
+
+        No output is acceptable for TIMEOUT/CRASH tests (the run may not finish
+        writing). Otherwise this is a genuine failure, so we surface the leader
+        log to explain *why* instead of silently reporting NO_RESULT.
+        """
+        expected = tc.expected_result.upper()
+        if expected in ("TIMEOUT", "CRASH"):
+            logger.warning(f"No artifact for {tc.formula_path.name} (expected {expected}); inferring pass")
+            actual = "TIMEOUT" if expected == "TIMEOUT" else "CRASH"
+            return TestResult(
+                test_case=tc,
+                actual_result=actual,
+                elapsed_time=0.0,
+                passed=True,
+                stdout="",
+                stderr="",
+                solver_result_code=SolverResultCode.TIMEOUT.value if expected == "TIMEOUT" else SolverResultCode.CRASH.value,
+                process_return_code=0,
+            )
+
+        logger.error(
+            f"No solver_out.json artifact for {tc.formula_path.name}; the distributed run "
+            "likely failed before producing a result. See the leader log for details."
+        )
+        return TestResult(
+            test_case=tc,
+            actual_result="NO_RESULT",
+            elapsed_time=0.0,
+            passed=False,
+            error_message=(
+                "No solver_out.json artifact was produced for this formula. The distributed "
+                "run likely failed before completing (e.g. the solver could not launch across "
+                "the worker network). Inspect the leader log (captured as stdout) for the cause."
+            ),
+            stdout=leader_log,
+            stderr="",
+            solver_result_code=SolverResultCode.INDETERMINATE.value,
+            process_return_code=-1,
+        )
+
+    def _matches_expected(self, actual: str, expected: str) -> bool:
+        """Whether a distributed run's actual result satisfies the expectation.
+
+        Distributed timeouts/crashes cannot always be distinguished as precisely
+        as in the single-container path, so ERROR/CRASH/TIMEOUT expectations are
+        matched leniently (a non-SAT/UNSAT outcome satisfies them).
+        """
+        a = actual.upper()
+        e = expected.upper()
+        if a == e:
+            return True
+        if e == "ERROR":
+            return a not in ("SAT", "UNSAT")
+        if e == "CRASH":
+            return a in ("CRASH", "INDETERMINATE")
+        if e == "TIMEOUT":
+            return a not in ("SAT", "UNSAT")
+        return False
+
+    @staticmethod
+    def _read_json(path: Path) -> Optional[dict]:
+        """Read and parse a JSON file, returning None on any failure."""
+        try:
+            with open(path, "r") as f:
+                return json.load(f)
+        except (OSError, json.JSONDecodeError):
+            return None
+
+    @staticmethod
+    def _read_text(path: Path) -> str:
+        """Read a text file, returning an empty string if it is missing/unreadable."""
+        try:
+            return path.read_text()
+        except OSError:
+            return ""
 
     def _cleanup(self):
         """Stop and remove all containers, remove network, remove temp dir."""
@@ -365,6 +470,15 @@ class DistributedTestRunner:
             except Exception as e:
                 logger.debug(f"Error removing shared dir {self._shared_dir}: {e}")
 
+        # Remove artifacts temp directory
+        if self._artifacts_dir and os.path.exists(self._artifacts_dir):
+            try:
+                import shutil
+
+                shutil.rmtree(self._artifacts_dir, ignore_errors=True)
+            except Exception as e:
+                logger.debug(f"Error removing artifacts dir {self._artifacts_dir}: {e}")
+
     def run(self, test_cases: List[TestCase]) -> List[TestResult]:
         """Run distributed tests. Creates network, starts containers, waits, collects results."""
         logger.info(f"Starting distributed test: {self.num_workers} workers, network={self.network_name}")
@@ -374,6 +488,7 @@ class DistributedTestRunner:
         try:
             self._create_network()
             self._create_shared_volume()
+            self._create_artifacts_volume()
             self._start_worker_containers()
 
             if self._cleanup_requested:

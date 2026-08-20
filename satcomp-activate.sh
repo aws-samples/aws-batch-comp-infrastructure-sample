@@ -21,7 +21,7 @@ elif [ "$PYTHON_MAJOR" -lt 3 ] || { [ "$PYTHON_MAJOR" -eq 3 ] && [ "$PYTHON_MINO
 fi
 
 # Docker 25.0+
-DOCKER_VERSION=$(docker --version 2>/dev/null | grep -oP '\d+\.\d+' | head -1)
+DOCKER_VERSION=$(docker --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+' | head -1)
 if [ -z "$DOCKER_VERSION" ]; then
   _warn "docker not found. Install Docker 25.0+ (https://www.docker.com/)"
 elif [ "$(echo "$DOCKER_VERSION" | cut -d. -f1)" -lt 25 ]; then
@@ -29,7 +29,7 @@ elif [ "$(echo "$DOCKER_VERSION" | cut -d. -f1)" -lt 25 ]; then
 fi
 
 # Node.js 22.0+
-NODE_VERSION=$(node --version 2>/dev/null | grep -oP '\d+' | head -1)
+NODE_VERSION=$(node --version 2>/dev/null | grep -oE '[0-9]+' | head -1)
 if [ -z "$NODE_VERSION" ]; then
   _warn "node not found. Install Node.js 22+ (https://nodejs.org/)"
 elif [ "$NODE_VERSION" -lt 22 ]; then
@@ -42,7 +42,7 @@ if ! command -v aws &>/dev/null; then
 fi
 
 # CDK 2.0+
-CDK_MAJOR=$(cdk --version 2>/dev/null | grep -oP '^\d+' | head -1)
+CDK_MAJOR=$(cdk --version 2>/dev/null | grep -oE '^[0-9]+' | head -1)
 if [ -z "$CDK_MAJOR" ]; then
   _warn "cdk not found. Install it: npm install -g aws-cdk"
 elif [ "$CDK_MAJOR" -lt 2 ]; then

@@ -23,6 +23,7 @@ from common.constants import (
     SMT_FORMULA_EXTENSION,
 )
 from common.solver_io import SolverInput, SolverResultCode
+from docker.errors import DockerException
 from runner.commands.base import CommandContext, CommandHandler
 from runner.runner_config import SolverConfig
 
@@ -171,6 +172,10 @@ class TestLocalCommand(CommandHandler):
             self.logger.error("No solvers to test")
             return 1
 
+        # Check that the solver Docker images are present
+        if not self._ensure_images_built(solvers_to_test):
+            return 1
+
         # Run tests for each solver and collect all results
         all_passed = True
         all_results: Dict[str, List[TestResult]] = {}
@@ -271,6 +276,32 @@ class TestLocalCommand(CommandHandler):
 
         # Return all solvers except the infrastructure image
         return [s for s in all_solvers if s.name != "satcomp-infrastructure"]
+
+    def _ensure_images_built(self, solvers: List[SolverConfig]) -> bool:
+        """Verify every solver has a locally built Docker image before testing.
+
+        Returns True if all images are present. If any are missing, logs which
+        ones and how to build them and returns False. If the Docker daemon is
+        unreachable, logs that and returns False.
+        """
+        try:
+            self.ctx.sdc.dc.images.list()  # Flush the image cache?
+            missing = self.ctx.sdc.find_missing_images(solvers)
+        except DockerException as e:
+            self.logger.error("Cannot reach the Docker daemon. Is Docker Desktop running?")
+            self.logger.debug(f"Docker error: {e}")
+            return False
+
+        if missing != []:
+            self.logger.error(
+                f"Cannot run test-local: {len(missing)} solver image(s) are not built:"
+            )
+            for image_name in missing:
+                self.logger.error(f"  - {image_name}")
+            self.logger.error("Build them first with: satcomp.py <config.yml> build")
+            return False
+
+        return True
 
     def _filter_tests_for_solver(self, test_cases: List[TestCase], solver: SolverConfig) -> List[TestCase]:
         """Filter test cases based on solver type (SAT vs SMT).

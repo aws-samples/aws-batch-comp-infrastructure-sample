@@ -63,6 +63,8 @@ def mock_sdc():
     sdc = MagicMock()
     sdc.get_solvers.return_value = ["solver1", "solver2", "satcomp-infrastructure"]
     sdc.get_aws_solvers.return_value = ["solver1", "solver2"]
+    # Default: all solver images are built (no missing images).
+    sdc.find_missing_images.return_value = []
     return sdc
 
 
@@ -615,6 +617,44 @@ class TestExecute:
 
         # Assertions
         assert result == 1  # Error due to no solvers
+
+    @patch.object(TestLocalCommand, '_load_test_cases')
+    @patch.object(TestLocalCommand, '_get_solvers_to_test')
+    @patch.object(TestLocalCommand, '_run_single_test')
+    def test_execute_aborts_when_image_missing(self, mock_run, mock_get_solvers,
+                                               mock_load, test_local_cmd):
+        """Test execute exits early (without running tests) if an image is missing."""
+        mock_load.return_value = [MagicMock()]
+        mock_get_solvers.return_value = [test_local_cmd.ctx.project.solvers[0]]
+        # Report the solver's image as not built
+        test_local_cmd.ctx.sdc.find_missing_images.return_value = ["test-project--solver1"]
+
+        test_local_cmd.expected_path.touch()
+
+        result = test_local_cmd.execute()
+
+        # Should fail fast and never invoke the (slow) Docker test path
+        assert result == 1
+        mock_run.assert_not_called()
+
+    @patch.object(TestLocalCommand, '_load_test_cases')
+    @patch.object(TestLocalCommand, '_get_solvers_to_test')
+    @patch.object(TestLocalCommand, '_run_single_test')
+    def test_execute_aborts_when_daemon_unreachable(self, mock_run, mock_get_solvers,
+                                                    mock_load, test_local_cmd):
+        """Test execute exits early if the Docker daemon is unreachable."""
+        from docker.errors import DockerException
+
+        mock_load.return_value = [MagicMock()]
+        mock_get_solvers.return_value = [test_local_cmd.ctx.project.solvers[0]]
+        test_local_cmd.ctx.sdc.find_missing_images.side_effect = DockerException("cannot connect")
+
+        test_local_cmd.expected_path.touch()
+
+        result = test_local_cmd.execute()
+
+        assert result == 1
+        mock_run.assert_not_called()
 
     @patch.object(TestLocalCommand, '_load_test_cases')
     @patch.object(TestLocalCommand, '_get_solvers_to_test')
