@@ -10,6 +10,8 @@ complex to set up. These tests focus on the parsing logic that can
 be tested in isolation.
 """
 
+from pathlib import Path
+
 import pytest
 
 from runner.runner_cli import (
@@ -19,6 +21,10 @@ from runner.runner_cli import (
     TeardownSubcommand,
     Subcommand,
 )
+
+# Repository root, derived from this file's location so tests are portable
+# across machines (tests/ lives directly under the repo root).
+REPO_ROOT = Path(__file__).resolve().parent.parent
 
 
 # ---------------------------------------------------------------------------
@@ -538,12 +544,12 @@ class TestCreateBoto3Session:
         import sys
 
         # Ensure the scripting dir is on PYTHONPATH so the import check passes
-        script_dir = "/home/rbtjones/satcomp/SATSMTCompPublicInfrastructure"
-        scripting_dir = f"{script_dir}/scripting"
+        script_dir = REPO_ROOT
+        scripting_dir = str(script_dir / "scripting")
         monkeypatch.setenv("PYTHONPATH", scripting_dir)
 
         # Load satcomp as a module
-        spec = importlib.util.spec_from_file_location("satcomp", f"{script_dir}/satcomp.py")
+        spec = importlib.util.spec_from_file_location("satcomp", str(script_dir / "satcomp.py"))
         satcomp_mod = importlib.util.module_from_spec(spec)
         sys.modules["satcomp"] = satcomp_mod
         spec.loader.exec_module(satcomp_mod)
@@ -564,11 +570,11 @@ class TestCreateBoto3Session:
         import importlib
         import sys
 
-        script_dir = "/home/rbtjones/satcomp/SATSMTCompPublicInfrastructure"
-        scripting_dir = f"{script_dir}/scripting"
+        script_dir = REPO_ROOT
+        scripting_dir = str(script_dir / "scripting")
         monkeypatch.setenv("PYTHONPATH", scripting_dir)
 
-        spec = importlib.util.spec_from_file_location("satcomp", f"{script_dir}/satcomp.py")
+        spec = importlib.util.spec_from_file_location("satcomp", str(script_dir / "satcomp.py"))
         satcomp_mod = importlib.util.module_from_spec(spec)
         sys.modules["satcomp"] = satcomp_mod
         spec.loader.exec_module(satcomp_mod)
