@@ -65,13 +65,24 @@ class SolverEc2Instance(Enum):
     M6I_16XLARGE = ("m6i.16xlarge", user_gb_to_mb(256), gb_to_mb(128))
     M6I_32XLARGE = ("m6i.32xlarge", user_gb_to_mb(512), gb_to_mb(256))
 
-    # M7i instance family -
+    # M7i instance family
     M7I_LARGE = ("m7i.large", user_gb_to_mb(8), gb_to_mb(4))
     M7I_XLARGE = ("m7i.xlarge", user_gb_to_mb(16), gb_to_mb(8))
     M7I_2XLARGE = ("m7i.2xlarge", user_gb_to_mb(32), gb_to_mb(16))
     M7I_4XLARGE = ("m7i.4xlarge", user_gb_to_mb(64), gb_to_mb(32))
     M7I_8XLARGE = ("m7i.8xlarge", user_gb_to_mb(128), gb_to_mb(64))
     M7I_16XLARGE = ("m7i.16xlarge", user_gb_to_mb(256), gb_to_mb(128))
+
+    # M8i instance family
+    M8I_LARGE = ("m8i.large", user_gb_to_mb(8), gb_to_mb(4))
+    M8I_XLARGE = ("m8i.xlarge", user_gb_to_mb(16), gb_to_mb(8))
+    M8I_2XLARGE = ("m8i.2xlarge", user_gb_to_mb(32), gb_to_mb(16))
+    M8I_4XLARGE = ("m8i.4xlarge", user_gb_to_mb(64), gb_to_mb(32))
+    M8I_8XLARGE = ("m8i.8xlarge", user_gb_to_mb(128), gb_to_mb(64))
+    M8I_16XLARGE = ("m8i.16xlarge", user_gb_to_mb(256), gb_to_mb(128))
+    M8I_24XLARGE = ("m8i.24xlarge", user_gb_to_mb(384), gb_to_mb(192))
+    M8I_32XLARGE = ("m8i.32xlarge", user_gb_to_mb(512), gb_to_mb(256))
+    M8I_48XLARGE = ("m8i.48xlarge", user_gb_to_mb(768), gb_to_mb(384))
 
     def instance_str(self) -> str:
         return self.value[0]

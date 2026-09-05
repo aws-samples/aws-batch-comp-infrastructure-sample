@@ -288,7 +288,7 @@ class SolverDockerClient:
                 self.images[name] = image
                 logger.info(f'The image "{name}" has already been built... success')
             except ImageNotFound:
-                self.build_image(image, no_cache=no_cache)
+                self.build_image(sc, no_cache=no_cache)
 
     def build_images(self, force_rebuild: bool = True, no_cache: bool = False) -> None:
         """

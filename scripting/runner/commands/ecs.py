@@ -367,6 +367,19 @@ class EcsServiceManager:
             DesiredCapacity=desired_asg_capacity,
         )
 
+        # For batch workloads, AZ balance is irrelevant and rebalancing
+        # kills containers mid-solve by terminating healthy instances.
+        if desired_asg_capacity > 0:
+            self.asg_client.suspend_processes(
+                AutoScalingGroupName=asg_name,
+                ScalingProcesses=["AZRebalance"],
+            )
+        else:
+            self.asg_client.resume_processes(
+                AutoScalingGroupName=asg_name,
+                ScalingProcesses=["AZRebalance"],
+            )
+
         # 2. Update the ECS cluster to start/stop a task
         cluster_name = self.rn.get_ecs_cluster_name()
         ecs_response = self.ecs_client.list_services(cluster=cluster_name)

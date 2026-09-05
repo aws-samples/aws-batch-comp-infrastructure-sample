@@ -15,6 +15,7 @@ cdk_infra/solvers.json
 .kiro/
 .hypothesis/
 CLAUDE.md
+.claude/
 
 # Generated test formulas (run tools/generate_test_formulas.sh to create)
 test_formulas/cnf/timeout_*.cnf

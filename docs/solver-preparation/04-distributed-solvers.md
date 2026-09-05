@@ -145,7 +145,7 @@ The Mallob distributed solver in `examples/configs/sat-distributed` is a complet
 ```yaml
 solvers:
   - name: mallob
-    docker_dir: $SATCOMP_ROOT/sat/parallel/mallob
+    docker_dir: $SATCOMP_ROOT/examples/solvers/sat/distributed/mallob
     dockerfile: Dockerfile
     is_distributed: true
     num_worker_nodes_per_leader: 7

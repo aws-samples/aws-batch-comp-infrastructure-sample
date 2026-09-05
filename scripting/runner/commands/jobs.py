@@ -60,14 +60,18 @@ class ProcessCommand(CommandHandler):
         super().__init__(ctx, logger)
         self.jm = job_manager
 
-    def execute(self, **kwargs) -> int:
+    def execute(self, versioned: bool = False, **kwargs) -> int:
         """Process results from solver output queues.
+
+        Args:
+            versioned: If True, create a new numbered results file instead of appending.
 
         Returns:
             0 on success
         """
         aws_solvers = self.ctx.aws_solvers
         rn = self.ctx.rn
+        project = self.ctx.project.project
 
         self.jm.make_results_dir()
         for solver in aws_solvers:
@@ -75,7 +79,7 @@ class ProcessCommand(CommandHandler):
             rn.set_solver(solver)
             q_out_name = rn.get_sqs_output_queue_name()
             q_out = SqsQueue.get_sqs_queue_from_session(self.ctx.boto3_session, q_out_name)
-            self.jm.process_jobs(q_out)
+            self.jm.process_jobs(q_out, project, versioned)
 
         return 0
 
