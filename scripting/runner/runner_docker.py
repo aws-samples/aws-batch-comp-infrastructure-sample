@@ -166,6 +166,26 @@ class SolverDockerClient:
             self.images[image_name] = image
         return self.images[image_name]
 
+    def image_exists(self, sc: SolverConfig) -> bool:
+        """Return whether the solver's local Docker image has been built.
+
+        Performs a single lookup against the Docker daemon. Raises
+        `DockerException` if the daemon is unreachable, so callers can fail
+        fast instead of issuing a slow daemon call for every test case.
+        """
+        try:
+            self.get_image(sc)
+            return True
+        except ImageNotFound:
+            return False
+
+    def find_missing_images(self, solvers: List[SolverConfig]) -> List[str]:
+        """Return the Docker image names of solvers that have not been built.
+
+        Raises `DockerException` if the Docker daemon is unreachable.
+        """
+        return [sc.get_docker_name() for sc in solvers if not self.image_exists(sc)]
+
     def get_repo_tagged_image(self, sc: SolverConfig, repo: str) -> Image | None:
         """
         Gets the (tagged) Docker `Image` object for remote repository `repo`.

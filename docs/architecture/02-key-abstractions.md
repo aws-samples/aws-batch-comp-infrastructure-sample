@@ -167,12 +167,13 @@ print(env.is_local)         # True if running locally
 
 Key environment variables:
 - `SOLVER_NAME` - Name of the solver
-- `IS_DISTRIBUTED` - "true" or "false"
-- `NUM_WORKERS` - Number of worker nodes
-- `IS_LEADER` - "true" for leader nodes
-- `SQS_INPUT_QUEUE_URL` - Input queue URL
-- `SQS_OUTPUT_QUEUE_URL` - Output queue URL
-- `S3_RESULTS_BUCKET` - Results bucket name
+- `PROJECT_NAME` - Name of the project/competition
+- `SOLVER_NODE_TYPE` - "parallel" for parallel, "distributed-leader" and "distributed-worker" for different node types
+- `NUM_WORKERS` - Number of worker nodes, including the leader node
+- `AWS_ACCOUNT_ID` - [AWS only] Account ID
+- `AWS_DEFAULT_REGION` - [AWS only] Region name
+- `LOCAL_TEST_FILES` - [Local testing only] Path to local test files, in the Docker image
+- `LOCAL_TIMEOUT` - [Local testing only] Number of seconds for timeout
 
 ## AWS Shim Classes
 
